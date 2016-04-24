@@ -10,6 +10,7 @@ class ode
 {
 public:
 	ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, computing_device_t comp_dev);
+	ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, uint32_t n_var, uint32_t n_par, computing_device_t comp_dev);
 	~ode();
 
 	void initialize();

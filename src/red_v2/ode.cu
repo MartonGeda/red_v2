@@ -17,6 +17,20 @@ ode::ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, computi
 	allocate_storage(n_var, n_par);
 }
 
+ode::ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, uint32_t n_var, uint32_t n_par, computing_device_t comp_dev) :
+	n_dim(n_dim),
+	n_vpo(n_vpo),
+	n_ppo(n_ppo),
+	n_obj(n_obj),
+	n_var(n_var),
+	n_par(n_par),
+	comp_dev(comp_dev)
+{
+	initialize();
+
+	allocate_storage(n_var, n_par);
+}
+
 ode::~ode()
 {
 	deallocate_storage();

@@ -14,7 +14,7 @@ using namespace redutil2;
 
 
 threebody::threebody(uint16_t n_ppo, computing_device_t comp_dev) :
-	ode(3, 8, n_ppo, 3, comp_dev)
+	ode(3, 8, n_ppo, 3, 17, 3, comp_dev)
 {
 	initialize();
 	allocate_storage();
@@ -346,13 +346,18 @@ void threebody::load_ascii(ifstream& input)
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
-		load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i], &h_y[i], &h_y[i+4]);
+		load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i]);
+	}
+
+	for (uint32_t i = 0; i < n_var; i++)
+	{
+		input >> h_y[i];
 	}
 
 	//load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i], &h_y[i], &h_y[i+8]);
 }
 
-void threebody::load_ascii_record(ifstream& input, ttt_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p, var_t* r, var_t* v)
+void threebody::load_ascii_record(ifstream& input, ttt_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p)
 {
 	string name;
 
@@ -369,15 +374,6 @@ void threebody::load_ascii_record(ifstream& input, ttt_t* t, threebody_t::metada
 	input >> md->id;
 	// mass
 	input >> p->m;
-
-	// position
-	var4_t* _r = (var4_t*)r;
-	input >> _r->x >> _r->y >> _r->z >> _r->w;
-
-	// velocity
-	var4_t* _v = (var4_t*)v;
-	input >> _v->x >> _v->y >> _v->z >> _v->w;
-
 }
 
 void threebody::load_binary(ifstream& input)
@@ -431,37 +427,53 @@ void threebody::print_solution_ascii(ofstream& sout)
 	sout.setf(ios::right);
 	sout.setf(ios::scientific);
 
-	for (uint32_t i = 0; i < n_obj; i++)
+
+	sout << t << SEP << h_y[n_var-1] << setw(var_t_w);
+	for (uint32_t i = 0; i < n_var-1; i++)
     {
-		uint32_t orig_idx = h_md[i].id - 1;
-
-		sout << setw(var_t_w) << t << SEP                       /* time of the record [day] (double)           */
-			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
-		// Print the metadata for each object
-        << setw(int_t_w) << h_md[i].id << SEP;
-
-		// Print the parameters for each object
-		for (uint16_t j = 0; j < n_ppo; j++)
+		sout << h_y[i];
+		if (i < n_var - 2)
 		{
-			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(var_t_w) << h_p[param_idx] << SEP;
+			sout << SEP;
 		}
-		// Print the variables for each object
-		for (uint16_t j = 0; j < n_vpo; j++)
+		else
 		{
-			uint32_t var_idx = i * n_vpo + j;
-			sout << setw(var_t_w) << h_y[var_idx];
-			if (j < n_vpo - 1)
-			{
-				sout << SEP;
-			}
-			else
-			{
-				sout << endl;
-			}
+			sout << endl;
 		}
 	}
 	sout.flush();
+
+	//for (uint32_t i = 0; i < n_obj; i++)
+ //   {
+	//	uint32_t orig_idx = h_md[i].id - 1;
+
+	//	sout << setw(var_t_w) << t << SEP                       /* time of the record [day] (double)           */
+	//		 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
+	//	// Print the metadata for each object
+ //       << setw(int_t_w) << h_md[i].id << SEP;
+
+	//	// Print the parameters for each object
+	//	for (uint16_t j = 0; j < n_ppo; j++)
+	//	{
+	//		uint32_t param_idx = i * n_ppo + j;
+	//		sout << setw(var_t_w) << h_p[param_idx] << SEP;
+	//	}
+	//	// Print the variables for each object
+	//	for (uint16_t j = 0; j < n_vpo; j++)
+	//	{
+	//		uint32_t var_idx = i * n_vpo + j;
+	//		sout << setw(var_t_w) << h_y[var_idx];
+	//		if (j < n_vpo - 1)
+	//		{
+	//			sout << SEP;
+	//		}
+	//		else
+	//		{
+	//			sout << endl;
+	//		}
+	//	}
+	//}
+
 }
 
 void threebody::print_solution_binary(ofstream& sout)
