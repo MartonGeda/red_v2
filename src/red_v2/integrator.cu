@@ -20,7 +20,8 @@ integrator::integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_
 {
 	initialize();
 
-	n_var  = f.n_obj * f.n_vpo;
+	//n_var  = f.n_obj * f.n_vpo;
+	n_var  = f.n_var;
 	allocate_storage(n_var);
 }
 

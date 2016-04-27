@@ -74,7 +74,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 //	f->print_solution(opt->out_fn[OUTPUT_NAME_SOLUTION], opt->param->output_data_rep);
 	f->print_solution(path_solution, opt->param->output_data_rep);
-
+	f->calc_integral();
 	/* 
 	 * Main cycle
 	 */
@@ -82,6 +82,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	{
 		// make the integration step, and measure the time it takes
 		clock_t T0_CPU = clock();
+
 		dt = intgr->step();
 		dT_CPU = (clock() - T0_CPU);
 		T_CPU += dT_CPU;
@@ -91,7 +92,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 		{
 			ps = 0.0;
 			f->print_solution(path_solution, opt->param->output_data_rep); 
-			f->calc_integral();
+			//f->calc_integral();
 			f->print_integral(path_integral);	
 		}
 
@@ -111,21 +112,22 @@ int main(int argc, const char** argv, const char** env)
 	ode*         f = 0x0;
 	options*   opt = 0x0;
 
-	//matrix4_t m = {{1,2,3,4},{4,2,6,7},{6,2,7,7},{2,7,2,8}};
-	//var4_t v = {1,5,7,2};
+	//matrix4_t m = {{10,8,10,7},{1,9,10,7},{8,8,4,7},{2,8,1,3}};
+	//var4_t v = {4,10,1,5};
 	//matrix4_t n = tools::calc_matrix_matrix_product(m,m);
 	//matrix4_t l = tools::calc_matrix_transpose(n);
 	//var4_t u = tools::calc_matrix_vector_product(m,v);
-	//var3_t qv1 = {1,3,0};
-	//var3_t qv2 = {-2,-1,0};
-	//var3_t qv3 = {1,-1,0};
-	//var3_t pv1 = {0,0,0};
-	//var3_t pv2 = {0,0,0};
-	//var3_t pv3 = {0,0,0};
-	//var4_t Q1,Q2,P1,P2;
-	//
-	//tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
-	//tools::trans_to_descartes(3,4,5,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
+
+	var3_t qv1 = {1,3,0};
+	var3_t qv2 = {-2,-1,0};
+	var3_t qv3 = {1,-1,0};
+	var3_t pv1 = {0,0,0};
+	var3_t pv2 = {0,0,0};
+	var3_t pv3 = {0,0,0};
+	var4_t Q1,Q2,P1,P2;
+	
+	tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
+	tools::trans_to_descartes(3,4,5,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
 
 	try
 	{
@@ -164,7 +166,7 @@ int main(int argc, const char** argv, const char** env)
 		integrator *intgr = opt->create_integrator(*f, dt);
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies
-		intgr->set_dt_min(1.0e-6); // day
+		intgr->set_dt_min(1.0e-20); // day
 		intgr->set_max_iter(10);
 
 		run_simulation(opt, f, intgr, *slog);
