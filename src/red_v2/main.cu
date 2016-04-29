@@ -162,7 +162,12 @@ int main(int argc, const char** argv, const char** env)
 			throw string("Invalid dynamical model.");
 		}
 
-		ttt_t dt = 0.01;
+		// TODO!!!!!
+		//
+		ttt_t dt = 0.001;
+		//
+		// TODO!!!!!
+
 		integrator *intgr = opt->create_integrator(*f, dt);
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies
