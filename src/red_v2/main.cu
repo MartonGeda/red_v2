@@ -14,6 +14,8 @@
 #include "tools.h"
 
 #include "type.h"
+// DEBUG
+#include "constants.h"
 #include "redutil2.h"
 
 using namespace std;
@@ -124,6 +126,12 @@ int main(int argc, const char** argv, const char** env)
 	var3_t pv1 = {1.35584617114928e-10,	-1.18154635090028e-10,	0};
 	var3_t pv2 = {-0.012137023259470 * 5.685826099573812e-09,   0.010261361613838 * 5.685826099573812e-09, 0};
 	var3_t pv3 = {-0.011709048488151 * 5.685826099573812e-09,   0.010519195691438 * 5.685826099573812e-09, 0};
+
+	// DEBUG
+	pv1.x /= constants::Gauss, pv1.y /= constants::Gauss, pv1.z /= constants::Gauss;
+	pv2.x /= constants::Gauss, pv2.y /= constants::Gauss, pv2.z /= constants::Gauss;
+	pv3.x /= constants::Gauss, pv3.y /= constants::Gauss, pv3.z /= constants::Gauss;
+
 	var4_t Q1,Q2,P1,P2;
 	
 	tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
@@ -164,7 +172,7 @@ int main(int argc, const char** argv, const char** env)
 
 		// TODO!!!!!
 		//
-		ttt_t dt = 1.0e-10;
+		ttt_t dt = 3.0e-2;
 		//
 		// TODO!!!!!
 
