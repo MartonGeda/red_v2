@@ -66,4 +66,7 @@ public:
 	var_t* h_epoch;
 	var_t* d_epoch;
 	var_t* epoch;
+
+	bool first_open_solution;
+	bool first_open_integral;
 };

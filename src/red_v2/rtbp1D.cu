@@ -226,7 +226,6 @@ void rtbp1D::print_solution(std::string& path, data_rep_t repres)
 void rtbp1D::print_solution_ascii(ofstream& sout)
 {
 	static uint32_t int_t_w  =  8;
-	static uint32_t var_t_w  = 25;
 
 	sout.precision(16);
 	sout.setf(ios::right);
@@ -240,7 +239,7 @@ void rtbp1D::print_solution_ascii(ofstream& sout)
     {
 		uint32_t orig_idx = h_md[i].id - 1;
 
-		sout << setw(var_t_w) << t << SEP                       /* time of the record [day] (double)           */
+		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
 			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
         << setw(int_t_w) << h_md[i].id << SEP;
@@ -249,17 +248,17 @@ void rtbp1D::print_solution_ascii(ofstream& sout)
 		for (uint16_t j = 0; j < n_ppo; j++)
 		{
 			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(var_t_w) << h_p[param_idx] << SEP;
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
 		}
 		// Print the regularized variables for each object
 		for (uint16_t j = 0; j < n_vpo; j++)
 		{
 			uint32_t var_idx = i * n_vpo + j;
-			sout << setw(var_t_w) << h_y[var_idx] << SEP;
+			sout << setw(VAR_T_W) << h_y[var_idx] << SEP;
 		}
 		// Print the descartes non-regularized variables for each object
-		sout << setw(var_t_w) << x << SEP
-			 << setw(var_t_w) << vx << endl;
+		sout << setw(VAR_T_W) << x << SEP
+			 << setw(VAR_T_W) << vx << endl;
 	}
 	sout.flush();
 }
@@ -271,9 +270,6 @@ void rtbp1D::print_solution_binary(ofstream& sout)
 
 void rtbp1D::print_integral(string& path)
 {
-	static uint32_t int_t_w  =  8;
-	static uint32_t var_t_w  = 25;
-
 	ofstream sout;
 
 	sout.open(path.c_str(), ios::out);
@@ -283,8 +279,8 @@ void rtbp1D::print_integral(string& path)
 		sout.setf(ios::right);
 		sout.setf(ios::scientific);
 
-		sout << setw(var_t_w) << t << SEP                       /* fictitious time of the record (double)           */
-			 << setw(var_t_w) << h_y[2] << SEP                  /* real time of the record [day] double             */
+		sout << setw(VAR_T_W) << t << SEP                       /* fictitious time of the record (double)           */
+			 << setw(VAR_T_W) << h_y[2] << SEP                  /* real time of the record [day] double             */
 			 << h << endl;                                      /* energy of the system                             */
 	}
 	else

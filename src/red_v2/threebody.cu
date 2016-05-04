@@ -31,6 +31,9 @@ void threebody::initialize()
 	h_epoch = 0x0;
 
 	h       = 0.0;
+
+	first_open_integral = true;
+	first_open_solution = true;
 }
 
 void threebody::allocate_storage()
@@ -74,112 +77,7 @@ void threebody::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(h_md));
 	FREE_DEVICE_VECTOR((void **)&(h_epoch));
 }
-/*
-void threebody::trans_to_descartes(var3_t& qv1, var3_t& pv1, var3_t& qv2, var3_t& pv2, var3_t& qv3, var3_t& pv3, const var4_t& Q1, const var4_t& P1, const var4_t& Q2, const var4_t& P2)
-{
-	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
 
-	matrix4_t A1 = {{2*Q1.x, -2*Q1.y, -2*Q1.z, 2*Q1.w},{2*Q1.y, 2*Q1.x, -2*Q1.w, -2*Q1.z},{2*Q1.z, 2*Q1.w, 2*Q1.x, 2*Q1.y},{0,0,0,0}};
-	matrix4_t A2 = {{2*Q2.x, -2*Q2.y, -2*Q2.z, 2*Q2.w},{2*Q2.y, 2*Q2.x, -2*Q2.w, -2*Q2.z},{2*Q2.z, 2*Q2.w, 2*Q2.x, 2*Q2.y},{0,0,0,0}};
-
-	var_t R1 = SQR(Q1.x) + SQR(Q1.y) + SQR(Q1.z) + SQR(Q1.w);
-	var_t R2 = SQR(Q2.x) + SQR(Q2.y) + SQR(Q2.z) + SQR(Q2.w);
-
-	var4_t q1 = tools::calc_matrix_vector_product(tools::calc_matrix_transpose(A1),Q1);
-	q1.x /= 2;
-	q1.y /= 2;
-	q1.z /= 2;
-	
-	var4_t q2 = tools::calc_matrix_vector_product(tools::calc_matrix_transpose(A2),Q2);
-	q2.x /= 2;
-	q2.y /= 2;
-	q2.z /= 2;
-
-	var4_t p1 = tools::calc_matrix_vector_product(tools::calc_matrix_transpose(A1),P1);
-	p1.x /= 4*R1;
-	p1.y /= 4*R1;
-	p1.z /= 4*R1;
-
-	var4_t p2 = tools::calc_matrix_vector_product(tools::calc_matrix_transpose(A2),P2);
-	p2.x /= 4*R2;
-	p2.y /= 4*R2;
-	p2.z /= 4*R2;
-
-	// q3' , q1', q2'
-	qv3.x = -(p[0].m * q1.x + p[1].m * q2.x) / (p[0].m + p[1].m + p[2].m);
-	qv3.y = -(p[0].m * q1.y + p[1].m * q2.y) / (p[0].m + p[1].m + p[2].m);
-	qv3.z = -(p[0].m * q1.z + p[1].m * q2.z) / (p[0].m + p[1].m + p[2].m);
-
-	qv1.x = qv3.x + q1.x;
-	qv1.y = qv3.y + q1.y;
-	qv1.z = qv3.z + q1.z;
-
-	qv2.x = qv3.x + q2.x;
-	qv2.y = qv3.y + q2.y;
-	qv2.z = qv3.z + q2.z;
-
-	// p1', p2', p3'
-	pv1.x = p1.x;
-	pv1.y = p1.y;
-	pv1.z = p1.z;
-
-	pv2.x = p2.x;
-	pv2.y = p2.y;
-	pv2.z = p2.z;
-
-	pv3.x = -(p1.x + p2.x);
-	pv3.y = -(p1.y + p2.y);
-	pv3.z = -(p1.z + p2.z);
-
-}
-
-void threebody::trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2, const var3_t& pv2, const var3_t& qv3, const var3_t& pv3, var4_t& Q1, var4_t& P1, var4_t& Q2, var4_t& P2)
-{
-	var3_t q1, q2;
-	q1.x = qv1.x - qv3.x;
-	q1.y = qv1.y - qv3.y;
-	q1.z = qv1.z - qv3.z;
-	
-	q2.x = qv2.x - qv3.x;
-	q2.y = qv2.y - qv3.y;
-	q2.z = qv2.z - qv3.z;
-
-	var4_t p1 = {pv1.x, pv1.y, pv1.z, 0};
-	var4_t p2 = {pv2.x, pv2.y, pv2.z, 0};
-
-	if (q1.x >= 0) {
-		Q1.x = sqrt(0.5 * (tools::norm(&q1)  + q1.x));
-		Q1.y = 0.5 * q1.y / Q1.x;
-		Q1.z = 0.5 * q1.z / Q1.x;
-		Q1.w = 0;
-	}
-	else {
-		Q1.y = sqrt(0.5 * (tools::norm(&q1)  - q1.x));
-		Q1.x = 0.5 * q1.y / Q1.y;
-		Q1.z = 0;
-		Q1.w = 0.5 * q1.z / Q1.y;	
-	}
-
-	if (q2.x >= 0) {
-		Q2.x = sqrt(0.5 * (tools::norm(&q2)  + q2.x));
-		Q2.y = 0.5 * q2.y / Q2.x;
-		Q2.z = 0.5 * q2.z / Q2.x;
-		Q2.w = 0;
-	}
-	else {
-		Q2.y = sqrt(0.5 * (tools::norm(&q2)  - q2.x));
-		Q2.x = 0.5 * q2.y / Q2.y;
-		Q2.z = 0;
-		Q2.w = 0.5 * q2.z / Q2.y;	
-	}
-
-	matrix4_t A1 = {{2*Q1.x, -2*Q1.y, -2*Q1.z, 2*Q1.w},{2*Q1.y, 2*Q1.x, -2*Q1.w, -2*Q1.z},{2*Q1.z, 2*Q1.w, 2*Q1.x, 2*Q1.y},{0,0,0,0}};
-	matrix4_t A2 = {{2*Q2.x, -2*Q2.y, -2*Q2.z, 2*Q2.w},{2*Q2.y, 2*Q2.x, -2*Q2.w, -2*Q2.z},{2*Q2.z, 2*Q2.w, 2*Q2.x, 2*Q2.y},{0,0,0,0}};
-
-	P1 = tools::calc_matrix_vector_product(A1,p1);
-	P2 = tools::calc_matrix_vector_product(A2,p2);	
-}
-*/
 void threebody::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (COMPUTING_DEVICE_CPU == comp_dev)
@@ -228,8 +126,8 @@ void threebody::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, v
 	*/
 
 	var_t R_temp1 = SQR(y_temp[0]) - SQR(y_temp[1]) - SQR(y_temp[2]) + SQR(y_temp[3]) - SQR(y_temp[4]) + SQR(y_temp[5]) + SQR(y_temp[6]) - SQR(y_temp[7]);
-	var_t R_temp2 = 4 * (y_temp[0]*y_temp[1] - y_temp[2]*y_temp[3] - y_temp[4]*y_temp[5] + y_temp[6]*y_temp[7]);
-	var_t R_temp3 = 4 * (y_temp[0]*y_temp[2] + y_temp[1]*y_temp[3] - y_temp[4]*y_temp[6] - y_temp[5]*y_temp[7]);
+	var_t R_temp2 = 2 * (y_temp[0]*y_temp[1] - y_temp[2]*y_temp[3] - y_temp[4]*y_temp[5] + y_temp[6]*y_temp[7]);
+	var_t R_temp3 = 2 * (y_temp[0]*y_temp[2] + y_temp[1]*y_temp[3] - y_temp[4]*y_temp[6] - y_temp[5]*y_temp[7]);
 	
 	var_t R = sqrt(SQR(R_temp1) + SQR(R_temp2) + SQR(R_temp3));
 	var_t R1 = SQR(y_temp[0]) + SQR(y_temp[1]) + SQR(y_temp[2]) + SQR(y_temp[3]);
@@ -264,7 +162,7 @@ void threebody::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, v
 
 	var_t c8 = 2*R2*P9 - 2*p[1].m*p[2].m + sqr_p5/(4*mu23) - 2*p[0].m*p[1].m*R2/R;
 	var_t c9 = 2*R1*P9 - 2*p[0].m*p[2].m + sqr_p1/(4*mu13) - 2*p[0].m*p[1].m*R1/R;
-	var_t c10 = p[0].m*p[1].m*R1*R2/CUBE(R);
+	var_t c10 = 2*p[0].m*p[1].m*R1*R2/CUBE(R);
 
 	//Qdot (1-8)
 	dy[0] = c1 * c4.x + c2 * p1.x;
@@ -278,15 +176,15 @@ void threebody::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, v
 	dy[7] = c1 * c5.w + c3 * p5.w;
 
 	//Pdot (1-8)
-	dy[8]  = -(c1 * c6.x + c8 * q1.x + c10 * ( 2*R_temp1*q1.x + R_temp2*q1.y + R_temp3*q1.z ) ); 
-	dy[9]  = -(c1 * c6.y + c8 * q1.y + c10 * (-2*R_temp1*q1.y + R_temp2*q1.x + R_temp3*q1.w ) ); 
-	dy[10] = -(c1 * c6.z + c8 * q1.z + c10 * ( 2*R_temp1*q1.z + R_temp2*q1.w - R_temp3*q1.x ) ); 
-	dy[11] = -(c1 * c6.w + c8 * q1.w + c10 * ( 2*R_temp1*q1.w - R_temp2*q1.z + R_temp3*q1.y ) );
+	dy[8]  = -(c1 * c6.x + c8 * q1.x + c10 * ( R_temp1*q1.x + R_temp2*q1.y + R_temp3*q1.z ) ); 
+	dy[9]  = -(c1 * c6.y + c8 * q1.y + c10 * (-R_temp1*q1.y + R_temp2*q1.x + R_temp3*q1.w ) ); 
+	dy[10] = -(c1 * c6.z + c8 * q1.z + c10 * ( R_temp1*q1.z + R_temp2*q1.w - R_temp3*q1.x ) ); 
+	dy[11] = -(c1 * c6.w + c8 * q1.w + c10 * ( R_temp1*q1.w - R_temp2*q1.z + R_temp3*q1.y ) );
 	
-	dy[12] = -(c1 * c7.x + c9 * q5.x + c10 * ( 2*R_temp1*q5.x + R_temp2*q5.y + R_temp3*q5.z ) ); 
-	dy[13] = -(c1 * c7.y + c9 * q5.y + c10 * ( 2*R_temp1*q5.x + R_temp2*q5.y + R_temp3*q5.z ) ); 
-	dy[14] = -(c1 * c7.z + c9 * q5.z + c10 * ( 2*R_temp1*q5.x + R_temp2*q5.y + R_temp3*q5.z ) ); 
-	dy[15] = -(c1 * c7.w + c9 * q5.w + c10 * ( 2*R_temp1*q5.x + R_temp2*q5.y + R_temp3*q5.z ) );
+	dy[12] = -(c1 * c7.x + c9 * q5.x - c10 * ( R_temp1*q5.x + R_temp2*q5.y + R_temp3*q5.z ) ); 
+	dy[13] = -(c1 * c7.y + c9 * q5.y - c10 * (-R_temp1*q5.y + R_temp2*q5.x + R_temp3*q5.w ) ); 
+	dy[14] = -(c1 * c7.z + c9 * q5.z - c10 * ( R_temp1*q5.z + R_temp2*q5.w - R_temp3*q5.x ) ); 
+	dy[15] = -(c1 * c7.w + c9 * q5.w - c10 * ( R_temp1*q5.w - R_temp2*q5.z + R_temp3*q5.y ) );
 
 	// dt = R1*R2*dtau
 	dy[16] = R1*R2;
@@ -393,7 +291,13 @@ void threebody::print_solution(std::string& path, data_rep_t repres)
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path.c_str(), ios::out | ios::app);
+		if (first_open_solution) {
+			sout.open(path.c_str(), ios::out);
+			first_open_solution = false;
+		}
+		else {
+			sout.open(path.c_str(), ios::out | ios::app);
+		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
 		sout.open(path.c_str(), ios::out | ios::binary);
@@ -442,10 +346,10 @@ void threebody::print_solution_ascii(ofstream& sout)
 	tools::trans_to_descartes(p[0].m, p[1].m, p[2].m, q1, p1, q2, p2, q3, p3, Q1, P1, Q2, P2);
 
 
-	sout << t << SEP << h_y[n_var-1] << setw(var_t_w);
+	sout << t << SEP << setw(var_t_w) << h_y[n_var-1] << setw(int_t_w) << SEP;
 	for (uint32_t i = 0; i < n_var-1; i++)
     {
-		sout << h_y[i];
+		sout << setw(var_t_w) << h_y[i];
 		if (i < n_var - 2)
 		{
 			sout << SEP;
@@ -455,8 +359,8 @@ void threebody::print_solution_ascii(ofstream& sout)
 			sout << setw(var_t_w);
 		}
 	}
-	sout << q1.x << SEP << q1.y <<  SEP << q1.z <<  SEP << q2.x <<  SEP << q2.y <<  SEP << q2.z <<  SEP << q3.x <<  SEP << q3.y <<  SEP << q3.z << SEP;
-	sout << p1.x << SEP << p1.y <<  SEP << p1.z <<  SEP << p2.x <<  SEP << p2.y <<  SEP << p2.z <<  SEP << p3.x <<  SEP << p3.y <<  SEP << p3.z << endl;
+	sout << setw(var_t_w) << q1.x << SEP << setw(var_t_w) << q1.y << SEP << setw(var_t_w) << q1.z <<  SEP << setw(var_t_w) << q2.x <<  SEP << setw(var_t_w) << q2.y <<  SEP << setw(var_t_w) << q2.z <<  SEP << setw(var_t_w) << q3.x <<  SEP << setw(var_t_w) << q3.y <<  SEP << setw(var_t_w) << q3.z << setw(int_t_w) << SEP;
+	sout << setw(var_t_w) << p1.x << SEP << setw(var_t_w) << p1.y << SEP << setw(var_t_w) << p1.z <<  SEP << setw(var_t_w) << p2.x <<  SEP << setw(var_t_w) << p2.y <<  SEP << setw(var_t_w) << p2.z <<  SEP << setw(var_t_w) << p3.x <<  SEP << setw(var_t_w) << p3.y <<  SEP << setw(var_t_w) << p3.z << endl;
 	sout.flush();
 
 	//for (uint32_t i = 0; i < n_obj; i++)
@@ -504,7 +408,13 @@ void threebody::print_integral(string& path)
 
 	ofstream sout;
 
-	sout.open(path.c_str(), ios::out | ios::app);
+	if (first_open_integral) {
+		sout.open(path.c_str(), ios::out);
+		first_open_integral = false;
+	}
+	else {
+		sout.open(path.c_str(), ios::out | ios::app);
+	}
 	if (sout)
 	{
 		sout.precision(16);

@@ -128,6 +128,7 @@ typedef enum integrator_type
 			INTEGRATOR_RUNGEKUTTA4,
 			INTEGRATOR_RUNGEKUTTAFEHLBERG56,
 			INTEGRATOR_RUNGEKUTTAFEHLBERG78,
+			INTEGRATOR_N
 		} integrator_type_t;
 
 typedef enum event_name
@@ -151,7 +152,8 @@ typedef enum migration_type
 		{
 			MIGRATION_TYPE_NO,
 			MIGRATION_TYPE_TYPE_I,
-			MIGRATION_TYPE_TYPE_II
+			MIGRATION_TYPE_TYPE_II,
+			MIGRATION_TYPE_N
 		} migration_type_t;
 
 typedef enum body_type
@@ -167,7 +169,7 @@ typedef enum body_type
 		} body_type_t;
 
 // var2_t gets aligned to 16 bytes.
-typedef struct __BUILTIN_ALIGN__ _var2
+typedef struct __BUILTIN_ALIGN__ var2
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
@@ -192,11 +194,11 @@ typedef struct __BUILTIN_ALIGN__ var4
 
 typedef struct matrix4
 		{
-			var4_t a;
-			var4_t b;
-			var4_t c;
-			var4_t d;
-		} matrix4_t;
+			var4_t a;    // [ 32 byte]
+			var4_t b;    // [ 32 byte]
+			var4_t c;    // [ 32 byte]
+			var4_t d;    // [ 32 byte]
+		} matrix4_t;     // [128 byte]
 
 typedef struct orbelem
 		{			
@@ -205,8 +207,8 @@ typedef struct orbelem
 			var_t inc;   //!< Inclination of the body          [8 byte]
 			var_t peri;  //!< Argument of the pericenter       [8 byte]
 			var_t node;  //!< Longitude of the ascending node  [8 byte]
-			var_t mean;  //!< Mean anomaly                     [8 byte] -> 48 byte
-		} orbelem_t;
+			var_t mean;  //!< Mean anomaly                     [8 byte]
+		} orbelem_t;     // [48 byte]
 
 typedef struct ode_data
 {
@@ -297,15 +299,6 @@ namespace threebody_t
 
 namespace nbody_t
 {
-	// param_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ param
-	{
-		var_t mass;             // [ 8 byte]
-		var_t radius;           // [ 8 byte]
-		var_t density;          // [ 8 byte]
-		var_t cd;	            // [ 8 byte]
-	} param_t;                  // [32 byte]
-
 	// body_metadata_t gets aligned to 16 bytes.
 	typedef struct __BUILTIN_ALIGN__ body_metadata
 	{
@@ -316,6 +309,15 @@ namespace nbody_t
 		bool	unused;         // [ 1 byte]
 		var_t   mig_stop_at;    // [ 8 byte]
 	} body_metadata_t;      // [16 byte]
+
+	// param_t gets aligned to 16 bytes.
+	typedef struct __BUILTIN_ALIGN__ param
+	{
+		var_t mass;             // [ 8 byte]
+		var_t radius;           // [ 8 byte]
+		var_t density;          // [ 8 byte]
+		var_t cd;	            // [ 8 byte]
+	} param_t;                  // [32 byte]
 
 	typedef struct integral
 	{			
@@ -329,6 +331,17 @@ namespace nbody_t
 
 namespace pp_disk_t
 {
+	// body_metadata_t gets aligned to 16 bytes.
+	typedef struct __BUILTIN_ALIGN__ body_metadata
+	{
+		int32_t id;             // [ 4 byte]
+		uchar_t body_type;      // [ 1 byte]
+		uchar_t mig_type;       // [ 1 byte]
+		bool	active;         // [ 1 byte]
+		bool	unused;         // [ 1 byte]
+		var_t   mig_stop_at;    // [ 8 byte]
+	} body_metadata_t;          // [16 byte]
+
 	// param_t gets aligned to 16 bytes.
 	typedef struct __BUILTIN_ALIGN__ param
 	{
@@ -337,26 +350,6 @@ namespace pp_disk_t
 		var_t density;          // [ 8 byte]
 		var_t cd;	            // [ 8 byte]
 	} param_t;                  // [32 byte]
-
-	// body_metadata_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ body_metadata
-	{
-		int32_t id;             // [ 4 byte]
-		int32_t body_type;	    // [ 4 byte]
-		int32_t mig_type;	    // [ 4 byte]
-		var_t	mig_stop_at;    // [ 8 byte]
-	} body_metadata_t;          // [20 byte]
-
-	// body_metadata_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ body_metadata_new
-	{
-		int32_t id;             // [ 4 byte]
-		uchar_t body_type;      // [ 1 byte]
-		uchar_t mig_type;       // [ 1 byte]
-		bool	active;         // [ 1 byte]
-		bool	unused;         // [ 1 byte]
-		var_t   mig_stop_at;    // [ 8 byte]
-	} body_metadata_new_t;      // [16 byte]
 
 	typedef struct integral
 	{			
@@ -370,24 +363,24 @@ namespace pp_disk_t
 	{
 		std::vector<var4_t*>	 y;				//!< Vectors of initial position and velocity of the bodies on the host (either in the DEVICE or HOST memory)
 		std::vector<var4_t*>	 yout;			//!< Vectors of ODE variables at the end of the step (at time tout) (either in the DEVICE or HOST memory)
-		param_t*		 p;   			//!< Vector of body parameters (either in the DEVICE or HOST memory)
-		body_metadata_t* body_md; 		//!< Vector of additional body parameters (either in the DEVICE or HOST memory)
-		ttt_t*			 epoch;			//!< Vector of epoch of the bodies (either in the DEVICE or HOST memory)
-		orbelem_t*		 oe;			//!< Vector of of the orbital elements (either in the DEVICE or HOST memory)
+		param_t*		 p;   			        //!< Vector of body parameters (either in the DEVICE or HOST memory)
+		body_metadata_t* body_md; 		        //!< Vector of additional body parameters (either in the DEVICE or HOST memory)
+		ttt_t*			 epoch;			        //!< Vector of epoch of the bodies (either in the DEVICE or HOST memory)
+		orbelem_t*		 oe;			        //!< Vector of of the orbital elements (either in the DEVICE or HOST memory)
 
 		std::vector<var4_t*>	 d_y;			//!< Device vectors of ODE variables at the beginning of the step (at time t)
 		std::vector<var4_t*>	 d_yout;		//!< Device vectors of ODE variables at the end of the step (at time tout)
-		param_t*		 d_p;			//!< Device vector of body parameters
-		body_metadata_t* d_body_md; 	//!< Device vector of additional body parameters
-		ttt_t*			 d_epoch;		//!< Device vector of epoch of the bodies
-		orbelem_t*		 d_oe;			//!< Device vector of the orbital elements
+		param_t*		 d_p;			        //!< Device vector of body parameters
+		body_metadata_t* d_body_md; 	        //!< Device vector of additional body parameters
+		ttt_t*			 d_epoch;		        //!< Device vector of epoch of the bodies
+		orbelem_t*		 d_oe;			        //!< Device vector of the orbital elements
 
 		std::vector<var4_t*>	 h_y;			//!< Host vectors of initial position and velocity of the bodies on the host
 		std::vector<var4_t*>	 h_yout;		//!< Host vectors of ODE variables at the end of the step (at time tout)
-		param_t*		 h_p;			//!< Host vector of body parameters
-		body_metadata_t* h_body_md; 	//!< Host vector of additional body parameters
-		ttt_t*			 h_epoch;		//!< Host vector of epoch of the bodies
-		orbelem_t*		 h_oe;			//!< Host vector of the orbital elements
+		param_t*		 h_p;			        //!< Host vector of body parameters
+		body_metadata_t* h_body_md; 	        //!< Host vector of additional body parameters
+		ttt_t*			 h_epoch;		        //!< Host vector of epoch of the bodies
+		orbelem_t*		 h_oe;			        //!< Host vector of the orbital elements
 
 		sim_data()
 		{
@@ -430,8 +423,8 @@ namespace pp_disk_t
 			id1  = id2  = 0;
 			idx1 = idx2 = 0;
 				
-			param_t p_zero = {0.0, 0.0, 0.0, 0.0};
-			var4_t v_zero = {0.0, 0.0, 0.0, 0.0};
+			param_t p_zero = { 0.0, 0.0, 0.0, 0.0 };
+			var4_t v_zero =  { 0.0, 0.0, 0.0, 0.0 };
 
 			p1 = p2 = ps = p_zero;
 			r1 = r2 = rs = v_zero;
@@ -442,60 +435,60 @@ namespace pp_disk_t
 
 typedef struct analytic_gas_disk_params
 		{
-			var2_t rho;   //!< The density of the gas disk in the midplane (time dependent)	
-			var2_t sch;   //!< The scale height of the gas disk
-			var2_t eta;   //!< Describes how the velocity of the gas differs from the circular velocity	
-			var2_t tau;   //!< Describes the Type 2 migartion of the giant planets
+			var2_t rho;                   //!< The density of the gas disk in the midplane (time dependent)	
+			var2_t sch;                   //!< The scale height of the gas disk
+			var2_t eta;                   //!< Describes how the velocity of the gas differs from the circular velocity	
+			var2_t tau;                   //!< Describes the Type 2 migartion of the giant planets
 
-			var2_t mfp;   //!< The mean free path of the gas molecules (calculated based on rho, time dependent)	
-			var2_t temp;  //!< The temperaterure of the gas (calculated based on sch)
+			var2_t mfp;                   //!< The mean free path of the gas molecules (calculated based on rho, time dependent)	
+			var2_t temp;                  //!< The temperaterure of the gas (calculated based on sch)
 	
-			var_t c_vth;  //!< Constant for computing the mean thermal velocity (calculated, constant)
+			var_t c_vth;                  //!< Constant for computing the mean thermal velocity (calculated, constant)
 
 			gas_decrease_t gas_decrease;  //!< The decrease type for the gas density
 
-			ttt_t t0;   //!< Time when the decrease of gas starts (for linear and exponential)
-			ttt_t t1;   //!< Time when the linear decrease of the gas ends
-			ttt_t e_folding_time; //!< The exponent for the exponential decrease
+			ttt_t t0;                     //!< Time when the decrease of gas starts (for linear and exponential)
+			ttt_t t1;                     //!< Time when the linear decrease of the gas ends
+			ttt_t e_folding_time;         //!< The exponent for the exponential decrease
 
-			var_t alpha;  //!< The viscosity parameter for the Shakura & Sunyaev model (constant)
+			var_t alpha;                  //!< The viscosity parameter for the Shakura & Sunyaev model (constant)
 			var_t mean_molecular_weight;  //!< The mean molecular weight in units of the proton mass (constant)
-			var_t particle_diameter;  //!< The mean molecular diameter (constant)
+			var_t particle_diameter;      //!< The mean molecular diameter (constant)
 		} analytic_gas_disk_params_t;
 
 typedef struct fargo_gas_disk_params
 		{
-			var_t aspect_ratio;        // Thickness over Radius in the disc
-			var_t sigma_0;             // Surface Density at r=1
-			var_t alpha_viscosity;     // Uniform kinematic viscosity
-			var_t sigma_slope;         // Slope of surface density profile.
-			var_t flaring_index;       // gamma; H(r) = h * r^(1 + gamma)
+			var_t aspect_ratio;           //!< Thickness over Radius in the disc
+			var_t sigma_0;                //!< Surface Density at r=1
+			var_t alpha_viscosity;        //!< Uniform kinematic viscosity
+			var_t sigma_slope;            //!< Slope of surface density profile.
+			var_t flaring_index;          //!< gamma; H(r) = h * r^(1 + gamma)
 
 			bool exclude_hill;
 
 			//Planet parameters
-			var_t thickness_smoothing; // Smoothing parameters in disk thickness
+			var_t thickness_smoothing;    //!< Smoothing parameters in disk thickness
 
 			// Numerical method parameters
 			var_t omega_frame;
 
 			// Mesh parameters
-			int n_rad;                 // Radial number of zones
-			int n_sec;                 // Azimuthal number of zones (sectors)
-			var_t r_min;               // Inner boundary radius
-			var_t r_max;               // Outer boundary radius
+			int n_rad;                    //!< Radial number of zones
+			int n_sec;                    //!< Azimuthal number of zones (sectors)
+			var_t r_min;                  //!< Inner boundary radius
+			var_t r_max;                  //!< Outer boundary radius
 
 			// Output control parameters
-			int n_tot;                 // Total number of time steps
-			int n_interm;              // Time steps between outputs
-			var_t dT;                  // Time step length. 2PI = 1 orbit
+			int n_tot;                    //!< Total number of time steps
+			int n_interm;                 //!< Time steps between outputs
+			var_t dT;                     //!< Time step length. 2PI = 1 orbit
 
 			// Viscosity damping due to a dead zone
-			var_t visc_mod_r1;         // Inner radius of dead zone
-			var_t visc_mod_delta_r1;   // Width of viscosity transition at inner radius
-			var_t visc_mod_r2;         // Outer radius of dead zone
-			var_t visc_mod_delta_r2;   // Width of viscosity transition at outer radius
-			var_t visc_mod;            // Viscosity damp
+			var_t visc_mod_r1;            //!< Inner radius of dead zone
+			var_t visc_mod_delta_r1;      //!< Width of viscosity transition at inner radius
+			var_t visc_mod_r2;            //!< Outer radius of dead zone
+			var_t visc_mod_delta_r2;      //!< Width of viscosity transition at outer radius
+			var_t visc_mod;               //!< Viscosity damp
 		} fargo_gas_disk_params_t;
 
 struct interaction_bound

@@ -77,6 +77,5 @@ namespace redutil2
 		void print_vector(const var4_t *v);
 		void print_parameter(const pp_disk_t::param_t *p);
 		void print_body_metadata(const pp_disk_t::body_metadata_t *b);
-		void print_body_metadata(const pp_disk_t::body_metadata_new_t *b);
 	} /* tools */
 } /* redutil2 */

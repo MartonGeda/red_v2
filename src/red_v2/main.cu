@@ -118,16 +118,16 @@ int main(int argc, const char** argv, const char** env)
 	//matrix4_t l = tools::calc_matrix_transpose(n);
 	//var4_t u = tools::calc_matrix_vector_product(m,v);
 
-	var3_t qv1 = {1,3,0};
-	var3_t qv2 = {-2,-1,0};
-	var3_t qv3 = {1,-1,0};
-	var3_t pv1 = {0,0,0};
-	var3_t pv2 = {0,0,0};
-	var3_t pv3 = {0,0,0};
+	var3_t qv1 = {-8.98410183670583e-09,	-9.96565986672290e-09,	0};
+	var3_t qv2 = {0.790071598004156,   0.876376842255768,                   0};
+	var3_t qv3 = {0.790015741877597,   0.876342937103978 ,                  0};
+	var3_t pv1 = {1.35584617114928e-10,	-1.18154635090028e-10,	0};
+	var3_t pv2 = {-0.012137023259470 * 5.685826099573812e-09,   0.010261361613838 * 5.685826099573812e-09, 0};
+	var3_t pv3 = {-0.011709048488151 * 5.685826099573812e-09,   0.010519195691438 * 5.685826099573812e-09, 0};
 	var4_t Q1,Q2,P1,P2;
 	
 	tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
-	tools::trans_to_descartes(3,4,5,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
+	tools::trans_to_descartes(1,5.685826099573812e-09,5.685826099573812e-09,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
 
 	try
 	{
@@ -162,7 +162,12 @@ int main(int argc, const char** argv, const char** env)
 			throw string("Invalid dynamical model.");
 		}
 
-		ttt_t dt = 0.01;
+		// TODO!!!!!
+		//
+		ttt_t dt = 1.0e-10;
+		//
+		// TODO!!!!!
+
 		integrator *intgr = opt->create_integrator(*f, dt);
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies

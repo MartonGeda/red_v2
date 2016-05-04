@@ -10,7 +10,10 @@
 // Define this to turn on error checking
 #define CUDA_ERROR_CHECK
 
-#define OUTPUT_ORDINAL_NUMBER_WIDTH 9
+#define OUTPUT_ORDINAL_NUMBER_WIDTH    9   // The number of digits used in the output file name for the solution
+#define INT_T_W                        9   // The minimum filed width used to print out an int_t type variable
+#define VAR_T_W                       25   // The minimum filed width used to print out an var_t type variable
+
 
 #define K			(var_t)0.01720209895
 #define K2			(var_t)0.0002959122082855911025

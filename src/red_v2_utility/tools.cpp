@@ -1053,30 +1053,26 @@ ttt_t calc_orbital_period(var_t mu, var_t a)
 
 void print_vector(const var4_t *v)
 {
-	static int var_t_w  = 25;
-
 	cout.precision(16);
 	cout.setf(ios::right);
 	cout.setf(ios::scientific);
 
-	cout << setw(var_t_w) << v->x 
-		 << setw(var_t_w) << v->y
-		 << setw(var_t_w) << v->z
-		 << setw(var_t_w) << v->w << endl;
+	cout << setw(VAR_T_W) << v->x 
+		 << setw(VAR_T_W) << v->y
+		 << setw(VAR_T_W) << v->z
+		 << setw(VAR_T_W) << v->w << endl;
 }
 
 void print_parameter(const pp_disk_t::param_t *p)
 {
-	static int var_t_w  = 25;
-
 	cout.precision(16);
 	cout.setf(ios::right);
 	cout.setf(ios::scientific);
 
-	cout << setw(var_t_w) << p->mass 
-		 << setw(var_t_w) << p->radius
-		 << setw(var_t_w) << p->density
-		 << setw(var_t_w) << p->cd << endl;
+	cout << setw(VAR_T_W) << p->mass 
+		 << setw(VAR_T_W) << p->radius
+		 << setw(VAR_T_W) << p->density
+		 << setw(VAR_T_W) << p->cd << endl;
 }
 
 void print_body_metadata(const pp_disk_t::body_metadata_t *b)
@@ -1097,38 +1093,8 @@ void print_body_metadata(const pp_disk_t::body_metadata_t *b)
 		"TYPE_I",
 		"TYPE_II"
 	};
-	static int var_t_w  = 5;
 
-	cout << setw(var_t_w) << b->id << endl;
-	cout << (char)(48 + b->body_type) << " (" << body_type_name[b->body_type] << ")" << endl
-		 << (char)(48 + b->mig_type) << " (" << migration_type_name[b->mig_type] << ")" << endl;
-	cout.precision(16);
-	cout.setf(ios::right);
-	cout.setf(ios::scientific);
-	cout << setw(var_t_w) << b->mig_stop_at << endl;
-}
-
-void print_body_metadata(const pp_disk_t::body_metadata_new_t *b)
-{
-	static const char* body_type_name[] = 
-	{
-		"STAR",
-		"GIANTPLANET",
-		"ROCKYPLANET",
-		"PROTOPLANET",
-		"SUPERPLANETESIMAL",
-		"PLANETESIMAL",
-		"TESTPARTICLE"
-	};
-	static const char* migration_type_name[] = 
-	{
-		"NO",
-		"TYPE_I",
-		"TYPE_II"
-	};
-	static int var_t_w  = 5;
-
-	cout << setw(var_t_w) << b->id << endl;
+	cout << setw(INT_T_W) << b->id << endl;
 	cout << (char)(48 + b->body_type) << " (" << body_type_name[b->body_type] << ")" << endl
 		 << (char)(48 + b->mig_type) << " (" << migration_type_name[b->mig_type] << ")" << endl
 		 << (char)(48 + b->active) << (b->active ? " (true)" : " (false)") << endl
@@ -1136,7 +1102,7 @@ void print_body_metadata(const pp_disk_t::body_metadata_new_t *b)
 	cout.precision(16);
 	cout.setf(ios::right);
 	cout.setf(ios::scientific);
-	cout << setw(var_t_w) << b->mig_stop_at << endl;
+	cout << setw(VAR_T_W) << b->mig_stop_at << endl;
 }
 } /* tools */
 } /* redutil2 */
