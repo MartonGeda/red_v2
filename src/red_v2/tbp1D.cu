@@ -26,9 +26,7 @@ tbp1D::~tbp1D()
 void tbp1D::initialize()
 {
 	h_md    = 0x0;
-	h_epoch = 0x0;
-
-	h       = 0.0;
+	h       = 0.0;            // energy
 }
 
 void tbp1D::allocate_storage()
@@ -42,14 +40,12 @@ void tbp1D::allocate_storage()
 
 void tbp1D::allocate_host_storage()
 {
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp1D_t::metadata_t));
-	ALLOCATE_HOST_VECTOR((void**)&(h_epoch), n_obj * sizeof(var_t));
+	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp1D_t::metadata_t));
 }
 
 void tbp1D::allocate_device_storage()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp1D_t::metadata_t));
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_epoch), n_obj * sizeof(var_t));
+	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp1D_t::metadata_t));
 }
 
 void tbp1D::deallocate_storage()
@@ -64,13 +60,11 @@ void tbp1D::deallocate_storage()
 void tbp1D::deallocate_host_storage()
 {
 	FREE_HOST_VECTOR((void **)&(h_md));
-	FREE_HOST_VECTOR((void **)&(h_epoch));
 }
 
 void tbp1D::deallocate_device_storage()
 {
-	FREE_DEVICE_VECTOR((void **)&(h_md));
-	FREE_DEVICE_VECTOR((void **)&(h_epoch));
+	FREE_DEVICE_VECTOR((void **)&(d_md));
 }
 
 void tbp1D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
@@ -111,11 +105,11 @@ void tbp1D::load(string& path)
 
 	cout << "Loading " << path << " ";
 
-	data_rep_t repres = (file::get_extension(path) == "txt" ? DATA_REPRESENTATION_ASCII : DATA_REPRESENTATION_BINARY);
+	data_rep_t repres = file::get_data_repres(path);
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		input.open(path.c_str());
+		input.open(path.c_str(), ios::in);
 		if (input) 
 		{
 			load_ascii(input);
@@ -126,7 +120,7 @@ void tbp1D::load(string& path)
 		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		input.open(path.c_str(), ios::binary);
+		input.open(path.c_str(), ios::in | ios::binary);
 		if (input) 
 		{
 			load_binary(input);
@@ -136,6 +130,8 @@ void tbp1D::load(string& path)
 			throw string("Cannot open " + path + ".");
 		}
 		break;
+	default:
+		throw string("Parameter 'repres' is out of range.");
 	}
 	input.close();
 
@@ -148,16 +144,16 @@ void tbp1D::load_ascii(ifstream& input)
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
-		load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i], &h_y[i], &h_y[i+1]);
+		load_ascii_record(input, &t, &h_md[i], &p[i], &h_y[i], &h_y[i+1]);
 	}
 }
 
-void tbp1D::load_ascii_record(ifstream& input, ttt_t* t, tbp1D_t::metadata_t *md, tbp1D_t::param_t* p, var_t* x, var_t* vx)
+void tbp1D::load_ascii_record(ifstream& input, ttt_t* _t, tbp1D_t::metadata_t *md, tbp1D_t::param_t* p, var_t* x, var_t* vx)
 {
 	string name;
 
 	// epoch
-	input >> *t;
+	input >> *_t;
 	// name
 	input >> name;
 	if (name.length() > 30)
@@ -187,40 +183,35 @@ void tbp1D::print_solution(std::string& path, data_rep_t repres)
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path.c_str(), ios::out);
+		sout.open(path.c_str(), ios::out | ios::app);
+		if (sout)
+		{
+			print_solution_ascii(sout);
+		}
+		else
+		{
+			throw string("Cannot open " + path + ".");
+		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::binary);
+		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
+		if (sout)
+		{
+			print_solution_binary(sout);
+		}
+		else
+		{
+			throw string("Cannot open " + path + ".");
+		}
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
-	}
-
-	if (sout)
-	{
-		switch (repres)
-		{
-		case DATA_REPRESENTATION_ASCII:
-			print_solution_ascii(sout);
-			break;
-		case DATA_REPRESENTATION_BINARY:
-			print_solution_binary(sout);
-			break;
-		default:
-			throw string("Parameter 'repres' is out of range.");
-		}
-	}
-	else
-	{
-		throw string("Cannot open " + path + ".");
 	}
 	sout.close();
 }
 
 void tbp1D::print_solution_ascii(ofstream& sout)
 {
-	static uint32_t int_t_w  =  8;
-
 	sout.precision(16);
 	sout.setf(ios::right);
 	sout.setf(ios::scientific);
@@ -232,7 +223,7 @@ void tbp1D::print_solution_ascii(ofstream& sout)
 		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
 			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
-        << setw(int_t_w) << h_md[i].id << SEP;
+        << setw(INT_T_W) << h_md[i].id << SEP;
 
 		// Print the parameters for each object
 		for (uint16_t j = 0; j < n_ppo; j++)
@@ -267,15 +258,15 @@ void tbp1D::print_integral(string& path)
 {
 	ofstream sout;
 
-	sout.open(path.c_str(), ios::out);
+	sout.open(path.c_str(), ios::out | ios::app);
 	if (sout)
 	{
 		sout.precision(16);
 		sout.setf(ios::right);
 		sout.setf(ios::scientific);
 
-	sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
-		 << h << endl;
+	    sout << setw(VAR_T_W) << t << SEP             /* time of the record [day] (double)           */
+		     << setw(VAR_T_W) << h << endl;           /* energy of the system                        */
 	}
 	else
 	{

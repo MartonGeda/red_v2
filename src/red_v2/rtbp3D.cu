@@ -244,7 +244,7 @@ void rtbp3D::print_solution(std::string& path, data_rep_t repres)
 		sout.open(path.c_str(), ios::out | ios::app);
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::binary);
+		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
@@ -272,10 +272,7 @@ void rtbp3D::print_solution(std::string& path, data_rep_t repres)
 }
 
 void rtbp3D::print_solution_ascii(ofstream& sout) //TODO: implement correctly
-{
-	static uint32_t int_t_w  =  8;
-
-	sout.precision(16);
+{	sout.precision(16);
 	sout.setf(ios::right);
 	sout.setf(ios::scientific);
 
@@ -294,7 +291,7 @@ void rtbp3D::print_solution_ascii(ofstream& sout) //TODO: implement correctly
 		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
 			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
-        << setw(int_t_w) << h_md[i].id << SEP;
+        << setw(INT_T_W) << h_md[i].id << SEP;
 
 		// Print the parameters for each object
 		for (uint16_t j = 0; j < n_ppo; j++)
@@ -324,7 +321,7 @@ void rtbp3D::print_integral(string& path)
 {
 	ofstream sout;
 
-	sout.open(path.c_str(), ios::out);
+	sout.open(path.c_str(), ios::out | ios::app);
 	if (sout)
 	{
 		sout.precision(16);

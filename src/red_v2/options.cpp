@@ -35,14 +35,10 @@ options::~options()
 
 void options::create_default()
 {
-	benchmark           = false;
 	test                = false;
 	verbose             = false;
 	print_to_screen     = false;
 	ef                  = false;
-
-	info_dt             = 5.0;     // [sec]
-	dump_dt             = 3600.0;  // [sec]
 
 	id_dev              = 0;
 	n_change_to_cpu     = 100;
@@ -54,6 +50,7 @@ void options::create_default()
 	out_fn[OUTPUT_NAME_INFO]           = "info";
 	out_fn[OUTPUT_NAME_EVENT]          = "event";
 	out_fn[OUTPUT_NAME_SOLUTION]       = "solution";
+	out_fn[OUTPUT_NAME_SOLUTION_INFO]  = "solution_info";
 	out_fn[OUTPUT_NAME_INTEGRAL]       = "integral";
 	out_fn[OUTPUT_NAME_INTEGRAL_EVENT] = "integral_event";
 }
@@ -67,7 +64,7 @@ void options::parse(int argc, const char** argv)
 		string p = argv[i];
 
 
-		if (     p == "--model" || p == "-m")
+		if (     p == "-m")
 		{
 			i++;
 			string value = argv[i];
@@ -96,19 +93,15 @@ void options::parse(int argc, const char** argv)
 				throw string("Invalid dynamical model: " + value + ".");
 			}
 		}
-		else if (p == "--benchmark" || p == "-b")
-		{
-			benchmark = true;
-		}
-		else if (p == "--test" || p == "-t")
+		else if (p == "-t")
 		{
 			test = true;
 		}
-		else if (p == "--verbose" || p == "-v")
+		else if (p == "-v")
 		{
 			verbose = true;
 		}
-		else if (p == "--print_to_screen" || p == "-pts")
+		else if (p == "-pts")
 		{
 			verbose = true;
 			print_to_screen = true;
@@ -118,26 +111,7 @@ void options::parse(int argc, const char** argv)
 			ef = true;
 		}
 
-		else if (p == "--info-dt" || p == "-i_dt")
-		{
-			i++;
-			if (!tools::is_number(argv[i])) 
-			{
-				throw string("Invalid number at: " + p);
-			}
-			info_dt = atof(argv[i]);
-		}
-		else if (p == "--dump-dt" || p == "-d_dt")
-		{
-			i++;
-			if (!tools::is_number(argv[i])) 
-			{
-				throw string("Invalid number at: " + p);
-			}
-			dump_dt = atof(argv[i]);
-		}
-
-		else if (p == "--id_active_device" || p == "-id_dev")
+		else if (p == "-id_dev")
 		{
 			i++;
 			if (!tools::is_number(argv[i])) 
@@ -146,7 +120,7 @@ void options::parse(int argc, const char** argv)
 			}
 			id_dev = atoi(argv[i]);
 		}
-		else if (p == "--n_change_to_cpu" || p == "-n_chg")
+		else if (p == "-n_chg")
 		{
 			i++;
 			if (!tools::is_number(argv[i])) 
@@ -156,74 +130,56 @@ void options::parse(int argc, const char** argv)
 			n_change_to_cpu = atoi(argv[i]);
 		}
 
-		else if (p == "--cpu" || p == "-cpu")
+		else if (p == "-cpu")
 		{
 			comp_dev = COMPUTING_DEVICE_CPU;
 		}
-		else if (p == "--gpu" || p == "-gpu")
+		else if (p == "-gpu")
 		{
 			comp_dev = COMPUTING_DEVICE_GPU;
 		}
-		else if (p == "--analytic_gas_disk" || p == "-ga")
+		else if (p == "-ga")
 		{
 			i++;
 			in_fn[INPUT_NAME_GAS_DISK_MODEL] = argv[i];
 			g_disk_model = GAS_DISK_MODEL_ANALYTIC;
 		}
-		else if (p == "--fargo_gas_disk" || p == "-gf")
+		else if (p == "-gf")
 		{
 			i++;
 			in_fn[INPUT_NAME_GAS_DISK_MODEL] = argv[i];
 			g_disk_model = GAS_DISK_MODEL_FARGO;
 		}
 
-		else if (p == "--log-filename" || p == "-log")
-		{
-			i++;
-			out_fn[OUTPUT_NAME_LOG] = argv[i];
-		}
-		else if (p == "--info-filename" || p == "-info")
-		{
-			i++;
-			out_fn[OUTPUT_NAME_INFO] = argv[i];
-		}
-		else if (p == "--event-filename" || p == "-event")
-		{
-			i++;
-			out_fn[OUTPUT_NAME_EVENT] = argv[i];
-		}
-		else if (p == "--result-filename" || p == "-result")
-		{
-			i++;
-			out_fn[OUTPUT_NAME_SOLUTION] = argv[i];
-		}
-
-
-
-		else if (p == "--initial_conditions" || p == "-ic")
+		else if (p == "-ic")
 		{
 			i++;
 			in_fn[INPUT_NAME_DATA] = argv[i];
 		}
 
-		else if (p =="--parameters" || p == "-p")
+		else if (p == "-i")
+		{
+			i++;
+			in_fn[INPUT_NAME_START_FILES] = argv[i];
+		}
+		else if (p == "-p")
 		{
 			i++;
 			in_fn[INPUT_NAME_PARAMETER] = argv[i];
 		}
 
-		else if (p == "--inputDir" || p == "-iDir")
+		else if (p == "-idir")
 		{
 			i++;
 			dir[DIRECTORY_NAME_IN] = argv[i];
 		}
-		else if (p == "--outputDir" || p == "-oDir")
+		else if (p == "-odir")
 		{
 			i++;
 			dir[DIRECTORY_NAME_OUT] = argv[i];
 		}
 
-		else if (p == "--help" || p == "-h")
+		else if (p == "-h")
 		{
 			print_usage();
 			exit(EXIT_SUCCESS);
@@ -249,7 +205,6 @@ ode* options::create_tbp1D()
 	model->load(path);
 	model->calc_integral();
 
-	model->t    = model->h_epoch[0];
 	model->tout = model->t;
 
 	param->start_time = model->t;

@@ -45,12 +45,12 @@ public:
 	var_t* h_yout;        //! Host vector (size of n_var) of ODE variables at tout
 	var_t* d_y;           //! Device vector (size of n_var) of ODE variables at t
 	var_t* d_yout;        //! Device vector (size of n_var) of ODE variables at tout
-	var_t* y;             //! Alias to either to Host or Device vector of ODE variables at t depeding on the execution device
-	var_t* yout;          //! Alias to either to Host or Device vector of ODE variables at tout depeding on the execution device
+	var_t* y;             //! Alias to Host or Device vector of ODE variables at t depeding on the execution device
+	var_t* yout;          //! Alias to Host or Device vector of ODE variables at tout depeding on the execution device
 
-	var_t* h_p;           //! Host vector (size of n_obj * n_ppo) of parameters
-	var_t* d_p;           //! Device vector (size of n_obj * n_ppo) of parameters
-	var_t* p;             //! Alias to either to Host or Device vector of parameters depeding on the execution device
+	var_t* h_p;           //! Host vector (size of n_par) of parameters
+	var_t* d_p;           //! Device vector (size of n_par) of parameters
+	var_t* p;             //! Alias to Host or Device vector of parameters depeding on the execution device
 
 	uint32_t n_obj;       //! The total number of objets in the problem
 	uint16_t n_dim;       //! The space dimension of the problem 

@@ -38,15 +38,17 @@ public:
 	*/
 	void print_integral(std::string& path);
 
-	void trans_to_descartes_var(var_t& x, var_t& vx);
 	void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
 
 //private:
+	void trans_to_descartes_var(var_t& x, var_t& vx);
+
 	void initialize();
 	void allocate_storage();
 	void allocate_host_storage();
 	void allocate_device_storage();
+
 	void deallocate_storage();
 	void deallocate_host_storage();
 	void deallocate_device_storage();
@@ -56,11 +58,5 @@ public:
 
 	var_t h;               //! Energy of the system
 
-	tbp1D_t::metadata_t* h_md;
-	tbp1D_t::metadata_t* d_md;
-	tbp1D_t::metadata_t* md;
-
-	var_t* h_epoch;
-	var_t* d_epoch;
-	var_t* epoch;
+	tbp1D_t::metadata_t *h_md, *d_md, *md;
 };

@@ -96,6 +96,26 @@ string get_extension(const string& path)
 	return result;
 }
 
+data_rep_t get_data_repres(const std::string& path)
+{
+	data_rep_t repres;
+	string ext = file::get_extension(path);
+	if (     "txt" == ext)
+	{
+		repres = DATA_REPRESENTATION_ASCII;
+	}
+	else if ("dat" == ext)
+	{
+		repres = DATA_REPRESENTATION_BINARY;
+	}
+	else
+	{
+		throw string("The extension of the path must be either 'txt' or 'dat'.");
+	}
+
+	return repres;
+}
+
 uint32_t load_ascii_file(const string& path, string& result)
 {
 	uint32_t n_line = 0;

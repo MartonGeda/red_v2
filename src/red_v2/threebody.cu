@@ -300,7 +300,7 @@ void threebody::print_solution(std::string& path, data_rep_t repres)
 		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::binary);
+		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
@@ -329,9 +329,6 @@ void threebody::print_solution(std::string& path, data_rep_t repres)
 
 void threebody::print_solution_ascii(ofstream& sout)
 {
-	static uint32_t int_t_w  =  8;
-	static uint32_t var_t_w  = 25;
-
 	sout.precision(16);
 	sout.setf(ios::right);
 	sout.setf(ios::scientific);
@@ -346,43 +343,43 @@ void threebody::print_solution_ascii(ofstream& sout)
 	tools::trans_to_descartes(p[0].m, p[1].m, p[2].m, q1, p1, q2, p2, q3, p3, Q1, P1, Q2, P2);
 
 
-	sout << t << SEP << setw(var_t_w) << h_y[n_var-1] << setw(int_t_w) << SEP;
+	sout << t << SEP << setw(VAR_T_W) << h_y[n_var-1] << setw(INT_T_W) << SEP;
 	for (uint32_t i = 0; i < n_var-1; i++)
     {
-		sout << setw(var_t_w) << h_y[i];
+		sout << setw(VAR_T_W) << h_y[i];
 		if (i < n_var - 2)
 		{
 			sout << SEP;
 		}
 		else
 		{
-			sout << setw(var_t_w);
+			sout << setw(VAR_T_W);
 		}
 	}
-	sout << setw(var_t_w) << q1.x << SEP << setw(var_t_w) << q1.y << SEP << setw(var_t_w) << q1.z <<  SEP << setw(var_t_w) << q2.x <<  SEP << setw(var_t_w) << q2.y <<  SEP << setw(var_t_w) << q2.z <<  SEP << setw(var_t_w) << q3.x <<  SEP << setw(var_t_w) << q3.y <<  SEP << setw(var_t_w) << q3.z << setw(int_t_w) << SEP;
-	sout << setw(var_t_w) << p1.x << SEP << setw(var_t_w) << p1.y << SEP << setw(var_t_w) << p1.z <<  SEP << setw(var_t_w) << p2.x <<  SEP << setw(var_t_w) << p2.y <<  SEP << setw(var_t_w) << p2.z <<  SEP << setw(var_t_w) << p3.x <<  SEP << setw(var_t_w) << p3.y <<  SEP << setw(var_t_w) << p3.z << endl;
+	sout << setw(VAR_T_W) << q1.x << SEP << setw(VAR_T_W) << q1.y << SEP << setw(VAR_T_W) << q1.z <<  SEP << setw(VAR_T_W) << q2.x <<  SEP << setw(VAR_T_W) << q2.y <<  SEP << setw(VAR_T_W) << q2.z <<  SEP << setw(VAR_T_W) << q3.x <<  SEP << setw(VAR_T_W) << q3.y <<  SEP << setw(VAR_T_W) << q3.z << setw(INT_T_W) << SEP;
+	sout << setw(VAR_T_W) << p1.x << SEP << setw(VAR_T_W) << p1.y << SEP << setw(VAR_T_W) << p1.z <<  SEP << setw(VAR_T_W) << p2.x <<  SEP << setw(VAR_T_W) << p2.y <<  SEP << setw(VAR_T_W) << p2.z <<  SEP << setw(VAR_T_W) << p3.x <<  SEP << setw(VAR_T_W) << p3.y <<  SEP << setw(VAR_T_W) << p3.z << endl;
 	sout.flush();
 
 	//for (uint32_t i = 0; i < n_obj; i++)
  //   {
 	//	uint32_t orig_idx = h_md[i].id - 1;
 
-	//	sout << setw(var_t_w) << t << SEP                       /* time of the record [day] (double)           */
+	//	sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
 	//		 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
 	//	// Print the metadata for each object
- //       << setw(int_t_w) << h_md[i].id << SEP;
+ //       << setw(INT_T_W) << h_md[i].id << SEP;
 
 	//	// Print the parameters for each object
 	//	for (uint16_t j = 0; j < n_ppo; j++)
 	//	{
 	//		uint32_t param_idx = i * n_ppo + j;
-	//		sout << setw(var_t_w) << h_p[param_idx] << SEP;
+	//		sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
 	//	}
 	//	// Print the variables for each object
 	//	for (uint16_t j = 0; j < n_vpo; j++)
 	//	{
 	//		uint32_t var_idx = i * n_vpo + j;
-	//		sout << setw(var_t_w) << h_y[var_idx];
+	//		sout << setw(VAR_T_W) << h_y[var_idx];
 	//		if (j < n_vpo - 1)
 	//		{
 	//			sout << SEP;
@@ -403,16 +400,15 @@ void threebody::print_solution_binary(ofstream& sout)
 
 void threebody::print_integral(string& path)
 {
-	static uint32_t int_t_w  =  8;
-	static uint32_t var_t_w  = 25;
-
 	ofstream sout;
 
-	if (first_open_integral) {
+	if (first_open_integral)
+	{
 		sout.open(path.c_str(), ios::out);
 		first_open_integral = false;
 	}
-	else {
+	else
+	{
 		sout.open(path.c_str(), ios::out | ios::app);
 	}
 	if (sout)
@@ -421,7 +417,7 @@ void threebody::print_integral(string& path)
 		sout.setf(ios::right);
 		sout.setf(ios::scientific);
 
-	sout << setw(var_t_w) << t << SEP                       /* time of the record [day] (double)           */
+	sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
 		 << h << endl;
 	}
 	else

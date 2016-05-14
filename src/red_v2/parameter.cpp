@@ -49,6 +49,9 @@ void parameter::create_default()
 	simulation_length  = 0.0;
 	output_interval    = 0.0;
 
+	info_dt            = 5.0;      // [sec]
+	dump_dt            = 3600.0;   // [sec]
+
 	memset(threshold, 0, THRESHOLD_N * sizeof(var_t));
 }
 
@@ -163,7 +166,7 @@ void parameter::set_param(string& key, string& value)
 		adaptive = true;
 		tolerance = atof(value.c_str());
 	}
-	else if (key == "error_check_for_tp" || key == "error check for tp")
+	else if (key == "error check for tp")
 	{
 		if      (value == "true")
 		{
@@ -186,13 +189,29 @@ void parameter::set_param(string& key, string& value)
 		}
 		simulation_length = atof(value.c_str()) * constants::YearToDay;
 	}
-    else if (key == "output_interval" || key == "output interval")
+    else if (key == "output interval")
 	{
 		if (!tools::is_number(value))
 		{
 			throw string("Invalid number at: " + key);
 		}
 		output_interval = atof(value.c_str()) * constants::YearToDay;
+	}
+	else if (key == "info dt")
+	{
+		if (!tools::is_number(value)) 
+		{
+			throw string("Invalid number at: " + key);
+		}
+		info_dt = atof(value.c_str());
+	}
+	else if (key == "dump dt")
+	{
+		if (!tools::is_number(value)) 
+		{
+			throw string("Invalid number at: " + key);
+		}
+		dump_dt = atof(value.c_str());
 	}
 	else
 	{

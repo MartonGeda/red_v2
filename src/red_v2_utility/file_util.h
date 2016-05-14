@@ -14,6 +14,8 @@ namespace redutil2
 		std::string get_directory(const std::string& path);
 		std::string get_extension(const std::string& path);
 
+		data_rep_t get_data_repres(const std::string& path);
+
 		uint32_t load_ascii_file(const std::string& path, std::string& result);
 		void load_binary_file(const std::string& path, size_t n_data, var_t* data);
 

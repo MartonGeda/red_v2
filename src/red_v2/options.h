@@ -25,14 +25,10 @@ public:
 	
 	dyn_model_t dyn_model;
 
-	bool benchmark;                 //!< Run benchmark test to tune the optimal number of threds per block
 	bool test;                      //!< Run tests for functions
 	bool verbose;                   //!< Print every event to the log file
 	bool print_to_screen;           //!< Print every event to the standard output stream (cout) 
 	bool ef;                        //!< Extend the file names with command line information. Only for developer and debugger purposes.
-
-	ttt_t info_dt;                  //!< The time interval in seconds between two subsequent information print to the screen (default value is 5 sec)
-	ttt_t dump_dt;                  //!< The time interval in seconds between two subsequent data dump to the hdd (default value is 3600 sec)
 
 	uint32_t id_dev;                //!< The id of the device which will execute the code
 	uint32_t n_change_to_cpu;       //!< The threshold value for the total number of SI bodies to change to the CPU

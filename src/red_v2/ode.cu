@@ -107,6 +107,7 @@ void ode::swap()
 {
 	std::swap(t, tout);
 
+	std::swap(y, yout);
 	std::swap(h_y, h_yout);
 	std::swap(d_y, d_yout);
 }

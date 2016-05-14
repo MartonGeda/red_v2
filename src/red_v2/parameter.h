@@ -28,6 +28,9 @@ public:
 	ttt_t stop_time;                   //! stop time of the simulation [day] (= start_time + sim_length)
 	ttt_t output_interval;             //! interval between two succesive output epoch [day]
 
+	ttt_t info_dt;                     //!< The time interval in seconds between two subsequent information print to the screen (default value is 5 sec)
+	ttt_t dump_dt;                     //!< The time interval in seconds between two subsequent data dump to the hdd (default value is 3600 sec)
+
 	var_t threshold[THRESHOLD_N];	   //! Contains the threshold values: hit_centrum_dst, ejection_dst, collision_factor
 
 	// Input/Output streams

@@ -94,11 +94,11 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 		{
 			ps = 0.0;
 			f->print_solution(path_solution, opt->param->output_data_rep); 
-			//f->calc_integral();
+			f->calc_integral();
 			f->print_integral(path_integral);	
 		}
 
-		if (opt->info_dt < (clock() - time_last_info) / (double)CLOCKS_PER_SEC) 
+		if (opt->param->info_dt < (clock() - time_last_info) / (double)CLOCKS_PER_SEC) 
 		{
 			time_last_info = clock();
 			//print_info(*output[OUTPUT_NAME_INFO], ppd, intgr, dt, &T_CPU, &dT_CPU);
@@ -172,7 +172,7 @@ int main(int argc, const char** argv, const char** env)
 
 		// TODO!!!!!
 		//
-		ttt_t dt = 3.0e-2;
+		ttt_t dt = min(3.0e-2, opt->param->output_interval);
 		//
 		// TODO!!!!!
 
@@ -187,12 +187,11 @@ int main(int argc, const char** argv, const char** env)
 	} /* try */
 	catch (const string& msg)
 	{
-		f->print_solution(opt->out_fn[OUTPUT_NAME_SOLUTION], opt->param->output_data_rep); //path_solution kell, mert ez így nem mûködik
 		if (0x0 != slog)
 		{
 			file::log_message(*slog, "Error: " + msg, false);
 		}
-		cerr << "Error: " << msg << endl;
+		cerr << "\nError: " << msg << endl;
 	}
 
 	if (0x0 != slog)
