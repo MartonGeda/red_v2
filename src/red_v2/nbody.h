@@ -8,7 +8,7 @@
 class nbody : public ode
 {
 public:
-	nbody(uint16_t n_ppo, computing_device_t comp_dev);
+	nbody(uint16_t n_ppo, comp_dev_t comp_dev);
 	~nbody();
 
 	void load(std::string& path);

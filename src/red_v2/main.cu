@@ -43,7 +43,7 @@ string create_prefix(const options* opt)
 #else
 		config = "R";
 #endif
-		string dev = (opt->comp_dev == COMPUTING_DEVICE_CPU ? "cpu" : "gpu");
+		string dev = (opt->comp_dev == COMP_DEV_CPU ? "cpu" : "gpu");
 		// as: adaptive step-size, fs: fix step-size
 		string adapt = (opt->param->adaptive == true ? "as" : "fs");
 		

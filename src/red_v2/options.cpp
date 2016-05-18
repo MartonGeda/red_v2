@@ -43,7 +43,7 @@ void options::create_default()
 	id_dev              = 0;
 	n_change_to_cpu     = 100;
 
-	comp_dev            = COMPUTING_DEVICE_CPU;
+	comp_dev            = COMP_DEV_CPU;
 	g_disk_model        = GAS_DISK_MODEL_NONE;
 
 	out_fn[OUTPUT_NAME_LOG]            = "log";
@@ -132,11 +132,11 @@ void options::parse(int argc, const char** argv)
 
 		else if (p == "-cpu")
 		{
-			comp_dev = COMPUTING_DEVICE_CPU;
+			comp_dev = COMP_DEV_CPU;
 		}
 		else if (p == "-gpu")
 		{
-			comp_dev = COMPUTING_DEVICE_GPU;
+			comp_dev = COMP_DEV_GPU;
 		}
 		else if (p == "-ga")
 		{
@@ -222,7 +222,6 @@ ode* options::create_rtbp1D()
 	model->load(path);
 	model->calc_integral();
 
-	model->t    = model->h_epoch[0];
 	model->tout = model->t;
 
 	param->start_time = model->t;

@@ -7,7 +7,7 @@
 class tbp3D : public ode
 {
 public:
-	tbp3D(uint16_t n_ppo, computing_device_t comp_dev);
+	tbp3D(uint16_t n_ppo, comp_dev_t comp_dev);
 	~tbp3D();
 
 	void load(std::string& path);

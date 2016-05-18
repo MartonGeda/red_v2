@@ -11,8 +11,8 @@ using namespace std;
 using namespace redutil2;
 
 
-rtbp3D::rtbp3D(uint16_t n_ppo, computing_device_t comp_dev) :
-	ode(3, 9, n_ppo, 1, comp_dev)
+rtbp3D::rtbp3D(uint16_t n_ppo, comp_dev_t comp_dev) :
+	ode(3, 1, 9, n_ppo, comp_dev)
 {
 	initialize();
 	allocate_storage();
@@ -35,7 +35,7 @@ void rtbp3D::initialize()
 void rtbp3D::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage();
 	}
@@ -56,7 +56,7 @@ void rtbp3D::allocate_device_storage()
 void rtbp3D::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}
@@ -113,7 +113,7 @@ static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r
 
 void rtbp3D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMPUTING_DEVICE_CPU == comp_dev)
+	if (COMP_DEV_CPU == comp_dev)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}

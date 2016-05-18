@@ -10,7 +10,7 @@
 using namespace std;
 using namespace redutil2;
 
-integrator::integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, computing_device_t comp_dev) : 
+integrator::integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev) : 
 	f(f),
 	dt_try(dt),
 	adaptive(adaptive),
@@ -50,7 +50,7 @@ void integrator::initialize()
 void integrator::allocate_storage(uint32_t n_var)
 {
 	allocate_host_storage(n_var);
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage(n_var);
 	}
@@ -87,7 +87,7 @@ void integrator::allocate_device_storage(uint32_t n_var)
 void integrator::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}
@@ -123,7 +123,7 @@ var_t integrator::get_max_error(uint32_t n_var)
 {
 	var_t max_err = 0.0;
 
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		// Wrap raw pointer with a device_ptr
 		thrust::device_ptr<var_t> d_ptr(d_err);

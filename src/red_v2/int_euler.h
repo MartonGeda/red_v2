@@ -9,7 +9,7 @@ class ode;
 class euler : public integrator
 {
 public:
-	euler(ode& f, ttt_t dt, computing_device_t comp_dev);
+	euler(ode& f, ttt_t dt, comp_dev_t comp_dev);
 	~euler();
 
 	ttt_t step();

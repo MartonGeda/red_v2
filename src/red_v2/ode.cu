@@ -3,11 +3,11 @@
 
 using namespace redutil2;
 
-ode::ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, computing_device_t comp_dev) :
+ode::ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, comp_dev_t comp_dev) :
 	n_dim(n_dim),
+	n_obj(n_obj),
 	n_vpo(n_vpo),
 	n_ppo(n_ppo),
-	n_obj(n_obj),
 	comp_dev(comp_dev)
 {
 	initialize();
@@ -17,11 +17,11 @@ ode::ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, computi
 	allocate_storage(n_var, n_par);
 }
 
-ode::ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, uint32_t n_var, uint32_t n_par, computing_device_t comp_dev) :
+ode::ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_var, uint32_t n_par, comp_dev_t comp_dev) :
 	n_dim(n_dim),
+	n_obj(n_obj),
 	n_vpo(n_vpo),
 	n_ppo(n_ppo),
-	n_obj(n_obj),
 	n_var(n_var),
 	n_par(n_par),
 	comp_dev(comp_dev)
@@ -60,7 +60,7 @@ void ode::initialize()
 void ode::allocate_storage(uint32_t n_var, uint32_t n_par)
 {
 	allocate_host_storage(n_var, n_par);
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage(n_var, n_par);
 	}
@@ -83,7 +83,7 @@ void ode::allocate_device_storage(uint32_t n_var, uint32_t n_par)
 void ode::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}

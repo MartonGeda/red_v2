@@ -33,7 +33,7 @@ public:
 	uint32_t id_dev;                //!< The id of the device which will execute the code
 	uint32_t n_change_to_cpu;       //!< The threshold value for the total number of SI bodies to change to the CPU
 
-	computing_device_t comp_dev;    //!< The computing device to carry out the calculations (cpu or gpu)
+	comp_dev_t comp_dev;    //!< The computing device to carry out the calculations (cpu or gpu)
 	gas_disk_model_t g_disk_model;
 
 	parameter* param;

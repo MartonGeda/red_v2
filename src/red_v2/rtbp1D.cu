@@ -11,8 +11,9 @@ using namespace std;
 using namespace redutil2;
 
 
-rtbp1D::rtbp1D(uint16_t n_ppo, computing_device_t comp_dev) :
-	ode(1, 3, n_ppo, 1, comp_dev)
+rtbp1D::rtbp1D(uint16_t n_ppo, comp_dev_t comp_dev) :
+	//ode(1, 1, 3, n_ppo, comp_dev)
+	ode(1, 1, 2, n_ppo, comp_dev)
 {
 	initialize();
 	allocate_storage();
@@ -25,16 +26,16 @@ rtbp1D::~rtbp1D()
 
 void rtbp1D::initialize()
 {
-	h_md    = 0x0;
+	h_md       = 0x0;
 
-	h       = 0.0;            // energy
-	h_y[2]  = 0.0;            // s_0: fictitious time
+	integral.h = 0.0;            // energy
+	h_y[2]     = 0.0;            // t_0: real time
 }
 
 void rtbp1D::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage();
 	}
@@ -53,7 +54,7 @@ void rtbp1D::allocate_device_storage()
 void rtbp1D::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}
@@ -79,12 +80,12 @@ void rtbp1D::calc_integral()
 {
 	const tbp1D_t::param_t* p = (tbp1D_t::param_t*)h_p;
 
-	h = (2.0 * SQR(h_y[1]) - p[0].mu ) / SQR(h_y[0]);
+	integral.h = (2.0 * SQR(h_y[1]) - p[0].mu ) / SQR(h_y[0]);
 }
 
 void rtbp1D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMPUTING_DEVICE_CPU == comp_dev)
+	if (COMP_DEV_CPU == comp_dev)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}
@@ -96,9 +97,11 @@ void rtbp1D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* d
 
 void rtbp1D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	dy[0] = y_temp[1];                // dy1 / ds = y2
-	dy[1] = (h / 2.0) * y_temp[0];    // dy2 / ds = h/2 * y1
-	dy[2] = SQR(y_temp[0]);           // dy3 / ds = y1^2
+	dy[0] = y_temp[1];                         // dy1 / ds = y2
+
+	dy[1] = (integral.h / 2.0) * y_temp[0];    // dy2 / ds = h/2 * y1
+
+	dy[2] = SQR(y_temp[0]);                    // dy3 / ds = y1^2
 }
 
 void rtbp1D::gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
@@ -229,7 +232,7 @@ void rtbp1D::print_solution_ascii(ofstream& sout)
     {
 		uint32_t orig_idx = h_md[i].id - 1;
 
-		sout << setw(VAR_T_W) << t << SEP                       /* 1  time of the record [day] (double)           */
+		sout << setw(VAR_T_W) << t << SEP                       /* 1  independent variable     (double)           */
 			 << setw(     30) << obj_names[orig_idx] << SEP     /* 2  name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
         << setw(INT_T_W) << h_md[i].id << SEP;                  /* 3  id of the body           (int32_t)          */ 
@@ -243,7 +246,7 @@ void rtbp1D::print_solution_ascii(ofstream& sout)
 		// Print the regularized variables for each object
 		for (uint16_t j = 0; j < n_vpo; j++)                    /* 5 u (reg. coordinate) of the object  (double)  */
 		{                                                       /* 6 v (reg. velocity) of the object    (double)  */
-			uint32_t var_idx = i * n_vpo + j;                   /* 7 s (fictitious time of the problem) (double)  */
+			uint32_t var_idx = i * n_vpo + j;                   /* 7 s (real time of the problem)       (double)  */
 			sout << setw(VAR_T_W) << h_y[var_idx] << SEP;
 		}
 		// Print the descartes non-regularized variables for each object
@@ -271,7 +274,7 @@ void rtbp1D::print_integral(string& path)
 
 		sout << setw(VAR_T_W) << t << SEP             /* fictitious time of the record (double)   */
 			 << setw(VAR_T_W) << h_y[2] << SEP        /* real time of the record [day] double     */
-			 << setw(VAR_T_W) << h << endl;           /* energy of the system                     */
+			 << setw(VAR_T_W) << integral.h << endl;  /* energy of the system                     */
 	}
 	else
 	{

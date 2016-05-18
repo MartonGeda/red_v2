@@ -13,8 +13,8 @@ using namespace std;
 using namespace redutil2;
 
 
-threebody::threebody(uint16_t n_ppo, computing_device_t comp_dev) :
-	ode(3, 8, n_ppo, 3, 17, 3, comp_dev)
+threebody::threebody(uint16_t n_ppo, comp_dev_t comp_dev) :
+	ode(3, 3, 8, n_ppo, 17, 3, comp_dev)
 {
 	initialize();
 	allocate_storage();
@@ -39,7 +39,7 @@ void threebody::initialize()
 void threebody::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage();
 	}
@@ -60,7 +60,7 @@ void threebody::allocate_device_storage()
 void threebody::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}
@@ -80,7 +80,7 @@ void threebody::deallocate_device_storage()
 
 void threebody::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMPUTING_DEVICE_CPU == comp_dev)
+	if (COMP_DEV_CPU == comp_dev)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}

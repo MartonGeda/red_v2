@@ -11,8 +11,8 @@ using namespace std;
 using namespace redutil2;
 
 
-tbp1D::tbp1D(uint16_t n_ppo, computing_device_t comp_dev) :
-	ode(1, 2, n_ppo, 1, comp_dev)
+tbp1D::tbp1D(uint16_t n_ppo, comp_dev_t comp_dev) :
+	ode(1, 1, 2, n_ppo, comp_dev)
 {
 	initialize();
 	allocate_storage();
@@ -25,14 +25,14 @@ tbp1D::~tbp1D()
 
 void tbp1D::initialize()
 {
-	h_md    = 0x0;
-	h       = 0.0;            // energy
+	h_md       = 0x0;
+	integral.h = 0.0;        // energy
 }
 
 void tbp1D::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		allocate_device_storage();
 	}
@@ -51,7 +51,7 @@ void tbp1D::allocate_device_storage()
 void tbp1D::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		deallocate_device_storage();
 	}
@@ -69,7 +69,7 @@ void tbp1D::deallocate_device_storage()
 
 void tbp1D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMPUTING_DEVICE_CPU == comp_dev)
+	if (COMP_DEV_CPU == comp_dev)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}
@@ -83,7 +83,7 @@ void tbp1D::calc_integral()
 {
 	const tbp1D_t::param_t* p = (tbp1D_t::param_t*)h_p;
 
-	h = 0.5 * SQR(h_y[1]) - p[0].mu / h_y[0];
+	integral.h = 0.5 * SQR(h_y[1]) - p[0].mu / h_y[0];
 }
 
 void tbp1D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
@@ -266,7 +266,7 @@ void tbp1D::print_integral(string& path)
 		sout.setf(ios::scientific);
 
 	    sout << setw(VAR_T_W) << t << SEP             /* time of the record [day] (double)           */
-		     << setw(VAR_T_W) << h << endl;           /* energy of the system                        */
+		     << setw(VAR_T_W) << integral.h << endl;  /* energy of the system                        */
 	}
 	else
 	{

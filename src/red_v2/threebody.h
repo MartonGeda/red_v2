@@ -7,7 +7,7 @@
 class threebody : public ode
 {
 public:
-	threebody(uint16_t n_ppo, computing_device_t comp_dev);
+	threebody(uint16_t n_ppo, comp_dev_t comp_dev);
 	~threebody();
 
 	void load(std::string& path);

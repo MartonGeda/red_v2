@@ -9,8 +9,17 @@
 class ode
 {
 public:
-	ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, computing_device_t comp_dev);
-	ode(uint16_t n_dim, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_obj, uint32_t n_var, uint32_t n_par, computing_device_t comp_dev);
+	//! Constructs a rtbp1D object
+	/*!
+		\param n_dim       The space dimension of the problem 
+		\param n_obj       The total number of objets in the problem
+		\param n_vpo       The number of variables per object (vpo)
+		\param n_ppo       The number of parameters per object (ppo)
+		\param comp_dev    The name of the executing device
+	*/
+	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, comp_dev_t comp_dev);
+	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_var, uint32_t n_par, comp_dev_t comp_dev);
+	//! Destructor
 	~ode();
 
 	void initialize();
@@ -28,7 +37,6 @@ public:
 
 	void swap();
 
-
 	virtual void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;
 
@@ -38,22 +46,22 @@ public:
 
 	std::vector<std::string> obj_names;
 
-	ttt_t t;              //! Current time
-	ttt_t tout;           //! Time at the end of the integration step
+	ttt_t t;              //! Independent variable (e.g. time or fictitious time)
+	ttt_t tout;           //! Independent variable at the end of the integration step
 
-	var_t* h_y;           //! Host vector (size of n_var) of ODE variables at t
-	var_t* h_yout;        //! Host vector (size of n_var) of ODE variables at tout
-	var_t* d_y;           //! Device vector (size of n_var) of ODE variables at t
-	var_t* d_yout;        //! Device vector (size of n_var) of ODE variables at tout
-	var_t* y;             //! Alias to Host or Device vector of ODE variables at t depeding on the execution device
-	var_t* yout;          //! Alias to Host or Device vector of ODE variables at tout depeding on the execution device
+	var_t* h_y;           //! Host vector (size of n_var) of the dependent variables at t
+	var_t* h_yout;        //! Host vector (size of n_var) of the dependent variables at tout
+	var_t* d_y;           //! Device vector (size of n_var) of the dependent variables at t
+	var_t* d_yout;        //! Device vector (size of n_var) of the dependent variables at tout
+	var_t* y;             //! Alias to Host or Device vector of the dependent variables at t depeding on the execution device
+	var_t* yout;          //! Alias to Host or Device vector of the dependent variables at tout depeding on the execution device
 
 	var_t* h_p;           //! Host vector (size of n_par) of parameters
 	var_t* d_p;           //! Device vector (size of n_par) of parameters
 	var_t* p;             //! Alias to Host or Device vector of parameters depeding on the execution device
 
-	uint32_t n_obj;       //! The total number of objets in the problem
 	uint16_t n_dim;       //! The space dimension of the problem 
+	uint32_t n_obj;       //! The total number of objets in the problem
 
 	uint16_t n_vpo;       //! The number of variables per object (vpo)
 	uint16_t n_ppo;       //! The number of parameters per object (ppo)
@@ -61,7 +69,7 @@ public:
 	uint32_t n_var;       //! The total number of variables of the problem
 	uint32_t n_par;       //! The total number of parameters of the problem
 
-	computing_device_t comp_dev;
+	comp_dev_t comp_dev;  //! The name of the executing device
 
 	dim3 grid;            //! Defines the grid of the blocks of the current execution
 	dim3 block;           //! Defines the block of the threads of the current execution

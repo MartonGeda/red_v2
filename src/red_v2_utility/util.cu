@@ -408,7 +408,7 @@ void set_device(int id_of_target_dev, ostream& sout)
 	}
 }
 
-void print_array(string path, int n, var_t *data, computing_device_t comp_dev)
+void print_array(string path, int n, var_t *data, comp_dev_t comp_dev)
 {
 	var_t* h_data = 0x0;
 
@@ -425,7 +425,7 @@ void print_array(string path, int n, var_t *data, computing_device_t comp_dev)
 	out->setf(ios::right);
 	out->setf(ios::scientific);
 
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		h_data = new var_t[n];
 		copy_vector_to_host(h_data, data, n * sizeof(var_t));
@@ -439,7 +439,7 @@ void print_array(string path, int n, var_t *data, computing_device_t comp_dev)
 		*out << setw(5) << i << setprecision(16) << setw(25) << h_data[i] << endl;
 	}
 
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		delete[] h_data;
 	}
@@ -450,11 +450,11 @@ void print_array(string path, int n, var_t *data, computing_device_t comp_dev)
 	}
 }
 
-void create_aliases(computing_device_t comp_dev, pp_disk_t::sim_data_t *sd)
+void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd)
 {
 	switch (comp_dev)
 	{
-	case COMPUTING_DEVICE_CPU:
+	case COMP_DEV_CPU:
 		for (int i = 0; i < 2; i++)
 		{
 			sd->y[i]    = sd->h_y[i];
@@ -465,7 +465,7 @@ void create_aliases(computing_device_t comp_dev, pp_disk_t::sim_data_t *sd)
 		sd->epoch   = sd->h_epoch;
         sd->oe      = sd->h_oe;
 		break;
-	case COMPUTING_DEVICE_GPU:
+	case COMP_DEV_GPU:
 		for (int i = 0; i < 2; i++)
 		{
 			sd->y[i]    = sd->d_y[i];

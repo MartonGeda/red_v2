@@ -15,7 +15,7 @@ public:
 	static ttt_t c[];
 	static uint16_t a_idx[];
 
-	int_rungekutta4(ode& f, ttt_t dt, bool adaptive, var_t tolerance, computing_device_t comp_dev);
+	int_rungekutta4(ode& f, ttt_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
 	~int_rungekutta4();
 
 	ttt_t step();

@@ -7,8 +7,8 @@
 class rtbp3D : public ode
 {
 public:
-	rtbp3D(uint16_t n_ppo, computing_device_t comp_dev);
-	rtbp3D(uint16_t n_ppo, ttt_t t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v, computing_device_t comp_dev);
+	rtbp3D(uint16_t n_ppo, comp_dev_t comp_dev);
+	rtbp3D(uint16_t n_ppo, ttt_t t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v, comp_dev_t comp_dev);
 	~rtbp3D();
 
 	void load(std::string& path);

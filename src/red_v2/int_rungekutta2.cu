@@ -43,7 +43,7 @@ void int_rungekutta2::cpu_sum_vector(var_t* a, const var_t* b, var_t F, const va
 	}
 }
 
-int_rungekutta2::int_rungekutta2(ode& f, ttt_t dt, computing_device_t comp_dev) :
+int_rungekutta2::int_rungekutta2(ode& f, ttt_t dt, comp_dev_t comp_dev) :
 	integrator(f, dt, false, 0.0, 2, comp_dev)
 {
 	name    = "Runge-Kutta2";
@@ -55,7 +55,7 @@ int_rungekutta2::~int_rungekutta2()
 
 void int_rungekutta2::calc_y_np1()
 {
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		rk2_kernel::sum_vector<<<grid, block>>>(f.d_yout, f.d_y, dt_try, d_k[1], f.n_var);
 		CUDA_CHECK_ERROR();
@@ -81,7 +81,7 @@ void int_rungekutta2::calc_ytemp(uint16_t stage)
 
 ttt_t int_rungekutta2::step()
 {
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
 	}

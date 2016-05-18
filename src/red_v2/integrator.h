@@ -10,15 +10,15 @@ class ode;
 class integrator
 {
 public:
-	integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, computing_device_t comp_dev);
+	integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev);
 	~integrator();
 
 	//! Set the computing device to calculate the integration step
 	/*
 		\param device specifies which device will execute the computations
 	*/
-//	void set_computing_device(computing_device_t device);
-//	computing_device_t get_computing_device() { return comp_dev; }
+//	void set_comp_dev(comp_dev_t device);
+//	comp_dev_t get_comp_dev() { return comp_dev; }
 
 	void update_counters(uint16_t iter);
 
@@ -43,12 +43,12 @@ protected:
 //	void calc_grid(int nData, int threads_per_block);
 	var_t get_max_error(uint32_t n_var);
 
-	computing_device_t comp_dev;        //!< The computing device to carry out the calculations (cpu or gpu)
+	comp_dev_t comp_dev;        //!< The computing device to carry out the calculations (cpu or gpu)
 
 	dim3 grid;
 	dim3 block;
 
-	ttt_t t;					        //!< Actual time of the integrator
+	ttt_t t;					        //!< Independent variable (e.g. time or fictitious time)
 	ttt_t dt_try;                       //!< The size of the step to try (based on the previous successfull step dt_did)
 	ttt_t dt_did;                       //!< The size of the previous successfull step
 

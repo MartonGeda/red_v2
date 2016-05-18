@@ -106,12 +106,12 @@ typedef enum gas_disk_model
 			GAS_DISK_MODEL_N,
 		} gas_disk_model_t;
 
-typedef enum computing_device
+typedef enum comp_dev
 		{
-			COMPUTING_DEVICE_CPU,
-			COMPUTING_DEVICE_GPU,
-			COMPUTING_DEVICE_N
-		} computing_device_t;
+			COMP_DEV_CPU,
+			COMP_DEV_GPU,
+			COMP_DEV_N
+		} comp_dev_t;
 
 typedef enum threshold
 		{
@@ -242,11 +242,11 @@ typedef struct ode_data
 	dim3 grid;                     //! Defines the grid of the blocks of the current execution
 	dim3 block;                    //! Defines the block of the threads of the current execution
 	uint16_t n_tpb;                //! Holds the number of threads per block
-	computing_device_t comp_dev;   //! The execution is performed on this device
+	comp_dev_t comp_dev;   //! The execution is performed on this device
 
 	ode_data()
 	{
-		comp_dev = COMPUTING_DEVICE_CPU;
+		comp_dev = COMP_DEV_CPU;
 
 		p      = d_p      = h_p      = 0x0;
 		obj_md = d_obj_md = h_obj_md = 0x0;
@@ -269,6 +269,11 @@ namespace tbp1D_t
 	{
 		var_t mu;
 	} param_t;
+
+	typedef struct integral
+	{
+		var_t h;
+	} integral_t;
 } /* namespace tbp1D_t */
 
 namespace tbp3D_t

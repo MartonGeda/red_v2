@@ -49,7 +49,7 @@ namespace redutil2
 
 
 	void set_device(int id_of_target_dev, std::ostream& sout);
-	void print_array(std::string path, int n, var_t *data, computing_device_t comp_dev);
+	void print_array(std::string path, int n, var_t *data, comp_dev_t comp_dev);
 
-	void create_aliases(computing_device_t comp_dev, pp_disk_t::sim_data_t *sd);
+	void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd);
 } /* redutil2 */

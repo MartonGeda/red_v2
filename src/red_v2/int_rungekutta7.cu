@@ -52,7 +52,7 @@ static __global__
 }
 } /* namespace rk8_kernel */
 
-int_rungekutta7::int_rungekutta7(ode& f, ttt_t dt, bool adaptive, var_t tolerance, computing_device_t comp_dev) :
+int_rungekutta7::int_rungekutta7(ode& f, ttt_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
 	integrator(f, dt, adaptive, tolerance, (adaptive ? 13 : 11), comp_dev)
 {
 	name    = "Runge-Kutta7";
@@ -64,7 +64,7 @@ int_rungekutta7::~int_rungekutta7()
 
 void int_rungekutta7::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
 {
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		// rk4_kernel::calc_lin_comb
 		CUDA_CHECK_ERROR();
@@ -77,7 +77,7 @@ void int_rungekutta7::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coe
 
 void int_rungekutta7::calc_error(uint32_t n)
 {
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		// rk4_kernel::calc_error
 		CUDA_CHECK_ERROR();
@@ -122,7 +122,7 @@ ttt_t int_rungekutta7::step()
 	static var_t aa[n_a];
 	static var_t bb[n_b];
 
-	if (COMPUTING_DEVICE_GPU == comp_dev)
+	if (COMP_DEV_GPU == comp_dev)
 	{
 		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
 	}
