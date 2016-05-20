@@ -23,7 +23,6 @@ public:
 	bool_t error_check_for_tp;         //! Check the error also for the test particle
 	bool_t adaptive;                   //! Adaptive step size
 								       
-	ttt_t start_time;                  //! start time of the simulation [day]
 	ttt_t simulation_length;           //! length of the simulation [day]
 	ttt_t stop_time;                   //! stop time of the simulation [day] (= start_time + sim_length)
 	ttt_t output_interval;             //! interval between two succesive output epoch [day]

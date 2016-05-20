@@ -9,7 +9,7 @@
 class ode
 {
 public:
-	//! Constructs a rtbp1D object
+	//! Constructs an ode object
 	/*!
 		\param n_dim       The space dimension of the problem 
 		\param n_obj       The total number of objets in the problem
@@ -18,6 +18,16 @@ public:
 		\param comp_dev    The name of the executing device
 	*/
 	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, comp_dev_t comp_dev);
+	//! Constructs an ode object
+	/*!
+		\param n_dim       The space dimension of the problem 
+		\param n_obj       The total number of objets in the problem
+		\param n_vpo       The number of variables per object (vpo)
+		\param n_ppo       The number of parameters per object (ppo)
+		\param n_var       The total number of variables
+		\param n_par       The total number of parameters
+		\param comp_dev    The name of the executing device
+	*/
 	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_var, uint32_t n_par, comp_dev_t comp_dev);
 	//! Destructor
 	~ode();
@@ -40,14 +50,14 @@ public:
 	virtual void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;
 
-	virtual void print_solution(std::string& path, data_rep_t repres) = 0;
+	//virtual void print_solution_info(std::string& path, data_rep_t repres) = 0;
+	virtual void print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres) = 0;
 	virtual void print_integral(std::string& path) = 0;
 
 
-	std::vector<std::string> obj_names;
-
 	ttt_t t;              //! Independent variable (e.g. time or fictitious time)
 	ttt_t tout;           //! Independent variable at the end of the integration step
+	ttt_t dt;             //! Step for the integrator
 
 	var_t* h_y;           //! Host vector (size of n_var) of the dependent variables at t
 	var_t* h_yout;        //! Host vector (size of n_var) of the dependent variables at tout

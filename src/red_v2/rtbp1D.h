@@ -21,12 +21,13 @@ public:
 	*/
 	void load(std::string& path);
 
-	//! Print the solution (the numerical approcimation of the solution)
+	//! Print the solution (the numerical approximation of the solution)
 	/*!
-		\param path   full file path where the solution will be printed
+		\param path_si  full file path where the info about the solution will be printed
+		\param path_sd  full file path where the the solution will be printed
 		\param repres indicates the data representation of the file, i.e. text or binary
 	*/
-	void print_solution(std::string& path, data_rep_t repres);
+	void print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres);
 
 	//! Print the integral(s) of the problem
 	/*!

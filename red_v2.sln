@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "red_v2", "src\red_v2\red_v2
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "red_v2_utility", "src\red_v2_utility\red_v2_utility.vcxproj", "{6B399C26-F518-435A-8864-E752F6A1DA29}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "red_v2_initial", "src\red_v2_initial\red_v2_initial.vcxproj", "{A8EBFFDF-3834-4B5E-9806-E464765EBD57}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -29,6 +31,14 @@ Global
 		{6B399C26-F518-435A-8864-E752F6A1DA29}.Release|Win32.Build.0 = Release|Win32
 		{6B399C26-F518-435A-8864-E752F6A1DA29}.Release|x64.ActiveCfg = Release|x64
 		{6B399C26-F518-435A-8864-E752F6A1DA29}.Release|x64.Build.0 = Release|x64
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Debug|Win32.Build.0 = Debug|Win32
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Debug|x64.ActiveCfg = Debug|x64
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Debug|x64.Build.0 = Debug|x64
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Release|Win32.ActiveCfg = Release|Win32
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Release|Win32.Build.0 = Release|Win32
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Release|x64.ActiveCfg = Release|x64
+		{A8EBFFDF-3834-4B5E-9806-E464765EBD57}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

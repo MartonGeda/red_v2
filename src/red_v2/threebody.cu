@@ -266,13 +266,6 @@ void threebody::load_ascii_record(ifstream& input, ttt_t* t, threebody_t::metada
 
 	// epoch
 	input >> *t;
-	// name
-	input >> name;
-	if (name.length() > 30)
-	{
-		name = name.substr(0, 30);
-	}
-	obj_names.push_back(name);
 	// id
 	input >> md->id;
 	// mass
@@ -284,7 +277,7 @@ void threebody::load_binary(ifstream& input)
 	throw string("The load_binary() is not implemented.");
 }
 
-void threebody::print_solution(std::string& path, data_rep_t repres)
+void threebody::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
 {
 	ofstream sout;
 
@@ -292,15 +285,15 @@ void threebody::print_solution(std::string& path, data_rep_t repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
 		if (first_open_solution) {
-			sout.open(path.c_str(), ios::out);
+			sout.open(path_si.c_str(), ios::out);
 			first_open_solution = false;
 		}
 		else {
-			sout.open(path.c_str(), ios::out | ios::app);
+			sout.open(path_si.c_str(), ios::out | ios::app);
 		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
+		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
@@ -322,7 +315,7 @@ void threebody::print_solution(std::string& path, data_rep_t repres)
 	}
 	else
 	{
-		throw string("Cannot open " + path + ".");
+		throw string("Cannot open " + path_si + ".");
 	}
 	sout.close();
 }

@@ -54,6 +54,39 @@ string create_prefix(const options* opt)
 	return prefix;
 }
 
+void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, ofstream& slog)
+{
+	static string prefix = create_prefix(opt);
+	static string ext = (DATA_REPRESENTATION_ASCII == opt->param->output_data_rep ? "txt" : "dat");
+
+    string n_print_str = redutil2::number_to_string(n_print, OUTPUT_ORDINAL_NUMBER_WIDTH, true);
+
+    string fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "_" + n_print_str + "." + ext;
+	string path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
+
+    string fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "_" + n_print_str + "." + ext;
+	string path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
+
+	f->print_solution(path_si, path_sd, opt->param->output_data_rep);
+	n_print++;
+
+	string path = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], "start_files.txt");
+	ofstream sout(path.c_str(), ios_base::out);
+	if (sout)
+	{
+		sout << fn_info << endl;
+		sout << fn_data << endl;
+	}
+	else
+	{
+		throw string("Cannot open " + path + "!");
+	}
+    sout.close();
+
+	//f->calc_integral(false, integrals[1]);
+	//f->print_integral_data(path_integral, integrals[1]);
+}
+
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
 	static string prefix = create_prefix(opt);
@@ -61,7 +94,8 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 	static string path_info           = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INFO] + ".txt");
 	static string path_event          = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_EVENT] + ".txt");
-	static string path_solution		  = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_SOLUTION] + ".txt");
+    //static string path_solution_info  = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + ext);
+    //static string path_solution_data  = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + ext);
 	static string path_integral       = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL] + ".txt");
 	static string path_integral_event = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
 
@@ -74,8 +108,21 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	time_t time_last_info = clock();
 	time_t time_last_dump = clock();
 
-//	f->print_solution(opt->out_fn[OUTPUT_NAME_SOLUTION], opt->param->output_data_rep);
-	f->print_solution(path_solution, opt->param->output_data_rep);
+
+	uint32_t n_print = 0;
+    if (0 < opt->in_fn[INPUT_NAME_START_FILES].length() && "data" == opt->in_fn[INPUT_NAME_IC_DATA].substr(0, 4))
+	{
+        string str = opt->in_fn[INPUT_NAME_IC_DATA];
+		size_t pos = str.find_first_of("_");
+		str = str.substr(pos + 1, OUTPUT_ORDINAL_NUMBER_WIDTH);
+		n_print = atoi(str.c_str());
+		n_print++;
+	}
+    if (0 == n_print)
+    {
+        print_solution(n_print, opt, f, intgr, slog);
+    }
+	//f->print_solution(path_solution_info, path_solution_data, opt->param->output_data_rep);
 	f->calc_integral();
 	/* 
 	 * Main cycle
@@ -93,7 +140,8 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 		if (opt->param->output_interval <= fabs(ps))
 		{
 			ps = 0.0;
-			f->print_solution(path_solution, opt->param->output_data_rep); 
+            print_solution(n_print, opt, f, intgr, slog);
+			//f->print_solution(path_solution_info, path_solution_data, opt->param->output_data_rep);
 			f->calc_integral();
 			f->print_integral(path_integral);	
 		}

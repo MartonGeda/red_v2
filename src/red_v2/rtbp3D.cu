@@ -208,13 +208,6 @@ void rtbp3D::load_ascii_record(ifstream& input, ttt_t* t, tbp3D_t::metadata_t *m
 
 	// epoch
 	input >> *t;
-	// name
-	input >> name;
-	if (name.length() > 30)
-	{
-		name = name.substr(0, 30);
-	}
-	obj_names.push_back(name);
 	// id
 	input >> md->id;
 	// mu = k^2*(m1 + m2)
@@ -234,17 +227,17 @@ void rtbp3D::load_binary(ifstream& input)
 	throw string("The load_binary() is not implemented.");
 }
 
-void rtbp3D::print_solution(std::string& path, data_rep_t repres)
+void rtbp3D::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
 {
 	ofstream sout;
 
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path.c_str(), ios::out | ios::app);
+		sout.open(path_si.c_str(), ios::out | ios::app);
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
+		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
@@ -266,7 +259,7 @@ void rtbp3D::print_solution(std::string& path, data_rep_t repres)
 	}
 	else
 	{
-		throw string("Cannot open " + path + ".");
+		throw string("Cannot open " + path_si + ".");
 	}
 	sout.close();
 }
@@ -286,10 +279,7 @@ void rtbp3D::print_solution_ascii(ofstream& sout) //TODO: implement correctly
 
 	for (uint32_t i = 0; i < n_obj; i++)
     {
-		uint32_t orig_idx = h_md[i].id - 1;
-
 		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
-			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
         << setw(INT_T_W) << h_md[i].id << SEP;
 

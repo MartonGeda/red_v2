@@ -38,5 +38,25 @@ namespace redutil2
 		void load_data_info_record_binary(std::ifstream& input, var_t& t, var_t& dt, n_objects_t** n_bodies);
 		void load_data_record_ascii( std::ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
 		void load_data_record_binary(std::ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
+
+
+        namespace tbp1D
+        {
+        void print_solution_info_ascii(std::ofstream& sout, ttt_t t, ttt_t dt);
+        void print_solution_info_binary(std::ofstream& sout, ttt_t t, ttt_t dt);
+        //! Print the solution for each object in text format
+        /*   
+            \param sout print the data to this stream
+        */
+        void print_solution_data_ascii(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+	    //! Print the solution for each object in binary format
+	    /*!
+		    \param sout print the data to this stream
+	    */
+        void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+        } /* tbp1D */
+
+
+
 	} /* file */
 } /* redutil2 */

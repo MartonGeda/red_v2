@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "options.h"
 #include "integrator.h"
@@ -49,8 +50,8 @@ void options::create_default()
 	out_fn[OUTPUT_NAME_LOG]            = "log";
 	out_fn[OUTPUT_NAME_INFO]           = "info";
 	out_fn[OUTPUT_NAME_EVENT]          = "event";
-	out_fn[OUTPUT_NAME_SOLUTION]       = "solution";
 	out_fn[OUTPUT_NAME_SOLUTION_INFO]  = "solution_info";
+	out_fn[OUTPUT_NAME_SOLUTION_DATA]  = "solution_data";
 	out_fn[OUTPUT_NAME_INTEGRAL]       = "integral";
 	out_fn[OUTPUT_NAME_INTEGRAL_EVENT] = "integral_event";
 }
@@ -151,12 +152,6 @@ void options::parse(int argc, const char** argv)
 			g_disk_model = GAS_DISK_MODEL_FARGO;
 		}
 
-		else if (p == "-ic")
-		{
-			i++;
-			in_fn[INPUT_NAME_DATA] = argv[i];
-		}
-
 		else if (p == "-i")
 		{
 			i++;
@@ -197,94 +192,127 @@ void options::parse(int argc, const char** argv)
 	}
 }
 
+void options::get_solution_path(string& path_si, string &path_sd)
+{
+	if (0 < in_fn[INPUT_NAME_START_FILES].length())
+	{
+		string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_START_FILES]);
+		ifstream file(path.c_str(), ifstream::in);
+		if (file)
+		{
+			uint32_t n = 0;
+			string str;
+			while (getline(file, str))
+			{
+				if (0 == n)
+				{
+                    in_fn[INPUT_NAME_IC_INFO] = str;
+				}
+				if (1 == n)
+				{
+                    in_fn[INPUT_NAME_IC_DATA] = str;
+				}
+				n++;
+			} 	
+			file.close();
+		}
+		else
+		{
+			throw string("The file '" + path + "' could not opened.");
+		}
+	}
+	else
+	{
+		throw string("The -i option was not provided.");
+	}
+    path_si = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_IC_INFO]);
+    path_sd = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_IC_DATA]);
+}
+
 ode* options::create_tbp1D()
 {
-	tbp1D* model = new tbp1D(1, comp_dev);
+    string path_si;
+    string path_sd;
+
+    get_solution_path(path_si, path_sd);
+    tbp1D* model = new tbp1D(path_si, path_sd, 1, comp_dev);
 	
-	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-	model->load(path);
-	model->calc_integral();
-
-	model->tout = model->t;
-
-	param->start_time = model->t;
 	// TODO: transform time variables in opt
-	param->stop_time = param->start_time + param->simulation_length;
+	param->stop_time = model->t + param->simulation_length;
 
 	return model;
 }
 
 ode* options::create_rtbp1D()
 {
+//    string path_si;
+//    string path_sd;
+//
+//    get_solution_path(path_si, path_sd);
 	rtbp1D* model = new rtbp1D(1, comp_dev);
-
-	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-	model->load(path);
-	model->calc_integral();
-
-	model->tout = model->t;
-
-	param->start_time = model->t;
-	// TODO: transform time variables in opt
-	param->stop_time = param->start_time + param->simulation_length;
-
+//
+//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
+//	model->load(path);
+//	model->calc_integral();
+//
+//	model->tout = model->t;
+//
+//	// TODO: transform time variables in opt
+//	param->stop_time = param->start_time + param->simulation_length;
+//
 	return model;
 }
 
 ode* options::create_tbp3D()
 {
 	tbp3D* model = new tbp3D(1, comp_dev);
-	
-	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-	model->load(path);
-	// TODO: calc_integrals
-	model->calc_integral();
-
-	model->t    = model->h_epoch[0];
-	model->tout = model->t;
-
-	param->start_time = model->t;
-	// TODO: transform time variables in opt
-	param->stop_time = param->start_time + param->simulation_length;
-
+//	
+//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
+//	model->load(path);
+//	// TODO: calc_integrals
+//	model->calc_integral();
+//
+//	model->t    = model->h_epoch[0];
+//	model->tout = model->t;
+//
+//	// TODO: transform time variables in opt
+//	param->stop_time = param->start_time + param->simulation_length;
+//
 	return model;
 }
 
 ode* options::create_rtbp3D()
 {
 	rtbp3D* model = new rtbp3D(1, comp_dev);
-	
-	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-	model->load(path);
-	// TODO: calc_integrals
-	model->calc_integral();
-
-	model->t    = model->h_epoch[0];
-	model->tout = model->t;
-
-	param->start_time = model->t;
-	// TODO: transform time variables in opt
-	param->stop_time = param->start_time + param->simulation_length;
-
+//	
+//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
+//	model->load(path);
+//	model->calc_integral();
+//
+//	model->t    = model->h_epoch[0];
+//	model->tout = model->t;
+//
+//	// TODO: transform time variables in opt
+//	param->stop_time = param->start_time + param->simulation_length;
+//
 	return model;
 }
 
 ode* options::create_threebody() //TODO
 {
 	threebody* model = new threebody(1, comp_dev);
-	
-	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-	model->load(path);
-	// TODO: calc_integrals
-	model->calc_integral();
-
-	model->t    = model->h_epoch[0];
-	model->tout = model->t;
-
-	param->start_time = model->t;
-	// TODO: transform time variables in opt
-	param->stop_time = param->start_time + param->simulation_length;
-
+//	
+//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
+//	model->load(path);
+//	// TODO: calc_integrals
+//	model->calc_integral();
+//
+//	model->t    = model->h_epoch[0];
+//	model->tout = model->t;
+//
+//	// TODO: transform time variables in opt
+//	param->stop_time = param->start_time + param->simulation_length;
+//
 	return model;
 }
 

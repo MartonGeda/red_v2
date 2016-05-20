@@ -96,7 +96,7 @@ string get_extension(const string& path)
 	return result;
 }
 
-data_rep_t get_data_repres(const std::string& path)
+data_rep_t get_data_repres(const string& path)
 {
 	data_rep_t repres;
 	string ext = file::get_extension(path);
@@ -120,7 +120,7 @@ uint32_t load_ascii_file(const string& path, string& result)
 {
 	uint32_t n_line = 0;
 
-	std::ifstream file(path.c_str(), ifstream::in);
+	ifstream file(path.c_str(), ifstream::in);
 	if (file)
 	{
 		string str;
@@ -223,7 +223,7 @@ void log_start(ostream& sout, int argc, const char** argv, const char** env, str
 	log_start(sout, argc, argv, env, params);
 	if (print_to_screen)
 	{
-		log_start(std::cout, argc, argv, env, params);
+		log_start(cout, argc, argv, env, params);
 	}
 }
 
@@ -232,7 +232,7 @@ void log_message(ostream& sout, string msg, bool print_to_screen)
 	sout << tools::get_time_stamp(false) << SEP << msg << endl;
 	if (print_to_screen && sout != cout)
 	{
-		std::cout << tools::get_time_stamp(false) << SEP << msg << endl;
+		cout << tools::get_time_stamp(false) << SEP << msg << endl;
 	}
 }
 
@@ -501,7 +501,7 @@ void load_data_info_record_binary(ifstream& input, var_t& t, var_t& dt, n_object
 	*n_bodies = new n_objects_t(ns, ngp, nrp, npp, nspl, npl, ntp);
 }
 
-void load_data_record_ascii(ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
+void load_data_record_ascii(ifstream& input, string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
 {
 	int	type = 0;
 	string	buffer;
@@ -536,7 +536,7 @@ void load_data_record_ascii(ifstream& input, std::string& name, pp_disk_t::param
 	r->w = v->w = 0.0;
 }
 
-void load_data_record_binary(ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
+void load_data_record_binary(ifstream& input, string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
 {
 	char buffer[30];
 	memset(buffer, 0, sizeof(buffer));
@@ -549,6 +549,66 @@ void load_data_record_binary(ifstream& input, std::string& name, pp_disk_t::para
 
 	name = buffer;
 }
+
+namespace tbp1D
+{
+void print_solution_info_ascii(ofstream& sout, ttt_t t, ttt_t dt)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+    sout << setw(VAR_T_W) << t << SEP     /* time of the record [day] (double)    */
+		 << setw(VAR_T_W) << dt << endl;  /* next timestep [day]      (double)    */
+	sout.flush();
+}
+
+void print_solution_info_binary(std::ofstream& sout, ttt_t t, ttt_t dt)
+{
+	sout.write((char*)&(t), sizeof(ttt_t));   /* time of the record [day] (double)    */
+	sout.write((char*)&(dt), sizeof(ttt_t));  /* next timestep [day]      (double)    */
+}
+
+void print_solution_data_ascii(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+	for (uint32_t i = 0; i < n_obj; i++)
+    {
+		sout << setw(INT_T_W) << h_md[i].id << SEP;
+		// Print the parameters for each object
+		for (uint16_t j = 0; j < n_ppo; j++)
+		{
+			uint32_t param_idx = i * n_ppo + j;
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+		}
+		// Print the variables for each object
+		for (uint16_t j = 0; j < n_vpo; j++)
+		{
+			uint32_t var_idx = i * n_vpo + j;
+			sout << setw(VAR_T_W) << h_y[var_idx];
+			if (j < n_vpo - 1)
+			{
+				sout << SEP;
+			}
+			else
+			{
+				sout << endl;
+			}
+		}
+	}
+	sout.flush();
+}
+
+void print_solution_data_binary(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	throw string("The print_result_binary() is not implemented.");
+}
+} /* tbp1D */
+
+
 
 } /* file */
 } /* redutil2 */

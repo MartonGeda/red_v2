@@ -45,6 +45,7 @@ public:
 private:
 	void create_default();
 	void parse(int argc, const char** argv);
+    void get_solution_path(std::string& path_si, std::string &path_sd);
 
 	void print_usage();
 };

@@ -11,11 +11,17 @@ using namespace std;
 using namespace redutil2;
 
 
-tbp1D::tbp1D(uint16_t n_ppo, comp_dev_t comp_dev) :
+tbp1D::tbp1D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(1, 1, 2, n_ppo, comp_dev)
 {
 	initialize();
 	allocate_storage();
+
+    load_solution_info(path_si);
+    load_solution_data(path_sd);
+
+    calc_integral();
+    tout = t;
 }
 
 tbp1D::~tbp1D()
@@ -99,7 +105,47 @@ void tbp1D::gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t
 	throw string("The gpu_calc_dy() is not implemented.");
 }
 
-void tbp1D::load(string& path)
+void tbp1D::load_solution_info(string& path)
+{
+	ifstream input;
+
+	cout << "Loading " << path << " ";
+
+	data_rep_t repres = file::get_data_repres(path);
+	switch (repres)
+	{
+	case DATA_REPRESENTATION_ASCII:
+		input.open(path.c_str(), ios::in);
+		if (input) 
+		{
+			input >> t >> dt;
+		}
+		else 
+		{
+			throw string("Cannot open " + path + ".");
+		}
+		break;
+	case DATA_REPRESENTATION_BINARY:
+		input.open(path.c_str(), ios::in | ios::binary);
+		if (input) 
+		{
+    		input.read((char*)&t, sizeof(ttt_t));
+	        input.read((char*)&dt, sizeof(ttt_t));
+		}
+		else 
+		{
+			throw string("Cannot open " + path + ".");
+		}
+		break;
+	default:
+		throw string("Parameter 'repres' is out of range.");
+	}
+	input.close();
+
+	cout << " done" << endl;
+}
+
+void tbp1D::load_solution_data(string& path)
 {
 	ifstream input;
 
@@ -150,17 +196,6 @@ void tbp1D::load_ascii(ifstream& input)
 
 void tbp1D::load_ascii_record(ifstream& input, ttt_t* _t, tbp1D_t::metadata_t *md, tbp1D_t::param_t* p, var_t* x, var_t* vx)
 {
-	string name;
-
-	// epoch
-	input >> *_t;
-	// name
-	input >> name;
-	if (name.length() > 30)
-	{
-		name = name.substr(0, 30);
-	}
-	obj_names.push_back(name);
 	// id
 	input >> md->id;
 	// mu = k^2*(m1 + m2)
@@ -176,32 +211,32 @@ void tbp1D::load_binary(ifstream& input)
 	throw string("The load_binary() is not implemented.");
 }
 
-void tbp1D::print_solution(std::string& path, data_rep_t repres)
+void tbp1D::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
 {
 	ofstream sout;
 
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path.c_str(), ios::out | ios::app);
+		sout.open(path_si.c_str(), ios::out | ios::app);
 		if (sout)
 		{
-			print_solution_ascii(sout);
+            file::tbp1D::print_solution_data_ascii(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
 		}
 		else
 		{
-			throw string("Cannot open " + path + ".");
+			throw string("Cannot open " + path_si + ".");
 		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
+		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
 		if (sout)
 		{
-			print_solution_binary(sout);
+            file::tbp1D::print_solution_data_binary(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
 		}
 		else
 		{
-			throw string("Cannot open " + path + ".");
+			throw string("Cannot open " + path_si + ".");
 		}
 		break;
 	default:
@@ -210,49 +245,49 @@ void tbp1D::print_solution(std::string& path, data_rep_t repres)
 	sout.close();
 }
 
-void tbp1D::print_solution_ascii(ofstream& sout)
-{
-	sout.precision(16);
-	sout.setf(ios::right);
-	sout.setf(ios::scientific);
-
-	for (uint32_t i = 0; i < n_obj; i++)
-    {
-		uint32_t orig_idx = h_md[i].id - 1;
-
-		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
-			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
-		// Print the metadata for each object
-        << setw(INT_T_W) << h_md[i].id << SEP;
-
-		// Print the parameters for each object
-		for (uint16_t j = 0; j < n_ppo; j++)
-		{
-			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
-		}
-		// Print the variables for each object
-		for (uint16_t j = 0; j < n_vpo; j++)
-		{
-			uint32_t var_idx = i * n_vpo + j;
-			sout << setw(VAR_T_W) << h_y[var_idx];
-			if (j < n_vpo - 1)
-			{
-				sout << SEP;
-			}
-			else
-			{
-				sout << endl;
-			}
-		}
-	}
-	sout.flush();
-}
-
-void tbp1D::print_solution_binary(ofstream& sout)
-{
-	throw string("The print_result_binary() is not implemented.");
-}
+//void tbp1D::print_solution_ascii(ofstream& sout)
+//{
+//	sout.precision(16);
+//	sout.setf(ios::right);
+//	sout.setf(ios::scientific);
+//
+//	for (uint32_t i = 0; i < n_obj; i++)
+//    {
+//		uint32_t orig_idx = h_md[i].id - 1;
+//
+//		sout << setw(VAR_T_W) << t << SEP                       /* time of the record [day] (double)           */
+//			 << setw(     30) << obj_names[orig_idx] << SEP     /* name of the body         (string = 30 char) */ 
+//		// Print the metadata for each object
+//        << setw(INT_T_W) << h_md[i].id << SEP;
+//
+//		// Print the parameters for each object
+//		for (uint16_t j = 0; j < n_ppo; j++)
+//		{
+//			uint32_t param_idx = i * n_ppo + j;
+//			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+//		}
+//		// Print the variables for each object
+//		for (uint16_t j = 0; j < n_vpo; j++)
+//		{
+//			uint32_t var_idx = i * n_vpo + j;
+//			sout << setw(VAR_T_W) << h_y[var_idx];
+//			if (j < n_vpo - 1)
+//			{
+//				sout << SEP;
+//			}
+//			else
+//			{
+//				sout << endl;
+//			}
+//		}
+//	}
+//	sout.flush();
+//}
+//
+//void tbp1D::print_solution_binary(ofstream& sout)
+//{
+//	throw string("The print_result_binary() is not implemented.");
+//}
 
 void tbp1D::print_integral(string& path)
 {

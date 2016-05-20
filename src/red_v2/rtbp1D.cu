@@ -162,13 +162,6 @@ void rtbp1D::load_ascii_record(ifstream& input, ttt_t* _t, tbp1D_t::metadata_t *
 
 	// epoch
 	input >> *_t;
-	// name
-	input >> name;
-	if (name.length() > 30)
-	{
-		name = name.substr(0, 30);
-	}
-	obj_names.push_back(name);
 	// id
 	input >> md->id;
 	// mu = k^2*(m1 + m2)
@@ -184,32 +177,32 @@ void rtbp1D::load_binary(ifstream& input)
 	throw string("The load_binary() is not implemented.");
 }
 
-void rtbp1D::print_solution(std::string& path, data_rep_t repres)
+void rtbp1D::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
 {
 	ofstream sout;
 
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path.c_str(), ios::out | ios::app);
+		sout.open(path_si.c_str(), ios::out | ios::app);
 		if (sout)
 		{
 			print_solution_ascii(sout);
 		}
 		else
 		{
-			throw string("Cannot open " + path + ".");
+			throw string("Cannot open " + path_si + ".");
 		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path.c_str(), ios::out | ios::app | ios::binary);
+		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
 		if (sout)
 		{
 			print_solution_binary(sout);
 		}
 		else
 		{
-			throw string("Cannot open " + path + ".");
+			throw string("Cannot open " + path_si + ".");
 		}
 		break;
 	default:
@@ -230,28 +223,25 @@ void rtbp1D::print_solution_ascii(ofstream& sout)
 
 	for (uint32_t i = 0; i < n_obj; i++)
     {
-		uint32_t orig_idx = h_md[i].id - 1;
-
 		sout << setw(VAR_T_W) << t << SEP                       /* 1  independent variable     (double)           */
-			 << setw(     30) << obj_names[orig_idx] << SEP     /* 2  name of the body         (string = 30 char) */ 
 		// Print the metadata for each object
-        << setw(INT_T_W) << h_md[i].id << SEP;                  /* 3  id of the body           (int32_t)          */ 
+        << setw(INT_T_W) << h_md[i].id << SEP;                  /* 2  id of the body           (int32_t)          */ 
 
 		// Print the parameters for each object
 		for (uint16_t j = 0; j < n_ppo; j++)
 		{
 			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;     /* 4 mu of the problem        (double)            */
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;     /* 3 mu of the problem        (double)            */
 		}
 		// Print the regularized variables for each object
-		for (uint16_t j = 0; j < n_vpo; j++)                    /* 5 u (reg. coordinate) of the object  (double)  */
-		{                                                       /* 6 v (reg. velocity) of the object    (double)  */
-			uint32_t var_idx = i * n_vpo + j;                   /* 7 s (real time of the problem)       (double)  */
+		for (uint16_t j = 0; j < n_vpo; j++)                    /* 4 u (reg. coordinate) of the object  (double)  */
+		{                                                       /* 5 v (reg. velocity) of the object    (double)  */
+			uint32_t var_idx = i * n_vpo + j;                   /* 6 s (real time of the problem)       (double)  */
 			sout << setw(VAR_T_W) << h_y[var_idx] << SEP;
 		}
 		// Print the descartes non-regularized variables for each object
-		sout << setw(VAR_T_W) << x << SEP                       /* 8 x coordinate of the object         (double)  */
-			 << setw(VAR_T_W) << vx << endl;                    /* 9 vx velocity  of the object         (double)  */
+		sout << setw(VAR_T_W) << x << SEP                       /* 7 x coordinate of the object         (double)  */
+			 << setw(VAR_T_W) << vx << endl;                    /* 8 vx velocity  of the object         (double)  */
 	}
 	sout.flush();
 }

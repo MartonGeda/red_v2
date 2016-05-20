@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>-m tbp1D -ef -idir C:\Work\red.cuda.Results\v2.0\Test\tbp1DCopy -p parameters.txt -ic input.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-m tbp1D -ef -idir C:\Work\red.cuda.Results\v2.0\Test\tbp1DCopy -p parameters.txt -ic input.txt</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

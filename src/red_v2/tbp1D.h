@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 #include "ode.h"
 #include "type.h"
@@ -8,25 +9,23 @@ class tbp1D : public ode
 public:
 	//! Constructs a tbp1D object
 	/*!
+        \param path_si   the path of the file which conatins data about the initial conditions
+        \param path_sd   the path of the file which conatins the initial conditions
 		\param n_ppo     the number of parameters per object
 		\param comp_dev  the name of the executing device
 	*/
-	tbp1D(uint16_t n_ppo, comp_dev_t comp_dev);
+	tbp1D(std::string& path_si, std::string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev);
 	//! Destructor
 	~tbp1D();
 
-	//! Load the initial conditions from the hard disk
-	/*!
-		\param path   full file path of the file
-	*/
-	void load(std::string& path);
 
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
-		\param path   full file path where the solution will be printed
+		\param path_si  full file path where the info about the solution will be printed
+		\param path_sd  full file path where the the solution will be printed
 		\param repres indicates the data representation of the file, i.e. text or binary
 	*/
-	void print_solution(std::string& path, data_rep_t repres);
+	void print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres);
 
 	//! Print the integral(s) of the problem
 	/*!
@@ -47,7 +46,17 @@ private:
 	void deallocate_host_storage();
 	void deallocate_device_storage();
 
-	//! Load the initial conditions from the input stream (text mode)
+	//! Load data about the initial conditions
+	/*!
+		\param path   full file path of the file
+	*/
+    void load_solution_info(std::string& path);
+	//! Load the initial conditions from the hard disk
+	/*!
+		\param path   full file path of the file
+	*/
+	void load_solution_data(std::string& path);
+    //! Load the initial conditions from the input stream (text mode)
 	/*!
 		\param input   the input stream associated with the file containing the initial conditions
 	*/
@@ -72,12 +81,12 @@ private:
 	/*   
 		\param sout print the data to this stream
 	*/
-	void print_solution_ascii(std::ofstream& sout);
+	//void print_solution_ascii(std::ofstream& sout);
 	//! Print the solution for each object in binary format
 	/*!
 		\param sout print the data to this stream
 	*/
-	void print_solution_binary(std::ofstream& sout);
+	//void print_solution_binary(std::ofstream& sout);
 
 	void cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
 	void gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
