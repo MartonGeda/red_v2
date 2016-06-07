@@ -12,7 +12,7 @@ public:
 
 	void load(std::string& path);
 	void load_ascii(std::ifstream& input);
-	void load_ascii_record(std::ifstream& input, ttt_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p);
+	void load_ascii_record(std::ifstream& input, var_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p);
 	void load_binary(std::ifstream& input);
 
 	//! Print the solution (the numerical approximation of the solution)
@@ -40,7 +40,7 @@ public:
 	void print_integral(std::string& path);
 
 	void calc_integral();
-	void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
+	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
 //	void trans_to_descartes(var3_t& q1, var3_t& p1, var3_t& q2, var3_t& p2, var3_t& q3, var3_t& p3, const var4_t& Q1, const var4_t& P1, const var4_t& Q2, const var4_t& P2);
 //	void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2, const var3_t& pv2, const var3_t& qv3, const var3_t& pv3, var4_t& Q1, var4_t& P1, var4_t& Q2, var4_t& P2);
@@ -55,8 +55,8 @@ public:
 	void deallocate_host_storage();
 	void deallocate_device_storage();
 
-	void cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
-	void gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
+	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
+	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
 	var_t h;               //! Energy of the system
 

@@ -56,6 +56,12 @@
     <ClInclude Include="tbp3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tbp2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rtbp2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="int_euler.cu">
@@ -95,6 +101,12 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="threebody.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tbp2D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="rtbp2D.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

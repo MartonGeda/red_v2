@@ -12,9 +12,7 @@
 #include "threebody.h"
 
 #include "tools.h"
-
 #include "type.h"
-// DEBUG
 #include "constants.h"
 #include "redutil2.h"
 
@@ -82,9 +80,6 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 		throw string("Cannot open " + path + "!");
 	}
     sout.close();
-
-	//f->calc_integral(false, integrals[1]);
-	//f->print_integral_data(path_integral, integrals[1]);
 }
 
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
@@ -94,13 +89,10 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 	static string path_info           = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INFO] + ".txt");
 	static string path_event          = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_EVENT] + ".txt");
-    //static string path_solution_info  = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + ext);
-    //static string path_solution_data  = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + ext);
 	static string path_integral       = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL] + ".txt");
 	static string path_integral_event = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
 
-	ttt_t ps = 0.0;
-	ttt_t dt = 0.0;
+	var_t ps = 0.0;
 
 	clock_t T_CPU = 0;
 	clock_t dT_CPU = 0;
@@ -108,40 +100,38 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	time_t time_last_info = clock();
 	time_t time_last_dump = clock();
 
-
 	uint32_t n_print = 0;
-    if (0 < opt->in_fn[INPUT_NAME_START_FILES].length() && "data" == opt->in_fn[INPUT_NAME_IC_DATA].substr(0, 4))
+	// Check if it is a continuation of a previous simulation
+	size_t pos = opt->in_fn[INPUT_NAME_IC_DATA].find("solution.data_");
+	if (string::npos > pos)
 	{
-        string str = opt->in_fn[INPUT_NAME_IC_DATA];
-		size_t pos = str.find_first_of("_");
-		str = str.substr(pos + 1, OUTPUT_ORDINAL_NUMBER_WIDTH);
-		n_print = atoi(str.c_str());
-		n_print++;
+		// 14 is the length of the 'solution.data_' string
+		string str = opt->in_fn[INPUT_NAME_IC_DATA].substr(pos + 14, OUTPUT_ORDINAL_NUMBER_WIDTH);
+		n_print = atoi(str.c_str()) + 1;
 	}
     if (0 == n_print)
     {
         print_solution(n_print, opt, f, intgr, slog);
+		f->calc_integral();
+		f->print_integral(path_integral);	
     }
-	//f->print_solution(path_solution_info, path_solution_data, opt->param->output_data_rep);
-	f->calc_integral();
+
 	/* 
 	 * Main cycle
 	 */
-	while (f->t <= opt->param->stop_time)
+	while (f->t <= opt->param->simulation_length)
 	{
 		// make the integration step, and measure the time it takes
 		clock_t T0_CPU = clock();
-
-		dt = intgr->step();
+		f->dt = intgr->step();
 		dT_CPU = (clock() - T0_CPU);
 		T_CPU += dT_CPU;
-		ps += fabs(dt);
+		ps += fabs(f->dt);
 
 		if (opt->param->output_interval <= fabs(ps))
 		{
 			ps = 0.0;
             print_solution(n_print, opt, f, intgr, slog);
-			//f->print_solution(path_solution_info, path_solution_data, opt->param->output_data_rep);
 			f->calc_integral();
 			f->print_integral(path_integral);	
 		}
@@ -159,8 +149,7 @@ int main(int argc, const char** argv, const char** env)
 	time_t start = time(NULL);
 
 	ofstream* slog = 0x0;
-	ode*         f = 0x0;
-	options*   opt = 0x0;
+	//options*   opt = 0x0;
 
 	//matrix4_t m = {{10,8,10,7},{1,9,10,7},{8,8,4,7},{2,8,1,3}};
 	//var4_t v = {4,10,1,5};
@@ -168,26 +157,26 @@ int main(int argc, const char** argv, const char** env)
 	//matrix4_t l = tools::calc_matrix_transpose(n);
 	//var4_t u = tools::calc_matrix_vector_product(m,v);
 
-	var3_t qv1 = {-8.98410183670583e-09,	-9.96565986672290e-09,	0};
-	var3_t qv2 = {0.790071598004156,   0.876376842255768,                   0};
-	var3_t qv3 = {0.790015741877597,   0.876342937103978 ,                  0};
-	var3_t pv1 = {1.35584617114928e-10,	-1.18154635090028e-10,	0};
-	var3_t pv2 = {-0.012137023259470 * 5.685826099573812e-09,   0.010261361613838 * 5.685826099573812e-09, 0};
-	var3_t pv3 = {-0.011709048488151 * 5.685826099573812e-09,   0.010519195691438 * 5.685826099573812e-09, 0};
+	//var3_t qv1 = {-8.98410183670583e-09,	-9.96565986672290e-09,	0};
+	//var3_t qv2 = {0.790071598004156,   0.876376842255768,                   0};
+	//var3_t qv3 = {0.790015741877597,   0.876342937103978 ,                  0};
+	//var3_t pv1 = {1.35584617114928e-10,	-1.18154635090028e-10,	0};
+	//var3_t pv2 = {-0.012137023259470 * 5.685826099573812e-09,   0.010261361613838 * 5.685826099573812e-09, 0};
+	//var3_t pv3 = {-0.011709048488151 * 5.685826099573812e-09,   0.010519195691438 * 5.685826099573812e-09, 0};
 
 	// DEBUG
-	pv1.x /= constants::Gauss, pv1.y /= constants::Gauss, pv1.z /= constants::Gauss;
-	pv2.x /= constants::Gauss, pv2.y /= constants::Gauss, pv2.z /= constants::Gauss;
-	pv3.x /= constants::Gauss, pv3.y /= constants::Gauss, pv3.z /= constants::Gauss;
+	//pv1.x /= constants::Gauss, pv1.y /= constants::Gauss, pv1.z /= constants::Gauss;
+	//pv2.x /= constants::Gauss, pv2.y /= constants::Gauss, pv2.z /= constants::Gauss;
+	//pv3.x /= constants::Gauss, pv3.y /= constants::Gauss, pv3.z /= constants::Gauss;
 
-	var4_t Q1,Q2,P1,P2;
-	
-	tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
-	tools::trans_to_descartes(1,5.685826099573812e-09,5.685826099573812e-09,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
+	//var4_t Q1,Q2,P1,P2;
+	//
+	//tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
+	//tools::trans_to_descartes(1,5.685826099573812e-09,5.685826099573812e-09,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
 
 	try
 	{
-		opt = new options(argc, argv);
+		options* opt = new options(argc, argv);
 		string prefix = create_prefix(opt);
 		string path_log = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_LOG]) + ".txt";
 		slog = new ofstream(path_log.c_str(), ios::out | ios::app);
@@ -197,41 +186,14 @@ int main(int argc, const char** argv, const char** env)
 		}
 		file::log_start(*slog, argc, argv, env, opt->param->get_data(), opt->print_to_screen);
 
-		switch (opt->dyn_model)
-		{
-		case DYN_MODEL_TBP1D:
-			f = opt->create_tbp1D();
-			break;
-		case DYN_MODEL_RTBP1D:
-			f = opt->create_rtbp1D();
-			break;
-		case DYN_MODEL_TBP3D:
-			f = opt->create_tbp3D();
-			break;
-		case DYN_MODEL_RTBP3D:
-			f = opt->create_rtbp3D();
-			break;
-		case DYN_MODEL_THREEBODY:
-			f = opt->create_threebody();
-			break;
-		default:
-			throw string("Invalid dynamical model.");
-		}
-
-		// TODO!!!!!
-		//
-		ttt_t dt = min(3.0e-2, opt->param->output_interval);
-		//
-		// TODO!!!!!
-
-		integrator *intgr = opt->create_integrator(*f, dt);
+		ode *f = opt->create_model();
+		integrator *intgr = opt->create_integrator(*f, f->dt);
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies
 		intgr->set_dt_min(1.0e-20); // day
 		intgr->set_max_iter(10);
 
 		run_simulation(opt, f, intgr, *slog);
-
 	} /* try */
 	catch (const string& msg)
 	{
@@ -239,7 +201,7 @@ int main(int argc, const char** argv, const char** env)
 		{
 			file::log_message(*slog, "Error: " + msg, false);
 		}
-		cerr << "\nError: " << msg << endl;
+		cerr << "Error: " << msg << endl;
 	}
 
 	if (0x0 != slog)

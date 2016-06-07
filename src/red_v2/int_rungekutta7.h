@@ -12,13 +12,13 @@ public:
 	static var_t a[];
 	static var_t b[];
 	static var_t bh[];
-	static ttt_t c[];
+	static var_t c[];
 	static uint16_t a_idx[];
 
-	int_rungekutta7(ode& f, ttt_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
+	int_rungekutta7(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
 	~int_rungekutta7();
 
-	ttt_t step();
+	var_t step();
 
 private:
 	void calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var);

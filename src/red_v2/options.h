@@ -15,13 +15,15 @@ public:
 	options(int argc, const char** argv);
 	~options();
 
-	ode* create_tbp1D();
-	ode* create_rtbp1D();
-	ode* create_tbp3D();
-	ode* create_rtbp3D();
-	ode* create_threebody();
+	ode* create_model();
 
-	integrator* create_integrator(ode& f, ttt_t dt);
+	//ode* create_tbp1D();
+	//ode* create_rtbp1D();
+	//ode* create_tbp3D();
+	//ode* create_rtbp3D();
+	//ode* create_threebody();
+
+	integrator* create_integrator(ode& f, var_t dt);
 	
 	dyn_model_t dyn_model;
 

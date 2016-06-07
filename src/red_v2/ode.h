@@ -47,7 +47,7 @@ public:
 
 	void swap();
 
-	virtual void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy) = 0;
+	virtual void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;
 
 	//virtual void print_solution_info(std::string& path, data_rep_t repres) = 0;
@@ -55,9 +55,9 @@ public:
 	virtual void print_integral(std::string& path) = 0;
 
 
-	ttt_t t;              //! Independent variable (e.g. time or fictitious time)
-	ttt_t tout;           //! Independent variable at the end of the integration step
-	ttt_t dt;             //! Step for the integrator
+	var_t t;              //! Independent variable (e.g. time or fictitious time)
+	var_t tout;           //! Independent variable at the end of the integration step
+	var_t dt;             //! Step for the integrator
 
 	var_t* h_y;           //! Host vector (size of n_var) of the dependent variables at t
 	var_t* h_yout;        //! Host vector (size of n_var) of the dependent variables at tout
@@ -84,4 +84,6 @@ public:
 	dim3 grid;            //! Defines the grid of the blocks of the current execution
 	dim3 block;           //! Defines the block of the threads of the current execution
 	uint16_t n_tpb;       //! Holds the number of threads per block
+
+	integral_t integral;  //! Holds the classical integrals 
 };

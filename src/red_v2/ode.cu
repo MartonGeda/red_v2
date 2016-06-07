@@ -40,6 +40,7 @@ void ode::initialize()
 {
 	t      = 0.0;
 	tout   = 0.0;
+	dt     = 0.0;
 
 	h_y    = 0x0;
 	h_yout = 0x0;
@@ -55,6 +56,12 @@ void ode::initialize()
 	p	   = 0x0;
 
 	n_tpb  = 0;
+
+	var3_t zero = {0, 0, 0};
+	integral.h0 = integral.h = 0;
+	integral.c0 = integral.c = zero;
+	integral.R0 = integral.R = zero;
+	integral.V0 = integral.V = zero;
 }
 
 void ode::allocate_storage(uint32_t n_var, uint32_t n_par)

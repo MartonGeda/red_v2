@@ -13,17 +13,10 @@
 #define __BUILTIN_ALIGN__
 #endif
 
-//! Type of time variables
-typedef double ttt_t;
-//! Type of variables
-typedef double var_t;
-//! Type of boolean variables
-typedef bool   bool_t;
-//! Type of integer tuples variables
-typedef int2   int2_t;
-//! Type of unsigned integer tuples variables
-typedef uint2  uint2_t;
-//! Type of unsigned char variables
+typedef double        var_t;
+typedef bool          bool_t;
+typedef int2          int2_t;
+typedef uint2         uint2_t;
 typedef unsigned char uchar_t;
 
 typedef enum copy_direction
@@ -36,9 +29,11 @@ typedef enum copy_direction
 typedef enum dyn_model
 		{
 			DYN_MODEL_TBP1D,
+			DYN_MODEL_TBP2D,
 			DYN_MODEL_TBP3D,
 
 			DYN_MODEL_RTBP1D,
+			DYN_MODEL_RTBP2D,
 			DYN_MODEL_RTBP3D,
 
 			DYN_MODEL_THREEBODY,
@@ -212,8 +207,8 @@ typedef struct orbelem
 
 typedef struct ode_data
 {
-	ttt_t t;                       //! Current time (the ODE variables in y are are valid for this time)
-	ttt_t tout;                    //! Time at the end of the integration step (the ODE variables in yout are are valid for this time)
+	var_t t;                       //! Current time (the ODE variables in y are are valid for this time)
+	var_t tout;                    //! Time at the end of the integration step (the ODE variables in yout are are valid for this time)
 
 	std::vector<var_t*>   y;	   //!< Vectors of initial position and velocity of the bodies on the host (either in the DEVICE or HOST memory)
 	std::vector<var_t*>   yout;    //!< Vectors of ODE variables at the end of the step (at time tout) (either in the DEVICE or HOST memory)
@@ -257,6 +252,17 @@ typedef struct ode_data
 	}
 } ode_data_t;
 
+typedef struct integral
+{
+	var_t h0;            //! Energy of the system at the beginning
+	var_t h;             //! Energy of the system
+	var3_t c0;           //! Angular momentum the system at the beginning
+	var3_t c;            //! Angular momentum the system
+	var3_t R0;           //! Position of the system's barycenter at the beginning
+	var3_t R;            //! Position of the system's barycenter
+	var3_t V0;           //! Velocity of the system's barycenter at the beginning
+	var3_t V;            //! Velocity of the system's barycenter
+} integral_t;
 
 namespace tbp1D_t
 {
@@ -269,11 +275,6 @@ namespace tbp1D_t
 	{
 		var_t mu;
 	} param_t;
-
-	typedef struct integral
-	{
-		var_t h;
-	} integral_t;
 } /* namespace tbp1D_t */
 
 namespace tbp3D_t
@@ -366,25 +367,25 @@ namespace pp_disk_t
 
 	typedef struct sim_data
 	{
-		std::vector<var4_t*>	 y;				//!< Vectors of initial position and velocity of the bodies on the host (either in the DEVICE or HOST memory)
-		std::vector<var4_t*>	 yout;			//!< Vectors of ODE variables at the end of the step (at time tout) (either in the DEVICE or HOST memory)
+		std::vector<var3_t*>	 y;				//!< Vectors of initial position and velocity of the bodies on the host (either in the DEVICE or HOST memory)
+		std::vector<var3_t*>	 yout;			//!< Vectors of ODE variables at the end of the step (at time tout) (either in the DEVICE or HOST memory)
 		param_t*		 p;   			        //!< Vector of body parameters (either in the DEVICE or HOST memory)
 		body_metadata_t* body_md; 		        //!< Vector of additional body parameters (either in the DEVICE or HOST memory)
-		ttt_t*			 epoch;			        //!< Vector of epoch of the bodies (either in the DEVICE or HOST memory)
+		var_t*			 epoch;			        //!< Vector of epoch of the bodies (either in the DEVICE or HOST memory)
 		orbelem_t*		 oe;			        //!< Vector of of the orbital elements (either in the DEVICE or HOST memory)
 
-		std::vector<var4_t*>	 d_y;			//!< Device vectors of ODE variables at the beginning of the step (at time t)
-		std::vector<var4_t*>	 d_yout;		//!< Device vectors of ODE variables at the end of the step (at time tout)
+		std::vector<var3_t*>	 d_y;			//!< Device vectors of ODE variables at the beginning of the step (at time t)
+		std::vector<var3_t*>	 d_yout;		//!< Device vectors of ODE variables at the end of the step (at time tout)
 		param_t*		 d_p;			        //!< Device vector of body parameters
 		body_metadata_t* d_body_md; 	        //!< Device vector of additional body parameters
-		ttt_t*			 d_epoch;		        //!< Device vector of epoch of the bodies
+		var_t*			 d_epoch;		        //!< Device vector of epoch of the bodies
 		orbelem_t*		 d_oe;			        //!< Device vector of the orbital elements
 
-		std::vector<var4_t*>	 h_y;			//!< Host vectors of initial position and velocity of the bodies on the host
-		std::vector<var4_t*>	 h_yout;		//!< Host vectors of ODE variables at the end of the step (at time tout)
+		std::vector<var3_t*>	 h_y;			//!< Host vectors of initial position and velocity of the bodies on the host
+		std::vector<var3_t*>	 h_yout;		//!< Host vectors of ODE variables at the end of the step (at time tout)
 		param_t*		 h_p;			        //!< Host vector of body parameters
 		body_metadata_t* h_body_md; 	        //!< Host vector of additional body parameters
-		ttt_t*			 h_epoch;		        //!< Host vector of epoch of the bodies
+		var_t*			 h_epoch;		        //!< Host vector of epoch of the bodies
 		orbelem_t*		 h_oe;			        //!< Host vector of the orbital elements
 
 		sim_data()
@@ -400,24 +401,24 @@ namespace pp_disk_t
 	{
 		event_name_t event_name;       //!< Name of the event
 
-		ttt_t	t;                     //!< Time of the event
+		var_t	t;                     //!< Time of the event
 		var_t	d;                     //!< distance of the bodies
 
 		int id1;                       //!< Id of the survivor
 		uint32_t idx1;                 //!< Index of the survivor
 		param_t p1;                    //!< Parameters of the survivor before the event
-		var4_t	r1;                    //!< Position of survisor
-		var4_t	v1;                    //!< Velocity of survisor
+		var3_t	r1;                    //!< Position of survisor
+		var3_t	v1;                    //!< Velocity of survisor
 
 		int		id2;                   //!< Id of the merger
 		uint32_t idx2;                 //!< Index of the merger
 		param_t p2;                    //!< Parameters of the merger before the event
-		var4_t	r2;                    //!< Position of merger
-		var4_t	v2;                    //!< Velocity of merger
+		var3_t	r2;                    //!< Position of merger
+		var3_t	v2;                    //!< Velocity of merger
 
 		param_t ps;                    //!< Parameters of the survivor after the event
-		var4_t	rs;                    //!< Position of survivor after the event
-		var4_t	vs;                    //!< Velocity of survivor after the event
+		var3_t	rs;                    //!< Position of survivor after the event
+		var3_t	vs;                    //!< Velocity of survivor after the event
 
 		event_data()
 		{
@@ -429,7 +430,7 @@ namespace pp_disk_t
 			idx1 = idx2 = 0;
 				
 			param_t p_zero = { 0.0, 0.0, 0.0, 0.0 };
-			var4_t v_zero =  { 0.0, 0.0, 0.0, 0.0 };
+			var3_t v_zero =  { 0.0, 0.0, 0.0 };
 
 			p1 = p2 = ps = p_zero;
 			r1 = r2 = rs = v_zero;
@@ -452,9 +453,9 @@ typedef struct analytic_gas_disk_params
 
 			gas_decrease_t gas_decrease;  //!< The decrease type for the gas density
 
-			ttt_t t0;                     //!< Time when the decrease of gas starts (for linear and exponential)
-			ttt_t t1;                     //!< Time when the linear decrease of the gas ends
-			ttt_t e_folding_time;         //!< The exponent for the exponential decrease
+			var_t t0;                     //!< Time when the decrease of gas starts (for linear and exponential)
+			var_t t1;                     //!< Time when the linear decrease of the gas ends
+			var_t e_folding_time;         //!< The exponent for the exponential decrease
 
 			var_t alpha;                  //!< The viscosity parameter for the Shakura & Sunyaev model (constant)
 			var_t mean_molecular_weight;  //!< The mean molecular weight in units of the proton mass (constant)

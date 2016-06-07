@@ -161,12 +161,12 @@ void populate_data(uint32_t* n_bodies, pp_disk_t::sim_data_t *sim_data)
 	int id = 1;
 
 	// Create aliases
-	var4_t* r             = sim_data->h_y[0];
-	var4_t* v             = sim_data->h_y[1];
-	pp_disk_t::param_t* p           = sim_data->h_p;
-	orbelem_t* oe        = sim_data->h_oe;
+	var3_t* r             = sim_data->h_y[0];
+	var3_t* v             = sim_data->h_y[1];
+	pp_disk_t::param_t* p = sim_data->h_p;
+	orbelem_t* oe         = sim_data->h_oe;
 	pp_disk_t::body_metadata_t* bmd = sim_data->h_body_md;
-	ttt_t* epoch         = sim_data->h_epoch;
+	var_t* epoch         = sim_data->h_epoch;
 
 	int upper = n_bodies[BODY_TYPE_STAR];
 	for (idx = 0; idx < upper; idx++)
@@ -325,8 +325,8 @@ void populate_data(uint32_t* n_bodies, pp_disk_t::sim_data_t *sim_data)
 	{
 		// The mass of the central star
 		var_t m0 = sim_data->h_p[0].mass;
-		var4_t rVec = {0.0, 0.0, 0.0, 0.0};
-		var4_t vVec = {0.0, 0.0, 0.0, 0.0};
+		var3_t rVec = {0.0, 0.0, 0.0};
+		var3_t vVec = {0.0, 0.0, 0.0};
 
 		// The coordinates of the central star
 		sim_data->h_y[0][0] = rVec;
@@ -374,14 +374,14 @@ var_t get_total_mass(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 	return M0 ;
 }
 
-void calc_bc(uint32_t n, const pp_disk_t::sim_data_t *sim_data, var_t M0, var4_t* R0, var4_t* V0)
+void calc_bc(uint32_t n, const pp_disk_t::sim_data_t *sim_data, var_t M0, var3_t* R0, var3_t* V0)
 {
-	const var4_t* r = sim_data->h_y[0];
-	const var4_t* v = sim_data->h_y[1];
+	const var3_t* r = sim_data->h_y[0];
+	const var3_t* v = sim_data->h_y[1];
 	const pp_disk_t::param_t* p = sim_data->h_p;
 
-	R0->x = R0->y = R0->z = R0->w = 0.0;
-	V0->x = V0->y = V0->z = V0->w = 0.0;
+	R0->x = R0->y = R0->z = 0.0;
+	V0->x = V0->y = V0->z = 0.0;
 
 	for (int j = n - 1; j >= 0; j-- )
 	{
@@ -405,14 +405,14 @@ void calc_bc(uint32_t n, const pp_disk_t::sim_data_t *sim_data, var_t M0, var4_t
 void transform_to_bc(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
 	// Position and velocity of the system's barycenter
-	var4_t R0 = {0.0, 0.0, 0.0, 0.0};
-	var4_t V0 = {0.0, 0.0, 0.0, 0.0};
+	var3_t R0 = {0.0, 0.0, 0.0};
+	var3_t V0 = {0.0, 0.0, 0.0};
 
 	var_t M0 = get_total_mass(n, sim_data);
 	calc_bc(n, sim_data, M0, &R0, &V0);
 
-	var4_t* r = sim_data->h_y[0];
-	var4_t* v = sim_data->h_y[1];
+	var3_t* r = sim_data->h_y[0];
+	var3_t* v = sim_data->h_y[1];
 	// Transform the bodies coordinates and velocities
 	for (int j = n - 1; j >= 0; j--)
 	{
@@ -435,7 +435,7 @@ void transform_time(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 
 void transform_velocity(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
-	var4_t* v = sim_data->h_y[1];
+	var3_t* v = sim_data->h_y[1];
 	// Transform the bodies' velocities
 	for (uint32_t i = 0; i < n; i++)
 	{
@@ -514,9 +514,9 @@ var_t calc_dot_product(const var4_t& u, const var4_t& v)
     return (u.x * v.x + u.y * v.y + u.z * v.z);
 }
 
-var4_t calc_cross_product(const var4_t& u, const var4_t& v)
+var3_t calc_cross_product(const var3_t& u, const var3_t& v)
 {
-    var4_t result = {0.0, 0.0, 0.0, 0.0};
+    var3_t result = {0.0, 0.0, 0.0};
     
     result.x = u.y * v.z - u.z * v.y;
     result.y = u.z * v.x - u.x * v.z;
@@ -711,12 +711,12 @@ var_t calc_energy(var_t mu, const var4_t* r, const var4_t* v)
 	return calc_kinetic_energy(v) + calc_pot_energy(mu, r);
 }
 
-var4_t calc_angular_momentum(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
+var3_t calc_angular_momentum(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
-    var4_t result = {0.0, 0.0, 0.0, 0.0};
+    var3_t result = {0.0, 0.0, 0.0};
     
-	var4_t* r = sim_data->h_y[0];
-	var4_t* v = sim_data->h_y[1];
+	var3_t* r = sim_data->h_y[0];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -725,7 +725,7 @@ var4_t calc_angular_momentum(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 		{
 			continue;
 		}
-        var4_t c = calc_cross_product(r[i], v[i]);
+        var3_t c = calc_cross_product(r[i], v[i]);
         c.x *= p[i].mass; c.y *= p[i].mass; c.z *= p[i].mass;
 		result.x += c.x; result.y += c.y; result.z += c.z;
 	}
@@ -733,12 +733,12 @@ var4_t calc_angular_momentum(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 	return result;
 }
 
-var4_t calc_angular_momentum_CMU(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
+var3_t calc_angular_momentum_CMU(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
-    var4_t result = {0.0, 0.0, 0.0, 0.0};
+    var3_t result = {0.0, 0.0, 0.0};
     
-	var4_t* r = sim_data->h_y[0];
-	var4_t* v = sim_data->h_y[1];
+	var3_t* r = sim_data->h_y[0];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -747,8 +747,8 @@ var4_t calc_angular_momentum_CMU(uint32_t n, const pp_disk_t::sim_data_t *sim_da
 		{
 			continue;
 		}
-		var4_t vv = {v[i].x * constants::Gauss, v[i].y * constants::Gauss, v[i].z * constants::Gauss, 0.0};
-        var4_t c = calc_cross_product(r[i], vv);
+		var3_t vv = {v[i].x * constants::Gauss, v[i].y * constants::Gauss, v[i].z * constants::Gauss};
+        var3_t c = calc_cross_product(r[i], vv);
 
 		c.x *= p[i].mass; c.y *= p[i].mass; c.z *= p[i].mass;
 		result.x += c.x; result.y += c.y; result.z += c.z;
@@ -761,8 +761,8 @@ var_t calc_potential_energy(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
 	var_t result = 0.0;
 
-	var4_t* r = sim_data->h_y[0];
-	var4_t* v = sim_data->h_y[1];
+	var3_t* r = sim_data->h_y[0];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -793,8 +793,8 @@ var_t calc_potential_energy_CMU(uint32_t n, const pp_disk_t::sim_data_t *sim_dat
 {
 	var_t result = 0.0;
 
-	var4_t* r = sim_data->h_y[0];
-	var4_t* v = sim_data->h_y[1];
+	var3_t* r = sim_data->h_y[0];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -825,7 +825,7 @@ var_t calc_kinetic_energy(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
 	var_t result = 0.0;
 
-	var4_t* v = sim_data->h_y[1];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -844,7 +844,7 @@ var_t calc_kinetic_energy_CMU(uint32_t n, const pp_disk_t::sim_data_t *sim_data)
 {
 	var_t result = 0.0;
 
-	var4_t* v = sim_data->h_y[1];
+	var3_t* v = sim_data->h_y[1];
     pp_disk_t::param_t* p = sim_data->h_p;
 
     for (uint32_t i = 0; i < n; i++)
@@ -906,7 +906,7 @@ void kepler_equation_solver(var_t ecc, var_t mean, var_t eps, var_t* E)
 	}
 }
 
-void calc_phase(var_t mu, const orbelem_t* oe, var4_t* rVec, var4_t* vVec)
+void calc_phase(var_t mu, const orbelem_t* oe, var3_t* rVec, var3_t* vVec)
 {
     var_t ecc = oe->ecc;
 	var_t E = 0.0;
@@ -927,11 +927,11 @@ void calc_phase(var_t mu, const orbelem_t* oe, var4_t* rVec, var4_t* vVec)
     var_t ci = cos(oe->inc);
     var_t si = sin(oe->inc);
 
-    var4_t P;
+    var3_t P;
 	P.x = cw * cO - sw * sO * ci;
 	P.y = cw * sO + sw * cO * ci;
 	P.z = sw * si;
-    var4_t Q;
+    var3_t Q;
 	Q.x = -sw * cO - cw * sO * ci;
 	Q.y = -sw * sO + cw * cO * ci;
 	Q.z = cw * si;
@@ -1044,7 +1044,7 @@ void calc_oe(var_t mu, const var4_t* rVec, const var4_t* vVec, orbelem_t* oe)
 	oe->mean = M;
 }
 
-ttt_t calc_orbital_period(var_t mu, var_t a)
+var_t calc_orbital_period(var_t mu, var_t a)
 {
 	static var_t two_pi = 6.283185307179586;
 
@@ -1104,5 +1104,71 @@ void print_body_metadata(const pp_disk_t::body_metadata_t *b)
 	cout.setf(ios::scientific);
 	cout << setw(VAR_T_W) << b->mig_stop_at << endl;
 }
+
+
+namespace rtbp1D
+{
+// Calculate parametric coordinate and velocity
+void transform_x2u(var_t x, var_t vx, var_t& u, var_t& v)
+{
+	// TODO: what if x < 0 ?!
+    u = sqrt(x);         // u
+    v = 0.5* u * vx;     // u'
+}
+
+// Calculate descartes coordinate and velocity
+void transform_u2x(var_t u, var_t v, var_t& x, var_t& vx)
+{
+    x =  u*u;            // x       ÉB. p.85 Eq. (10.21)
+	// TODO: what if u = 0 ?!
+    vx = 2.0 * (v/u);    // vx
+}
+} /* namespace rtbp1D */
+
+namespace rtbp2D
+{
+//! Calculate parametric coordinate and velocity
+void transform_x2u(var2_t x, var2_t xd, var2_t& u, var2_t& up)
+{
+	var_t r = sqrt(SQR(x.x) + SQR(x.y));
+	// Because in this case d is larger -> u.y is larger and u.x is a result of a division by u.y
+	if (0 > x.x)
+	{
+		var_t d = 0.5 * (r - x.x);
+		u.y = sqrt(d);
+		u.x = x.y / (2.0*u.y);
+	}
+	else
+	{
+		var_t d = 0.5 * (r + x.x);
+		u.x = sqrt(d);
+		u.y = x.y / (2.0*u.x);
+	}
+
+	// Now it is possible to create the transpose of the Levi-Civita matrix
+	var_t LT[2][2];
+	LT[0][0] =  u.x, LT[0][1] = u.y;
+	LT[1][0] = -u.y, LT[1][1] = u.x;
+
+	var_t c = 1.0/(2.0 * (SQR(u.x) + SQR(u.y)));      // = 1/(2*r^2)
+	up.x = c * (LT[0][0] * xd.x + LT[0][1] * xd.y);
+	up.y = c * (LT[1][0] * xd.x + LT[1][1] * xd.y);
+}
+
+//! Calculate physical coordinate and velocity
+void transform_u2x(var2_t u, var2_t up, var2_t& x, var2_t& xd)
+{
+	var_t L[2][2];
+	L[0][0] = u.x, L[0][1] = -u.y;
+	L[1][0] = u.y, L[1][1] =  u.x;
+
+	x.x = L[0][0] * u.x + L[0][1] * u.y;
+	x.y = L[1][0] * u.x + L[1][1] * u.y;
+
+	xd.x = 2.0 * (L[0][0] * up.x + L[0][1] * up.y);
+	xd.y = 2.0 * (L[1][0] * up.x + L[1][1] * up.y);
+}
+} /* namespace rtbp2D */
+
 } /* tools */
 } /* redutil2 */

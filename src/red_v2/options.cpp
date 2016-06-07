@@ -10,8 +10,10 @@
 #include "int_rungekutta7.h"
 #include "parameter.h"
 #include "tbp1D.h"
-#include "rtbp1D.h"
+#include "tbp2D.h"
 #include "tbp3D.h"
+#include "rtbp1D.h"
+#include "rtbp2D.h"
 #include "rtbp3D.h"
 #include "threebody.h"
 
@@ -36,6 +38,8 @@ options::~options()
 
 void options::create_default()
 {
+	dyn_model           = DYN_MODEL_N;
+
 	test                = false;
 	verbose             = false;
 	print_to_screen     = false;
@@ -50,8 +54,8 @@ void options::create_default()
 	out_fn[OUTPUT_NAME_LOG]            = "log";
 	out_fn[OUTPUT_NAME_INFO]           = "info";
 	out_fn[OUTPUT_NAME_EVENT]          = "event";
-	out_fn[OUTPUT_NAME_SOLUTION_INFO]  = "solution_info";
-	out_fn[OUTPUT_NAME_SOLUTION_DATA]  = "solution_data";
+	out_fn[OUTPUT_NAME_SOLUTION_INFO]  = "solution.info";
+	out_fn[OUTPUT_NAME_SOLUTION_DATA]  = "solution.data";
 	out_fn[OUTPUT_NAME_INTEGRAL]       = "integral";
 	out_fn[OUTPUT_NAME_INTEGRAL_EVENT] = "integral_event";
 }
@@ -60,11 +64,14 @@ void options::parse(int argc, const char** argv)
 {
 	int i = 1;
 
+	if (1 >= argc)
+	{
+		throw string("Missing command line arguments. For help use -h.");
+	}
+
 	while (i < argc)
 	{
 		string p = argv[i];
-
-
 		if (     p == "-m")
 		{
 			i++;
@@ -73,6 +80,10 @@ void options::parse(int argc, const char** argv)
 			{
 				dyn_model = DYN_MODEL_TBP1D;
 			}
+			else if (value == "tbp2D")
+			{
+				dyn_model = DYN_MODEL_TBP2D;
+			}
 			else if (value == "tbp3D")
 			{
 				dyn_model = DYN_MODEL_TBP3D;
@@ -80,6 +91,10 @@ void options::parse(int argc, const char** argv)
 			else if (value == "rtbp1D")
 			{
 				dyn_model = DYN_MODEL_RTBP1D;
+			}
+			else if (value == "rtbp2D")
+			{
+				dyn_model = DYN_MODEL_RTBP2D;
 			}
 			else if (value == "rtbp3D")
 			{
@@ -181,9 +196,22 @@ void options::parse(int argc, const char** argv)
 		}
 		else
 		{
-			throw string("Invalid switch on command-line: " + p + ".");
+			throw string("Invalid switch on command line: " + p + ".");
 		}
 		i++;
+	}
+	// Check for obligatory arguments
+	if (0 == in_fn[INPUT_NAME_START_FILES].length())
+	{
+		throw string("Missing value for -i");
+	}
+	if (0 == in_fn[INPUT_NAME_PARAMETER].length())
+	{
+		throw string("Missing value for -p");
+	}
+	if (DYN_MODEL_N == dyn_model)
+	{
+		throw string("Missing value for -m");
 	}
 
 	if (0 == dir[DIRECTORY_NAME_OUT].length())
@@ -194,129 +222,85 @@ void options::parse(int argc, const char** argv)
 
 void options::get_solution_path(string& path_si, string &path_sd)
 {
-	if (0 < in_fn[INPUT_NAME_START_FILES].length())
+	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_START_FILES]);
+	ifstream file(path.c_str(), ifstream::in);
+	if (file)
 	{
-		string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_START_FILES]);
-		ifstream file(path.c_str(), ifstream::in);
-		if (file)
+		uint32_t n = 0;
+		string str;
+		while (getline(file, str))
 		{
-			uint32_t n = 0;
-			string str;
-			while (getline(file, str))
+			if (0 == n)
 			{
-				if (0 == n)
-				{
-                    in_fn[INPUT_NAME_IC_INFO] = str;
-				}
-				if (1 == n)
-				{
-                    in_fn[INPUT_NAME_IC_DATA] = str;
-				}
-				n++;
-			} 	
-			file.close();
-		}
-		else
-		{
-			throw string("The file '" + path + "' could not opened.");
-		}
+                in_fn[INPUT_NAME_IC_INFO] = str;
+			}
+			if (1 == n)
+			{
+                in_fn[INPUT_NAME_IC_DATA] = str;
+			}
+			n++;
+		} 	
+		file.close();
 	}
 	else
 	{
-		throw string("The -i option was not provided.");
+		throw string("The file '" + path + "' could not opened.");
 	}
     path_si = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_IC_INFO]);
     path_sd = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_IC_DATA]);
 }
 
-ode* options::create_tbp1D()
+ode* options::create_model()
 {
+	ode *model;
     string path_si;
     string path_sd;
 
     get_solution_path(path_si, path_sd);
-    tbp1D* model = new tbp1D(path_si, path_sd, 1, comp_dev);
-	
-	// TODO: transform time variables in opt
-	param->stop_time = model->t + param->simulation_length;
 
-	return model;
+	switch (dyn_model)
+	{
+	case DYN_MODEL_TBP1D:
+		{
+		    model = new tbp1D(path_si, path_sd, 1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_TBP2D:
+		{
+		    model = new tbp2D(path_si, path_sd, 1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_TBP3D:
+		{
+		    model = new tbp3D(1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_RTBP1D:
+		{
+		    model = new rtbp1D(path_si, path_sd, 1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_RTBP2D:
+		{
+		    model = new rtbp2D(path_si, path_sd, 1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_RTBP3D:
+		{
+		    model = new rtbp3D(1, comp_dev);
+			return model;
+		}
+	case DYN_MODEL_THREEBODY:
+		{
+	    	model = new threebody(1, comp_dev);
+			return model;
+		}
+	default:
+		throw string("Invalid dynamical model.");
+	}
 }
 
-ode* options::create_rtbp1D()
-{
-//    string path_si;
-//    string path_sd;
-//
-//    get_solution_path(path_si, path_sd);
-	rtbp1D* model = new rtbp1D(1, comp_dev);
-//
-//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-//	model->load(path);
-//	model->calc_integral();
-//
-//	model->tout = model->t;
-//
-//	// TODO: transform time variables in opt
-//	param->stop_time = param->start_time + param->simulation_length;
-//
-	return model;
-}
-
-ode* options::create_tbp3D()
-{
-	tbp3D* model = new tbp3D(1, comp_dev);
-//	
-//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-//	model->load(path);
-//	// TODO: calc_integrals
-//	model->calc_integral();
-//
-//	model->t    = model->h_epoch[0];
-//	model->tout = model->t;
-//
-//	// TODO: transform time variables in opt
-//	param->stop_time = param->start_time + param->simulation_length;
-//
-	return model;
-}
-
-ode* options::create_rtbp3D()
-{
-	rtbp3D* model = new rtbp3D(1, comp_dev);
-//	
-//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-//	model->load(path);
-//	model->calc_integral();
-//
-//	model->t    = model->h_epoch[0];
-//	model->tout = model->t;
-//
-//	// TODO: transform time variables in opt
-//	param->stop_time = param->start_time + param->simulation_length;
-//
-	return model;
-}
-
-ode* options::create_threebody() //TODO
-{
-	threebody* model = new threebody(1, comp_dev);
-//	
-//	string path = file::combine_path(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_DATA]);
-//	model->load(path);
-//	// TODO: calc_integrals
-//	model->calc_integral();
-//
-//	model->t    = model->h_epoch[0];
-//	model->tout = model->t;
-//
-//	// TODO: transform time variables in opt
-//	param->stop_time = param->start_time + param->simulation_length;
-//
-	return model;
-}
-
-integrator* options::create_integrator(ode& f, ttt_t dt)
+integrator* options::create_integrator(ode& f, var_t dt)
 {
 	integrator* intgr = 0x0;
 

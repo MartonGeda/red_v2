@@ -78,7 +78,7 @@ void threebody::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(h_epoch));
 }
 
-void threebody::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void threebody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (COMP_DEV_CPU == comp_dev)
 	{
@@ -92,7 +92,9 @@ void threebody::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t
 
 void threebody::calc_integral() // check!!!
 {
+	static bool first_call = true;
 	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
+
 	var3_t q1, q2, q3, p1, p2, p3;
 	const var4_t Q1 = {h_y[0], h_y[1], h_y[2], h_y[3]};
 	const var4_t Q2 = {h_y[4], h_y[5], h_y[6], h_y[7]};
@@ -112,9 +114,15 @@ void threebody::calc_integral() // check!!!
 	var_t u = -((p[0].m * p[2].m) / R1 + (p[1].m * p[2].m) / R2 + (p[0].m * p[1].m) / R);
 
 	h = k1+k2+k3 + u;
+
+	if (first_call)
+	{
+		integral.h0 = integral.h;
+		first_call = false;
+	}
 }
 
-void threebody::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void threebody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
 
@@ -201,7 +209,7 @@ void threebody::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, v
 	
 }
 
-void threebody::gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void threebody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	throw string("The gpu_calc_dy() is not implemented.");
 }
@@ -260,7 +268,7 @@ void threebody::load_ascii(ifstream& input)
 	//load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i], &h_y[i], &h_y[i+8]);
 }
 
-void threebody::load_ascii_record(ifstream& input, ttt_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p)
+void threebody::load_ascii_record(ifstream& input, var_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p)
 {
 	string name;
 

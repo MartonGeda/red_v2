@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>-odir C:\Work\red.cuda.Results\v2.0\Test\tbp1D -f input</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>-odir C:\Work\red.cuda.Results\v2.0\Test\rtbp2D -f input</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

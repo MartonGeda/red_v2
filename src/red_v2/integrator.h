@@ -10,7 +10,7 @@ class ode;
 class integrator
 {
 public:
-	integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev);
+	integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev);
 	~integrator();
 
 	//! Set the computing device to calculate the integration step
@@ -32,7 +32,7 @@ public:
 	void set_dt_min(var_t dt)      { dt_min = dt;          }
 	var_t get_dt_min()             { return dt_min;        }
 
-	virtual ttt_t step() = 0;
+	virtual var_t step() = 0;
 
 	ode& f;
 
@@ -48,9 +48,9 @@ protected:
 	dim3 grid;
 	dim3 block;
 
-	ttt_t t;					        //!< Independent variable (e.g. time or fictitious time)
-	ttt_t dt_try;                       //!< The size of the step to try (based on the previous successfull step dt_did)
-	ttt_t dt_did;                       //!< The size of the previous successfull step
+	var_t t;					        //!< Independent variable (e.g. time or fictitious time)
+	var_t dt_try;                       //!< The size of the step to try (based on the previous successfull step dt_did)
+	var_t dt_did;                       //!< The size of the previous successfull step
 
 	uint64_t n_tried_step;
 	uint64_t n_passed_step;

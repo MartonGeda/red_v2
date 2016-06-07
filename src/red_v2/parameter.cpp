@@ -27,7 +27,6 @@ parameter::parameter(string& dir, string& filename, bool verbose) :
 	}
 	file::load_ascii_file(path, data);
 	parse();
-	//stop_time = start_time + simulation_length;
 }
 
 parameter::~parameter() 
@@ -44,7 +43,6 @@ void parameter::create_default()
 	int_type           = INTEGRATOR_RUNGEKUTTAFEHLBERG78;
 	tolerance          = 1.0e-10;
 
-	stop_time          = 0.0;
 	simulation_length  = 0.0;
 	output_interval    = 0.0;
 

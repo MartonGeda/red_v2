@@ -16,7 +16,7 @@ var_t int_rungekutta2::a[] =
 // weights
 var_t int_rungekutta2::b[] = { 0.0, 1.0     };
 // nodes
-ttt_t int_rungekutta2::c[] = { 0.0, 1.0/2.0 };
+var_t int_rungekutta2::c[] = { 0.0, 1.0/2.0 };
 
 namespace rk2_kernel
 {
@@ -43,7 +43,7 @@ void int_rungekutta2::cpu_sum_vector(var_t* a, const var_t* b, var_t F, const va
 	}
 }
 
-int_rungekutta2::int_rungekutta2(ode& f, ttt_t dt, comp_dev_t comp_dev) :
+int_rungekutta2::int_rungekutta2(ode& f, var_t dt, comp_dev_t comp_dev) :
 	integrator(f, dt, false, 0.0, 2, comp_dev)
 {
 	name    = "Runge-Kutta2";
@@ -79,7 +79,7 @@ void int_rungekutta2::calc_ytemp(uint16_t stage)
 	}
 }
 
-ttt_t int_rungekutta2::step()
+var_t int_rungekutta2::step()
 {
 	if (COMP_DEV_GPU == comp_dev)
 	{

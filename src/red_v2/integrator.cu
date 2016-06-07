@@ -10,7 +10,7 @@
 using namespace std;
 using namespace redutil2;
 
-integrator::integrator(ode& f, ttt_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev) : 
+integrator::integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev) : 
 	f(f),
 	dt_try(dt),
 	adaptive(adaptive),

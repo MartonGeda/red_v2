@@ -236,7 +236,7 @@ void log_message(ostream& sout, string msg, bool print_to_screen)
 	}
 }
 
-void print_data_info_record_ascii_RED(ofstream& sout, ttt_t t, ttt_t dt, n_objects_t* n_bodies)
+void print_data_info_record_ascii_RED(ofstream& sout, var_t t, var_t dt, n_objects_t* n_bodies)
 {
 	static uint32_t int_t_w  =  8;
 	static uint32_t var_t_w  = 25;
@@ -253,10 +253,10 @@ void print_data_info_record_ascii_RED(ofstream& sout, ttt_t t, ttt_t dt, n_objec
 	}
 }
 
-void print_data_info_record_binary_RED(ofstream& sout, ttt_t t, ttt_t dt, n_objects_t* n_bodies)
+void print_data_info_record_binary_RED(ofstream& sout, var_t t, var_t dt, n_objects_t* n_bodies)
 {
-	sout.write((char*)&(t), sizeof(ttt_t));
-	sout.write((char*)&(dt), sizeof(ttt_t));
+	sout.write((char*)&(t), sizeof(var_t));
+	sout.write((char*)&(dt), sizeof(var_t));
 	for (uint32_t type = 0; type < BODY_TYPE_N; type++)
 	{
 		uint32_t n = n_bodies->get_n_active_by((body_type_t)type);
@@ -445,7 +445,7 @@ void print_oe_record(ofstream &sout, orbelem_t* oe, pp_disk_t::param_t *p)
 	sout.flush();
 }
 
-void print_oe_record(ofstream &sout, ttt_t epoch, orbelem_t* oe, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd)
+void print_oe_record(ofstream &sout, var_t epoch, orbelem_t* oe, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd)
 {
 	static int var_t_w  = 15;
 	static int int_t_w  = 7;
@@ -487,8 +487,8 @@ void load_data_info_record_binary(ifstream& input, var_t& t, var_t& dt, n_object
 	uint32_t ns, ngp, nrp, npp, nspl, npl, ntp;
 	ns = ngp = nrp = npp = nspl = npl = ntp = 0;
 
-	input.read((char*)&t, sizeof(ttt_t));
-	input.read((char*)&dt, sizeof(ttt_t));
+	input.read((char*)&t, sizeof(var_t));
+	input.read((char*)&dt, sizeof(var_t));
 
 	input.read((char*)&ns,   sizeof(ns));
 	input.read((char*)&ngp,  sizeof(ngp));
@@ -552,7 +552,7 @@ void load_data_record_binary(ifstream& input, string& name, pp_disk_t::param_t *
 
 namespace tbp1D
 {
-void print_solution_info_ascii(ofstream& sout, ttt_t t, ttt_t dt)
+void print_solution_info_ascii(ofstream& sout, var_t t, var_t dt)
 {
 	sout.precision(16);
 	sout.setf(ios::right);
@@ -563,10 +563,10 @@ void print_solution_info_ascii(ofstream& sout, ttt_t t, ttt_t dt)
 	sout.flush();
 }
 
-void print_solution_info_binary(std::ofstream& sout, ttt_t t, ttt_t dt)
+void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt)
 {
-	sout.write((char*)&(t), sizeof(ttt_t));   /* time of the record [day] (double)    */
-	sout.write((char*)&(dt), sizeof(ttt_t));  /* next timestep [day]      (double)    */
+	sout.write((char*)&(t), sizeof(var_t));   /* time of the record [day] (double)    */
+	sout.write((char*)&(dt), sizeof(var_t));  /* next timestep [day]      (double)    */
 }
 
 void print_solution_data_ascii(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
@@ -606,9 +606,181 @@ void print_solution_data_binary(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, 
 {
 	throw string("The print_result_binary() is not implemented.");
 }
-} /* tbp1D */
+} /* namespace tbp1D */
 
+namespace tbp2D
+{
+void print_solution_info_ascii(ofstream& sout, var_t t, var_t dt)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
 
+    sout << setw(VAR_T_W) << t << SEP     /* time of the record [day] (double)    */
+		 << setw(VAR_T_W) << dt << endl;  /* next timestep [day]      (double)    */
+	sout.flush();
+}
+
+void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt)
+{
+	sout.write((char*)&(t), sizeof(var_t));   /* time of the record [day] (double)    */
+	sout.write((char*)&(dt), sizeof(var_t));  /* next timestep [day]      (double)    */
+}
+
+void print_solution_data_ascii(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+	for (uint32_t i = 0; i < n_obj; i++)
+    {
+		sout << setw(INT_T_W) << h_md[i].id << SEP;
+		// Print the parameters for each object
+		for (uint16_t j = 0; j < n_ppo; j++)
+		{
+			uint32_t param_idx = i * n_ppo + j;
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+		}
+		// Print the variables for each object
+		for (uint16_t j = 0; j < n_vpo; j++)
+		{
+			uint32_t var_idx = i * n_vpo + j;
+			sout << setw(VAR_T_W) << h_y[var_idx];
+			if (j < n_vpo - 1)
+			{
+				sout << SEP;
+			}
+			else
+			{
+				sout << endl;
+			}
+		}
+	}
+	sout.flush();
+}
+
+void print_solution_data_binary(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	throw string("The print_result_binary() is not implemented.");
+}
+} /* namespace tbp2D */
+
+namespace rtbp1D
+{
+void print_solution_info_ascii(ofstream& sout, var_t s, var_t ds)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+    sout << setw(VAR_T_W) << s << SEP     /* independent variable of the record (double)    */
+		 << setw(VAR_T_W) << ds << endl;  /* next timestep (double)                         */
+	sout.flush();
+}
+
+void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds)
+{
+	sout.write((char*)&(s), sizeof(var_t));     /* independent variable of the record (double) */
+	sout.write((char*)&(ds), sizeof(var_t));    /* next timestep (double)                      */
+}
+
+void print_solution_data_ascii(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+	var_t x, vx;
+	tools::rtbp1D::transform_u2x(h_y[0], h_y[1], x, vx);
+
+	for (uint32_t i = 0; i < n_obj; i++)
+    {
+		sout << setw(INT_T_W) << h_md[i].id << SEP;             // 1 id of the object
+		// Print the parameters for each object
+		for (uint16_t j = 0; j < n_ppo; j++)                    // 2 parameter of the problem
+		{
+			uint32_t param_idx = i * n_ppo + j;
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+		}
+		// Print the variables for each object
+		for (uint16_t j = 0; j < n_vpo; j++)                    // 3 u coordinate of the object
+		{                                                       // 4 u' velocity of the object
+			uint32_t var_idx = i * n_vpo + j;
+			sout << setw(VAR_T_W) << h_y[var_idx] << SEP;
+		}
+		sout << setw(VAR_T_W) << h_y[2] << SEP                  // 5 t physical time
+			 << setw(VAR_T_W) << x      << SEP                  // 6 x physical coordinate of the object
+			 << setw(VAR_T_W) << vx     << endl;                // 7 x physical velocity of the object
+	}
+	sout.flush();
+}
+
+void print_solution_data_binary(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	throw string("The print_result_binary() is not implemented.");
+}
+} /* namespace rtbp1D */
+
+namespace rtbp2D
+{
+void print_solution_info_ascii(ofstream& sout, var_t s, var_t ds)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+    sout << setw(VAR_T_W) << s << SEP     /* independent variable of the record (double)    */
+		 << setw(VAR_T_W) << ds << endl;  /* next timestep (double)                         */
+	sout.flush();
+}
+
+void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds)
+{
+	sout.write((char*)&(s), sizeof(var_t));     /* independent variable of the record (double) */
+	sout.write((char*)&(ds), sizeof(var_t));    /* next timestep (double)                      */
+}
+
+void print_solution_data_ascii(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	sout.precision(16);
+	sout.setf(ios::right);
+	sout.setf(ios::scientific);
+
+	var2_t x, xd;
+	var2_t u  = {h_y[0], h_y[1]};
+	var2_t up = {h_y[2], h_y[3]};
+	tools::rtbp2D::transform_u2x(u, up, x, xd);
+
+	for (uint32_t i = 0; i < n_obj; i++)
+    {
+		sout << setw(INT_T_W) << h_md[i].id << SEP;             // 1 id of the object
+		// Print the parameters for each object
+		for (uint16_t j = 0; j < n_ppo; j++)                    // 2 parameter of the problem
+		{
+			uint32_t param_idx = i * n_ppo + j;
+			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+		}
+		// Print the variables for each object
+		for (uint16_t j = 0; j < n_vpo; j++)                    // 3, 4  u1, u2 coordinate of the object
+		{                                                       // 5, 6  u1', u2' velocity of the object
+			uint32_t var_idx = i * n_vpo + j;
+			sout << setw(VAR_T_W) << h_y[var_idx] << SEP;
+		}
+		sout << setw(VAR_T_W) << h_y[4] << SEP                  // 7 t physical time
+			 << setw(VAR_T_W) << x.x    << SEP                  // 8 x physical coordinate of the object
+			 << setw(VAR_T_W) << x.y    << SEP                  // 9 y physical coordinate of the object
+			 << setw(VAR_T_W) << xd.x   << SEP                  //10 vx physical velocity of the object
+			 << setw(VAR_T_W) << xd.y   << endl;                //11 vy physical velocity of the object
+	}
+	sout.flush();
+}
+
+void print_solution_data_binary(ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y)
+{
+	throw string("The print_result_binary() is not implemented.");
+}
+} /* namespace rtbp2D */
 
 } /* file */
 } /* redutil2 */

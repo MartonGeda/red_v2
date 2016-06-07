@@ -30,8 +30,10 @@
     <ClInclude Include="options.h" />
     <ClInclude Include="parameter.h" />
     <ClInclude Include="rtbp1D.h" />
+    <ClInclude Include="rtbp2D.h" />
     <ClInclude Include="rtbp3D.h" />
     <ClInclude Include="tbp1D.h" />
+    <ClInclude Include="tbp2D.h" />
     <ClInclude Include="tbp3D.h" />
     <ClInclude Include="threebody.h" />
   </ItemGroup>
@@ -45,8 +47,10 @@
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="ode.cu" />
     <CudaCompile Include="rtbp1D.cu" />
+    <CudaCompile Include="rtbp2D.cu" />
     <CudaCompile Include="rtbp3D.cu" />
     <CudaCompile Include="tbp1D.cu" />
+    <CudaCompile Include="tbp2D.cu" />
     <CudaCompile Include="tbp3D.cu" />
     <CudaCompile Include="threebody.cu" />
   </ItemGroup>

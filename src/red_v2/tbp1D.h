@@ -18,7 +18,6 @@ public:
 	//! Destructor
 	~tbp1D();
 
-
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
 		\param path_si  full file path where the info about the solution will be printed
@@ -33,7 +32,7 @@ public:
 	*/
 	void print_integral(std::string& path);
 
-	void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
+	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
 
 private:
@@ -51,46 +50,27 @@ private:
 		\param path   full file path of the file
 	*/
     void load_solution_info(std::string& path);
+
 	//! Load the initial conditions from the hard disk
 	/*!
 		\param path   full file path of the file
 	*/
 	void load_solution_data(std::string& path);
-    //! Load the initial conditions from the input stream (text mode)
+
+	//! Load the initial conditions from the input stream (text mode)
 	/*!
 		\param input   the input stream associated with the file containing the initial conditions
 	*/
 	void load_ascii(std::ifstream& input);
-	//! Load an initial condition record from the input stream (text mode)
-	/*!
-		\param input   the input stream associated with the file containing the initial conditions
-		\param _t      the time for which the data are valid
-		\param md      the metadata of the object
-		\param p       the parameters of the object
-		\param x       the x coordinate of the object
-		\param vx      the vx velocity of the object
-	*/
-	void load_ascii_record(std::ifstream& input, ttt_t* _t, tbp1D_t::metadata_t *md, tbp1D_t::param_t* p, var_t* x, var_t* vx);
+
 	//! Load the initial conditions from the input stream (binary mode)
 	/*!
 		\param input   the input stream associated with the file containing the initial conditions
 	*/
 	void load_binary(std::ifstream& input);
 
-	//! Print the solution for each object in text format
-	/*   
-		\param sout print the data to this stream
-	*/
-	//void print_solution_ascii(std::ofstream& sout);
-	//! Print the solution for each object in binary format
-	/*!
-		\param sout print the data to this stream
-	*/
-	//void print_solution_binary(std::ofstream& sout);
+	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
+	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
-	void cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
-	void gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
-
-	tbp1D_t::integral_t integral;   //! Energy of the system
 	tbp1D_t::metadata_t *h_md, *d_md, *md;
 };

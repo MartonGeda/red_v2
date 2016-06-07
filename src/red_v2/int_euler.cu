@@ -32,7 +32,7 @@ void euler::cpu_sum_vector(var_t* a, const var_t* b, var_t F, const var_t* c, ui
 	}
 }
 
-euler::euler(ode& f, ttt_t dt, comp_dev_t comp_dev) :
+euler::euler(ode& f, var_t dt, comp_dev_t comp_dev) :
 	integrator(f, dt, false, 0.0, 1, comp_dev)
 {
 	name    = "Euler";
@@ -55,7 +55,7 @@ void euler::calc_y_np1()
 	}
 }
 
-ttt_t euler::step()
+var_t euler::step()
 {
 	if (COMP_DEV_GPU == comp_dev)
 	{

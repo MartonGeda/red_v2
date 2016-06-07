@@ -317,7 +317,7 @@ void allocate_host_storage(pp_disk_t::sim_data_t *sd, int n)
 	}
 	ALLOCATE_HOST_VECTOR((void **)&(sd->h_p),           n*sizeof(pp_disk_t::param_t));
 	ALLOCATE_HOST_VECTOR((void **)&(sd->h_body_md),     n*sizeof(pp_disk_t::body_metadata_t));
-	ALLOCATE_HOST_VECTOR((void **)&(sd->h_epoch),       n*sizeof(ttt_t));
+	ALLOCATE_HOST_VECTOR((void **)&(sd->h_epoch),       n*sizeof(var_t));
 
 	ALLOCATE_HOST_VECTOR((void **)&(sd->h_oe),          n*sizeof(orbelem_t));
 }
@@ -334,7 +334,7 @@ void allocate_device_storage(pp_disk_t::sim_data_t *sd, int n)
 	}
 	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_p),			  n*sizeof(pp_disk_t::param_t));
 	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_body_md),	  n*sizeof(pp_disk_t::body_metadata_t));
-	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_epoch),		  n*sizeof(ttt_t));
+	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_epoch),		  n*sizeof(var_t));
 
     ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_oe),          n*sizeof(orbelem_t));
 }

@@ -31,7 +31,7 @@ var_t int_rungekutta7::a[] =
 var_t int_rungekutta7::b[]  = { 41.0/840.0, 0.0, 0.0, 0.0, 0.0, 34.0/105.0, 9.0/35.0, 9.0/35.0, 9.0/280.0, 9.0/280.0, 41.0/840.0  };
 var_t int_rungekutta7::bh[] = {        0.0, 0.0, 0.0, 0.0, 0.0, 34.0/105.0, 9.0/35.0, 9.0/35.0, 9.0/280.0, 9.0/280.0, 41.0/840.0, 41.0/840.0, 41.0/840.0 };
 // nodes
-ttt_t int_rungekutta7::c[]  = { 0.0, 2.0/27.0, 1.0/9.0, 1.0/6.0, 5.0/12.0, 1.0/2.0, 5.0/6.0, 1.0/6.0, 2.0/3.0, 1.0/3.0, 1.0, 0.0, 1.0 };
+var_t int_rungekutta7::c[]  = { 0.0, 2.0/27.0, 1.0/9.0, 1.0/6.0, 5.0/12.0, 1.0/2.0, 5.0/6.0, 1.0/6.0, 2.0/3.0, 1.0/3.0, 1.0, 0.0, 1.0 };
 // The starting index of the RK matrix for the stages
 uint16_t int_rungekutta7::a_idx[] = {0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66};
 
@@ -52,7 +52,7 @@ static __global__
 }
 } /* namespace rk8_kernel */
 
-int_rungekutta7::int_rungekutta7(ode& f, ttt_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
+int_rungekutta7::int_rungekutta7(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
 	integrator(f, dt, adaptive, tolerance, (adaptive ? 13 : 11), comp_dev)
 {
 	name    = "Runge-Kutta7";
@@ -113,7 +113,7 @@ void int_rungekutta7::cpu_calc_error(uint32_t n)
 	}
 }
 
-ttt_t int_rungekutta7::step()
+var_t int_rungekutta7::step()
 {
 	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 

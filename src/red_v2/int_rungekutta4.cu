@@ -23,7 +23,7 @@ var_t int_rungekutta4::a[] =
 var_t int_rungekutta4::b[]  = { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 - LAMBDA, LAMBDA };
 var_t int_rungekutta4::bh[] = { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0         ,    0.0 };
 // nodes
-ttt_t int_rungekutta4::c[]  = {     0.0, 1.0/2.0, 1.0/2.0, 1.0, 1.0                 };
+var_t int_rungekutta4::c[]  = {     0.0, 1.0/2.0, 1.0/2.0, 1.0, 1.0                 };
 // The starting index of the RK matrix for the stages
 uint16_t int_rungekutta4::a_idx[] = {0, 1, 3, 6};
 
@@ -44,7 +44,7 @@ static __global__
 }
 } /* namespace rk4_kernel */
 
-int_rungekutta4::int_rungekutta4(ode& f, ttt_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
+int_rungekutta4::int_rungekutta4(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
 	integrator(f, dt, adaptive, tolerance, (adaptive ? 5 : 4), comp_dev)
 {
 	name    = "Runge-Kutta4";
@@ -175,7 +175,7 @@ void int_rungekutta4::cpu_calc_error(uint32_t n)
 	}
 }
 
-ttt_t int_rungekutta4::step()
+var_t int_rungekutta4::step()
 {
 	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 

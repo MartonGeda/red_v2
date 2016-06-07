@@ -111,7 +111,7 @@ static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r
 //	vz = (2.0/r) * (h_y[2] * h_y[4] + h_y[3] * h_y[5] + h_y[0] * h_y[6] + h_y[1] * h_y[7]);		// vz = 2/r * (u3*vu1 - u4*vu2 - u1*vu3 + u2*vu4)
 //}
 
-void rtbp3D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void rtbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (COMP_DEV_CPU == comp_dev)
 	{
@@ -125,6 +125,8 @@ void rtbp3D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* d
 
 void rtbp3D::calc_integral()
 {
+	static bool first_call = true;
+
 	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
 
 	var_t r  = SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) + SQR(h_y[3]);
@@ -133,9 +135,15 @@ void rtbp3D::calc_integral()
 	var_t vz = (2.0/r) * (h_y[2] * h_y[4] + h_y[3] * h_y[5] + h_y[0] * h_y[6] + h_y[1] * h_y[7]);		// vz = 2/r * (u3*vu1 - u4*vu2 - u1*vu3 + u2*vu4)
 	var_t v2 = SQR(vx) + SQR(vy) + SQR(vz);
 	h = 0.5 * v2 - p[0].mu / r;
+
+	if (first_call)
+	{
+		integral.h0 = integral.h;
+		first_call = false;
+	}
 }
 
-void rtbp3D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void rtbp3D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	dy[0] = y_temp[4];																// dy1 / ds = y5
 	dy[1] = y_temp[5];																// dy2 / ds = y6
@@ -150,7 +158,7 @@ void rtbp3D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_
 	dy[8] = SQR(y_temp[0]) + SQR(y_temp[1])  + SQR(y_temp[2]) + SQR(y_temp[3]);     // dy9 / ds = y1^2 + y2^2 + y3^2 + y4^2
 }
 
-void rtbp3D::gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void rtbp3D::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	throw string("The gpu_calc_dy() is not implemented.");
 }
@@ -202,7 +210,7 @@ void rtbp3D::load_ascii(ifstream& input)
 	}
 }
 
-void rtbp3D::load_ascii_record(ifstream& input, ttt_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
+void rtbp3D::load_ascii_record(ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
 {
 	string name;
 

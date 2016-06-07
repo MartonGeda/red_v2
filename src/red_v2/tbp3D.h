@@ -12,7 +12,7 @@ public:
 
 	void load(std::string& path);
 	void load_ascii(std::ifstream& input);
-	void load_ascii_record(std::ifstream& input, ttt_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v);
+	void load_ascii_record(std::ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v);
 	void load_binary(std::ifstream& input);
 
 	//! Print the solution (the numerical approximation of the solution)
@@ -39,7 +39,7 @@ public:
 	*/
 	void print_integral(std::string& path);
 
-	void calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
+	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
 
 //private:
@@ -52,8 +52,8 @@ public:
 	void deallocate_host_storage();
 	void deallocate_device_storage();
 
-	void cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
-	void gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy);
+	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
+	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
 	var_t h;               //! Energy of the system
 

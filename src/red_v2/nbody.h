@@ -13,6 +13,6 @@ public:
 
 	void load(std::string& path);
 	void load_ascii(ifstream& input);
-	void load_ascii_record(ifstream& input, ttt_t* t, nbody_t::body_metadata_t* bmd, nbody_t::param_t* p, var_t* r, var_t* v);
+	void load_ascii_record(ifstream& input, var_t* t, nbody_t::body_metadata_t* bmd, nbody_t::param_t* p, var_t* r, var_t* v);
 
 };

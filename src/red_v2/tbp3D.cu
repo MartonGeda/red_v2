@@ -73,7 +73,7 @@ void tbp3D::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(h_epoch));
 }
 
-void tbp3D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void tbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (COMP_DEV_CPU == comp_dev)
 	{
@@ -87,15 +87,21 @@ void tbp3D::calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy
 
 void tbp3D::calc_integral()
 {
+	static bool first_call = true;
 	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
 
 	var_t r  = sqrt( SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) );
 	var_t v2 = SQR(h_y[3]) + SQR(h_y[4]) + SQR(h_y[5]);
 
 	h = 0.5 * v2 - p[0].mu / r;
+	if (first_call)
+	{
+		integral.h0 = integral.h;
+		first_call = false;
+	}
 }
 
-void tbp3D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void tbp3D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
 
@@ -111,7 +117,7 @@ void tbp3D::cpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t
 	dy[5] = -p[0].mu / r3 * y_temp[2];    // dx6 / dt = -(mu/r^3) * x3
 }
 
-void tbp3D::gpu_calc_dy(uint16_t stage, ttt_t curr_t, const var_t* y_temp, var_t* dy)
+void tbp3D::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	throw string("The gpu_calc_dy() is not implemented.");
 }
@@ -163,7 +169,7 @@ void tbp3D::load_ascii(ifstream& input)
 	}
 }
 
-void tbp3D::load_ascii_record(ifstream& input, ttt_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
+void tbp3D::load_ascii_record(ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
 {
 	string name;
 
