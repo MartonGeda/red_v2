@@ -57,29 +57,47 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 	static string prefix = create_prefix(opt);
 	static string ext = (DATA_REPRESENTATION_ASCII == opt->param->output_data_rep ? "txt" : "dat");
 
-    string n_print_str = redutil2::number_to_string(n_print, OUTPUT_ORDINAL_NUMBER_WIDTH, true);
+	string fn_info;
+	string path_si;
+	string fn_data;
+	string path_sd;
 
-    string fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "_" + n_print_str + "." + ext;
-	string path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
-
-    string fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "_" + n_print_str + "." + ext;
-	string path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
-
-	f->print_solution(path_si, path_sd, opt->param->output_data_rep);
-	n_print++;
-
-	string path = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], "start_files.txt");
-	ofstream sout(path.c_str(), ios_base::out);
-	if (sout)
+	if (opt->append)
 	{
-		sout << fn_info << endl;
-		sout << fn_data << endl;
+		fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "." + ext;
+		path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
+
+		fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "." + ext;
+		path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
+
+		f->print_solution(path_si, path_sd, opt->param->output_data_rep);
 	}
 	else
 	{
-		throw string("Cannot open " + path + "!");
+		string n_print_str = redutil2::number_to_string(n_print, OUTPUT_ORDINAL_NUMBER_WIDTH, true);
+
+		fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "_" + n_print_str + "." + ext;
+		path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
+
+		fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "_" + n_print_str + "." + ext;
+		path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
+
+		f->print_solution(path_si, path_sd, opt->param->output_data_rep);
+		n_print++;
+
+		string path = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], "start_files.txt");
+		ofstream sout(path.c_str(), ios_base::out);
+		if (sout)
+		{
+			sout << fn_info << endl;
+			sout << fn_data << endl;
+		}
+		else
+		{
+			throw string("Cannot open " + path + "!");
+		}
+		sout.close();
 	}
-    sout.close();
 }
 
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)

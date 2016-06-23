@@ -9,8 +9,8 @@
 using namespace std;
 using namespace redutil2;
 
-string fn_info;
-string fn_data;
+static string fn_info;
+static string fn_data;
 
 namespace model
 {
@@ -35,13 +35,13 @@ namespace model
 	namespace tbp1D
     {
         // parameter of the problem
-        tbp1D_t::param_t p;
+        tbp_t::param_t p;
        	// Epoch for the initial condition
         var_t t0;
         // Initial conditions
         var_t* y;
         // Metadata of the object
-        tbp1D_t::metadata_t md;
+        tbp_t::metadata_t md;
         // Initial stepsize for the integrator
         var_t dt0;
         
@@ -54,7 +54,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::tbp1D::print_solution_info_ascii(sout, t0, dt0);
+				file::tbp::print_solution_info(sout, t0, dt0, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -67,7 +67,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::tbp1D::print_solution_data_ascii(sout, 1, 1, 2, &md, (var_t*)&p, y);
+                file::tbp::print_solution_data(sout, 1, 1, 2, &md, (var_t*)&p, y, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -111,13 +111,13 @@ namespace model
 	namespace tbp2D
 	{
         // parameter of the problem
-        tbp1D_t::param_t p;
+        tbp_t::param_t p;
        	// Epoch for the initial condition
         var_t t0;
         // Initial conditions
         var_t* y;
         // Metadata of the object
-        tbp1D_t::metadata_t md;
+        tbp_t::metadata_t md;
         // Initial stepsize for the integrator
         var_t dt0;
         
@@ -130,7 +130,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::tbp2D::print_solution_info_ascii(sout, t0, dt0);
+                file::tbp::print_solution_info(sout, t0, dt0, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -143,7 +143,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::tbp2D::print_solution_data_ascii(sout, 1, 1, 4, &md, (var_t*)&p, y);
+                file::tbp::print_solution_data(sout, 1, 1, 4, &md, (var_t*)&p, y, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -167,8 +167,8 @@ namespace model
             
             ALLOCATE_HOST_VECTOR((void**)&(y), 4 * sizeof(var_t));
 
-			// Set the parameters of the problem
-            p.mu  = constants::Gauss2 * (1.0 + 1.0);
+			// Set the parameter of the problem
+            p.mu = constants::Gauss2 * (1.0 + 1.0);
 			// Set the initial conditions at t0
             t0   = 0.0;
 			// Set the initial orbital elements
@@ -195,13 +195,13 @@ namespace model
 	namespace rtbp1D
     {
         // parameter of the problem
-        tbp1D_t::param_t p;
+        tbp_t::param_t p;
        	// Value of the independent variable for the initial condition
         var_t s0;
         // Initial conditions
         var_t* y;
         // Metadata of the object
-        tbp1D_t::metadata_t md;
+        tbp_t::metadata_t md;
         // Initial stepsize for the integrator
         var_t ds0;
         
@@ -214,7 +214,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::rtbp1D::print_solution_info_ascii(sout, s0, ds0);
+				file::tbp::print_solution_info(sout, s0, ds0, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -227,7 +227,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::rtbp1D::print_solution_data_ascii(sout, 1, 1, 2, &md, (var_t*)&p, y);
+                file::rtbp::print_solution_data(sout, 1, 1, 2, &md, (var_t*)&p, y, 1, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -256,7 +256,7 @@ namespace model
 			// Set and compute the initial conditions at s0 (fictitious time)
             s0   = 0.0;
 			var_t x0   = 1.0;
-			var_t vx0  = -0.1;
+			var_t vx0  = 0.0;
 			tools::rtbp1D::transform_x2u(x0, vx0, y[0], y[1]);
 			var_t _x0  = 0.0;
 			var_t _vx0 = 0.0;
@@ -277,13 +277,13 @@ namespace model
 	namespace rtbp2D
     {
         // parameter of the problem
-        tbp1D_t::param_t p;
+        tbp_t::param_t p;
        	// Value of the independent variable for the initial condition
         var_t s0;
         // Initial conditions
         var_t* y;
         // Metadata of the object
-        tbp1D_t::metadata_t md;
+        tbp_t::metadata_t md;
         // Initial stepsize for the integrator
         var_t ds0;
         
@@ -313,7 +313,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::rtbp2D::print_solution_info_ascii(sout, s0, ds0);
+                file::tbp::print_solution_info(sout, s0, ds0, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -326,7 +326,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::rtbp2D::print_solution_data_ascii(sout, 1, 1, 4, &md, (var_t*)&p, y);
+                file::rtbp::print_solution_data(sout, 1, 1, 4, &md, (var_t*)&p, y, 2, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -355,30 +355,17 @@ namespace model
 			// Set and compute the initial conditions at s0 (fictitious time)
             s0   = 0.0;
 			// Set the initial orbital elements
-			orbelem_t oe = {1.0, 0.1, 0.0, 0.0, 0.0, 0.1};
+			orbelem_t oe = {1.0, 0.1, 0.0, 0.0, 0.0, 0.0};
 			var3_t r0 = {0, 0, 0};
 			var3_t v0 = {0, 0, 0};
 			// Calculate the initial position and velocity vectors
 			tools::calc_phase(p.mu, &oe, &r0, &v0);
-			// Calculate the energy
-			y[0] = r0.x, y[1] = r0.y;
-			y[2] = v0.x, y[3] = v0.y;
-			var_t h = calc_integral(p.mu, y);
 
 			var2_t r02D = {r0.x, r0.y};
 			var2_t v02D = {v0.x, v0.y};
 			var2_t u    = {0, 0};
 			var2_t up   = {0, 0};
 			tools::rtbp2D::transform_x2u(r02D, v02D, u, up);
-			y[0] = u.x;
-			y[1] = u.y;
-			y[2] = up.x;
-			y[3] = up.y;
-			var_t reg_h = reg_calc_integral(p.mu, y);
-
-			r02D.x = r02D.y = 0.0;
-			v02D.x = v02D.y = 0.0;
-			tools::rtbp2D::transform_u2x(u, up, r02D, v02D);
 
 			y[0] = u.x;
 			y[1] = u.y;
@@ -396,6 +383,10 @@ namespace model
         } /* create() */
     } /* namespace tbp2D */
 
+	namespace nbody
+	{
+
+	} /* namespace nbody */
 
 } /* namespace model */
 

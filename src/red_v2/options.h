@@ -16,20 +16,13 @@ public:
 	~options();
 
 	ode* create_model();
-
-	//ode* create_tbp1D();
-	//ode* create_rtbp1D();
-	//ode* create_tbp3D();
-	//ode* create_rtbp3D();
-	//ode* create_threebody();
-
 	integrator* create_integrator(ode& f, var_t dt);
 	
 	dyn_model_t dyn_model;
 
-	bool test;                      //!< Run tests for functions
 	bool verbose;                   //!< Print every event to the log file
 	bool print_to_screen;           //!< Print every event to the standard output stream (cout) 
+	bool append;                    //!< If true than only one file will hold the solution
 	bool ef;                        //!< Extend the file names with command line information. Only for developer and debugger purposes.
 
 	uint32_t id_dev;                //!< The id of the device which will execute the code

@@ -595,12 +595,15 @@ void trans_to_descartes(const var_t m1, const var_t m2, const var_t m3, var3_t& 
 {
 	//const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
 
+	/* Eq. (4.53): */
 	matrix4_t A1 = {{2*Q1.x, -2*Q1.y, -2*Q1.z, 2*Q1.w},{2*Q1.y, 2*Q1.x, -2*Q1.w, -2*Q1.z},{2*Q1.z, 2*Q1.w, 2*Q1.x, 2*Q1.y},{0,0,0,0}};
 	matrix4_t A2 = {{2*Q2.x, -2*Q2.y, -2*Q2.z, 2*Q2.w},{2*Q2.y, 2*Q2.x, -2*Q2.w, -2*Q2.z},{2*Q2.z, 2*Q2.w, 2*Q2.x, 2*Q2.y},{0,0,0,0}};
 
+	/* Eq. (4.45): */
 	var_t R1 = SQR(Q1.x) + SQR(Q1.y) + SQR(Q1.z) + SQR(Q1.w);
 	var_t R2 = SQR(Q2.x) + SQR(Q2.y) + SQR(Q2.z) + SQR(Q2.w);
 
+	/* Eq. (4.59): */
 	var4_t q1 = calc_matrix_vector_product(tools::calc_matrix_transpose(A1),Q1);
 	q1.x /= 2;
 	q1.y /= 2;
@@ -611,6 +614,7 @@ void trans_to_descartes(const var_t m1, const var_t m2, const var_t m3, var3_t& 
 	q2.y /= 2;
 	q2.z /= 2;
 
+	/* Eq. (4.60): */
 	var4_t p1 = calc_matrix_vector_product(tools::calc_matrix_transpose(A1),P1);
 	p1.x /= 4*R1;
 	p1.y /= 4*R1;
@@ -621,6 +625,7 @@ void trans_to_descartes(const var_t m1, const var_t m2, const var_t m3, var3_t& 
 	p2.y /= 4*R2;
 	p2.z /= 4*R2;
 
+	/* Eq. (4.61): */
 	// q3' , q1', q2'
 	qv3.x = -(m1 * q1.x + m2 * q2.x) / (m1 + m2 + m3);
 	qv3.y = -(m1 * q1.y + m2 * q2.y) / (m1 + m2 + m3);
@@ -634,6 +639,7 @@ void trans_to_descartes(const var_t m1, const var_t m2, const var_t m3, var3_t& 
 	qv2.y = qv3.y + q2.y;
 	qv2.z = qv3.z + q2.z;
 
+	/* Eq. (4.62): */
 	// p1', p2', p3'
 	pv1.x = p1.x;
 	pv1.y = p1.y;
@@ -646,12 +652,12 @@ void trans_to_descartes(const var_t m1, const var_t m2, const var_t m3, var3_t& 
 	pv3.x = -(p1.x + p2.x);
 	pv3.y = -(p1.y + p2.y);
 	pv3.z = -(p1.z + p2.z);
-
 }
 
 void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2, const var3_t& pv2, const var3_t& qv3, const var3_t& pv3, var4_t& Q1, var4_t& P1, var4_t& Q2, var4_t& P2)
 {
 	var3_t q1, q2;
+	/* Eq. (4.56): */
 	q1.x = qv1.x - qv3.x;
 	q1.y = qv1.y - qv3.y;
 	q1.z = qv1.z - qv3.z;
@@ -663,12 +669,14 @@ void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2,
 	var4_t p1 = {pv1.x, pv1.y, pv1.z, 0};
 	var4_t p2 = {pv2.x, pv2.y, pv2.z, 0};
 
+	/* Eq. (4.57): */
 	if (q1.x >= 0) {
 		Q1.x = sqrt(0.5 * (norm(&q1)  + q1.x));
 		Q1.y = 0.5 * q1.y / Q1.x;
 		Q1.z = 0.5 * q1.z / Q1.x;
 		Q1.w = 0;
 	}
+	/* Eq. (4.58): */
 	else {
 		Q1.y = sqrt(0.5 * (norm(&q1)  - q1.x));
 		Q1.x = 0.5 * q1.y / Q1.y;
@@ -676,12 +684,14 @@ void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2,
 		Q1.w = 0.5 * q1.z / Q1.y;	
 	}
 
+	/* Eq. (4.57): */
 	if (q2.x >= 0) {
 		Q2.x = sqrt(0.5 * (norm(&q2)  + q2.x));
 		Q2.y = 0.5 * q2.y / Q2.x;
 		Q2.z = 0.5 * q2.z / Q2.x;
 		Q2.w = 0;
 	}
+	/* Eq. (4.58): */
 	else {
 		Q2.y = sqrt(0.5 * (norm(&q2)  - q2.x));
 		Q2.x = 0.5 * q2.y / Q2.y;
@@ -689,24 +699,26 @@ void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2,
 		Q2.w = 0.5 * q2.z / Q2.y;	
 	}
 
+	/* Eq. (4.53): */
 	matrix4_t A1 = {{2*Q1.x, -2*Q1.y, -2*Q1.z, 2*Q1.w},{2*Q1.y, 2*Q1.x, -2*Q1.w, -2*Q1.z},{2*Q1.z, 2*Q1.w, 2*Q1.x, 2*Q1.y},{0,0,0,0}};
 	matrix4_t A2 = {{2*Q2.x, -2*Q2.y, -2*Q2.z, 2*Q2.w},{2*Q2.y, 2*Q2.x, -2*Q2.w, -2*Q2.z},{2*Q2.z, 2*Q2.w, 2*Q2.x, 2*Q2.y},{0,0,0,0}};
 
+	/* Eq. (4.30): */
 	P1 = calc_matrix_vector_product(A1,p1);
 	P2 = calc_matrix_vector_product(A2,p2);	
 }
 
-var_t calc_kinetic_energy(const var4_t* v)
+var_t calc_kinetic_energy(const var3_t* v)
 {
 	return (SQR(v->x) + SQR(v->y) + SQR(v->z)) / 2.0;
 }
 
-var_t calc_pot_energy(var_t mu, const var4_t* r)
+var_t calc_pot_energy(var_t mu, const var3_t* r)
 {
     return -mu / norm(r);
 }
 
-var_t calc_energy(var_t mu, const var4_t* r, const var4_t* v)
+var_t calc_energy(var_t mu, const var3_t* r, const var3_t* v)
 {
 	return calc_kinetic_energy(v) + calc_pot_energy(mu, r);
 }
@@ -883,6 +895,7 @@ void shift_into_range(var_t lower, var_t upper, var_t &value)
     }
 }
 
+// TODO if ecc >= 0.99 the iteration does not converge!!
 void kepler_equation_solver(var_t ecc, var_t mean, var_t eps, var_t* E)
 {
 	if (ecc == 0.0 || mean == 0.0 || mean == PI)
@@ -945,7 +958,7 @@ void calc_phase(var_t mu, const orbelem_t* oe, var3_t* rVec, var3_t* vVec)
 	vVec->z = vKszi * P.z + vEta * Q.z;
 }
 
-void calc_oe(var_t mu, const var4_t* rVec, const var4_t* vVec, orbelem_t* oe)
+void calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
 {
     const var_t sq2 = 1.0e-14;
     const var_t sq3 = 1.0e-14;
@@ -1105,6 +1118,16 @@ void print_body_metadata(const pp_disk_t::body_metadata_t *b)
 	cout << setw(VAR_T_W) << b->mig_stop_at << endl;
 }
 
+namespace tbp
+{
+var_t calc_integral(var_t mu, var2_t r, var2_t v)
+{
+	var_t d  = sqrt(SQR(r.x) + SQR(r.y));
+	var_t v2 = SQR(v.x) + SQR(v.y);
+	var_t h = 0.5*v2 - mu / d;
+	return h;
+}
+} /* namespace tbp */
 
 namespace rtbp1D
 {
@@ -1127,47 +1150,111 @@ void transform_u2x(var_t u, var_t v, var_t& x, var_t& vx)
 
 namespace rtbp2D
 {
-//! Calculate parametric coordinate and velocity
-void transform_x2u(var2_t x, var2_t xd, var2_t& u, var2_t& up)
+void transform_x2u(var2_t x, var2_t& u)
 {
 	var_t r = sqrt(SQR(x.x) + SQR(x.y));
-	// Because in this case d is larger -> u.y is larger and u.x is a result of a division by u.y
-	if (0 > x.x)
+
+	// If x_1 = 0 and x_2 = 0
+	if (0.0 == x.x && 0.0 == x.y)
 	{
-		var_t d = 0.5 * (r - x.x);
-		u.y = sqrt(d);
-		u.x = x.y / (2.0*u.y);
+		u.x = u.y = 0.0;
 	}
+	// If x_1 = 0 and x_2 != 0
+	else if (0.0 == x.x && 0.0 != x.y)
+	{
+		if (0.0 < x.y)
+		{
+			u.y = sqrt(x.y/2.0);
+			u.x = u.y;
+		}
+		else
+		{
+			u.y = sqrt(-x.y/2.0);
+			u.x = -u.y;
+		}
+	}
+	// If x_1 != 0 and x_2 = 0
+	else if (0.0 != x.x && 0.0 == x.y)
+	{
+		if (0.0 < x.x)
+		{
+			u.x = sqrt(x.x);
+			u.y = 0.0;
+		}
+		else
+		{
+			u.x = 0.0;
+			u.y = -sqrt(-x.x);
+		}
+	}
+	/*
+	 * I. Quadrant: x_1 > 0 and x_2 > 0
+	 * -> u_1 > u_2
+	 * -> sgn(u_1) = sgn(u_2)
+	 */
+	else if (0.0 < x.x && 0.0 < x.y) 
+	{
+		u.x = sqrt((x.x + r)/2.0);
+		u.y = x.y/(2.0*u.x);
+	}
+	// II. Quadrant
+	else if (0.0 > x.x && 0.0 < x.y) 
+	{
+		u.y = sqrt((-x.x + r)/2.0);
+		u.x = x.y/(2.0*u.y);
+	}
+	// III. Quadrant
+	else if (0.0 > x.x && 0.0 > x.y) 
+	{
+		u.y = sqrt((-x.x + r)/2.0);
+		u.x = x.y/(2.0*u.y);
+	}
+	// IV. Quadrant
 	else
 	{
-		var_t d = 0.5 * (r + x.x);
-		u.x = sqrt(d);
-		u.y = x.y / (2.0*u.x);
+		u.x = sqrt((x.x + r)/2.0);
+		u.y = x.y/(2.0*u.x);
 	}
-
-	// Now it is possible to create the transpose of the Levi-Civita matrix
-	var_t LT[2][2];
-	LT[0][0] =  u.x, LT[0][1] = u.y;
-	LT[1][0] = -u.y, LT[1][1] = u.x;
-
-	var_t c = 1.0/(2.0 * (SQR(u.x) + SQR(u.y)));      // = 1/(2*r^2)
-	up.x = c * (LT[0][0] * xd.x + LT[0][1] * xd.y);
-	up.y = c * (LT[1][0] * xd.x + LT[1][1] * xd.y);
 }
 
-//! Calculate physical coordinate and velocity
-void transform_u2x(var2_t u, var2_t up, var2_t& x, var2_t& xd)
+void transform_xd2up(var2_t u, var2_t xd, var2_t& up)
 {
-	var_t L[2][2];
-	L[0][0] = u.x, L[0][1] = -u.y;
-	L[1][0] = u.y, L[1][1] =  u.x;
+	var_t r = SQR(u.x) + SQR(u.y);
 
-	x.x = L[0][0] * u.x + L[0][1] * u.y;
-	x.y = L[1][0] * u.x + L[1][1] * u.y;
+	var2_t xp = {r*xd.x, r*xd.y};
 
-	xd.x = 2.0 * (L[0][0] * up.x + L[0][1] * up.y);
-	xd.y = 2.0 * (L[1][0] * up.x + L[1][1] * up.y);
+	var_t f = 1.0/(2.0*r);
+	up.x = f * ( u.x * xp.x + u.y * xp.y);
+	up.y = f * (-u.y * xp.x + u.x * xp.y);
 }
+
+void transform_u2x(var2_t u, var2_t& x)
+{
+	x.x = SQR(u.x) - SQR(u.y);
+	x.y = 2.0*(u.x*u.y);
+}
+
+void transform_up2xd(var2_t u, var2_t up, var2_t& xd)
+{
+	var2_t xp = {0, 0};
+
+	xp.x = 2.0*(u.x*up.x - u.y*up.y);
+	xp.y = 2.0*(u.y*up.x + u.x*up.y);
+
+	var_t f = 1.0 / (SQR(u.x) + SQR(u.y));
+	xd.x = f * xp.x;
+	xd.y = f * xp.y;
+}
+
+var_t calc_integral(var_t mu, var2_t u, var2_t up)
+{
+	var_t d  = SQR( u.x) + SQR( u.y);
+	var_t v2 = SQR(up.x) + SQR(up.y);
+	var_t h = (2.0*v2 - mu) / d;
+
+	return h;
+}
+
 } /* namespace rtbp2D */
 
 } /* tools */

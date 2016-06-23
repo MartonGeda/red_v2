@@ -40,70 +40,98 @@ namespace redutil2
 		void load_data_record_binary(std::ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
 
 
-        namespace tbp1D
-        {
-        void print_solution_info_ascii( std::ofstream& sout, var_t t, var_t dt);
-        void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt);
+		namespace tbp
+		{
+		void print_solution_info(std::ofstream& sout, var_t t, var_t dt, data_rep_t repres);
         //! Print the solution for each object in text format
         /*   
             \param sout print the data to this stream
         */
-        void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-	    //! Print the solution for each object in binary format
-	    /*!
-		    \param sout print the data to this stream
-	    */
-        void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-        } /* namespace tbp1D */
+        void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* md, var_t* p, var_t* y, data_rep_t repres);
+		} /* namespace tbp */
 
-        namespace tbp2D
-        {
-        void print_solution_info_ascii( std::ofstream& sout, var_t t, var_t dt);
-        void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt);
+		namespace rtbp
+		{
         //! Print the solution for each object in text format
         /*   
             \param sout print the data to this stream
         */
-        void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-	    //! Print the solution for each object in binary format
-	    /*!
-		    \param sout print the data to this stream
-	    */
-        void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-        } /* namespace tbp2D */
+        void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* md, var_t* p, var_t* y, uint16_t n_dim, data_rep_t repres);
+		} /* namespace rtbp */
 
-        namespace rtbp1D
+     //   namespace tbp1D
+     //   {
+     //   void print_solution_info_ascii( std::ofstream& sout, var_t t, var_t dt);
+     //   void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt);
+     //   //! Print the solution for each object in text format
+     //   /*   
+     //       \param sout print the data to this stream
+     //   */
+     //   void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+	    ////! Print the solution for each object in binary format
+	    ///*!
+		   // \param sout print the data to this stream
+	    //*/
+     //   void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+     //   } /* namespace tbp1D */
+
+     //   namespace tbp2D
+     //   {
+     //   void print_solution_info_ascii( std::ofstream& sout, var_t t, var_t dt);
+     //   void print_solution_info_binary(std::ofstream& sout, var_t t, var_t dt);
+     //   //! Print the solution for each object in text format
+     //   /*   
+     //       \param sout print the data to this stream
+     //   */
+     //   void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+	    ////! Print the solution for each object in binary format
+	    ///*!
+		   // \param sout print the data to this stream
+	    //*/
+     //   void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+     //   } /* namespace tbp2D */
+
+     //   namespace rtbp1D
+     //   {
+     //   void print_solution_info_ascii( std::ofstream& sout, var_t s, var_t ds);
+     //   void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds);
+     //   //! Print the solution for each object in text format
+     //   /*   
+     //       \param sout print the data to this stream
+     //   */
+     //   void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+	    ////! Print the solution for each object in binary format
+	    ///*!
+		   // \param sout print the data to this stream
+	    //*/
+     //   void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+     //   } /* namespace rtbp1D */
+
+     //   namespace rtbp2D
+     //   {
+     //   void print_solution_info_ascii( std::ofstream& sout, var_t s, var_t ds);
+     //   void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds);
+     //   //! Print the solution for each object in text format
+     //   /*   
+     //       \param sout print the data to this stream
+     //   */
+     //   void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+	    ////! Print the solution for each object in binary format
+	    ///*!
+		   // \param sout print the data to this stream
+	    //*/
+     //   void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
+     //   } /* namespace rtbp2D */
+
+        namespace nbody
         {
-        void print_solution_info_ascii( std::ofstream& sout, var_t s, var_t ds);
-        void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds);
+		void print_solution_info(std::ofstream& sout, var_t t, var_t dt, uint32_t n, data_rep_t repres);
         //! Print the solution for each object in text format
         /*   
             \param sout print the data to this stream
         */
-        void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-	    //! Print the solution for each object in binary format
-	    /*!
-		    \param sout print the data to this stream
-	    */
-        void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-        } /* namespace rtbp1D */
-
-        namespace rtbp2D
-        {
-        void print_solution_info_ascii( std::ofstream& sout, var_t s, var_t ds);
-        void print_solution_info_binary(std::ofstream& sout, var_t s, var_t ds);
-        //! Print the solution for each object in text format
-        /*   
-            \param sout print the data to this stream
-        */
-        void print_solution_data_ascii( std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-	    //! Print the solution for each object in binary format
-	    /*!
-		    \param sout print the data to this stream
-	    */
-        void print_solution_data_binary(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, tbp1D_t::metadata_t* h_md, var_t* h_p, var_t* h_y);
-        } /* namespace rtbp2D */
-
+        void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, nbp_t::metadata_t* md, var_t* p, var_t* y, data_rep_t repres);
+        } /* namespace nbody */
 
 
 	} /* file */

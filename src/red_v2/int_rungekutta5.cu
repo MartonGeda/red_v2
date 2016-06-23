@@ -164,8 +164,16 @@ var_t int_rungekutta5::step()
 			}
 			// calculate: err = abs(k0 + k5 - k6 - k7)
 			calc_error(f.n_var);
-			max_err = dt_try * LAMBDA * get_max_error(f.n_var);
-			dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
+			max_err = get_max_error(f.n_var);
+			if (1.0e-20 < max_err)
+			{
+				max_err *= dt_try * LAMBDA;
+				dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
+			}
+			else
+			{
+				dt_try *= 5.0;
+			}
 		}
 		iter++;
 	} while (adaptive && max_iter > iter && dt_min < dt_try && max_err > tolerance);

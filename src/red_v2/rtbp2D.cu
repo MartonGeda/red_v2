@@ -31,9 +31,9 @@ rtbp2D::~rtbp2D()
 
 void rtbp2D::initialize()
 {
-	h_md       = 0x0;
-	d_md       = 0x0;
-	md         = 0x0;
+	h_md = 0x0;
+	d_md = 0x0;
+	md   = 0x0;
 }
 
 void rtbp2D::allocate_storage()
@@ -47,12 +47,12 @@ void rtbp2D::allocate_storage()
 
 void rtbp2D::allocate_host_storage()
 {
-	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp1D_t::metadata_t));
+	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp_t::metadata_t));
 }
 
 void rtbp2D::allocate_device_storage()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp1D_t::metadata_t));
+	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp_t::metadata_t));
 }
 
 void rtbp2D::deallocate_storage()
@@ -89,7 +89,7 @@ void rtbp2D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* d
 void rtbp2D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp1D_t::param_t* p = (tbp1D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	var_t r  = SQR(h_y[0]) + SQR(h_y[1]);
 	var_t v2 = SQR(h_y[2]) + SQR(h_y[3]);
@@ -234,58 +234,36 @@ void rtbp2D::print_solution(std::string& path_si, std::string& path_sd, data_rep
 	{
 	case DATA_REPRESENTATION_ASCII:
 		sout.open(path_si.c_str(), ios::out | ios::app);
-		if (sout)
-		{
-			file::rtbp2D::print_solution_info_ascii(sout, t, dt);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
 		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
-		if (sout)
-		{
-			file::rtbp2D::print_solution_info_binary(sout, t, dt);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
 	}
+	if (!sout)
+	{
+		throw string("Cannot open " + path_si + ".");
+	}
+	file::tbp::print_solution_info(sout, t, dt, repres);
 	sout.close();
 
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
 		sout.open(path_sd.c_str(), ios::out | ios::app);
-		if (sout)
-		{
-			file::rtbp2D::print_solution_data_ascii(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
-		if (sout)
-		{
-			file::rtbp2D::print_solution_data_binary(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
-		}
-		else
-		{
-			throw string("Cannot open " + path_sd + ".");
-		}
+		sout.open(path_sd.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
 	}
+	if (!sout)
+	{
+		throw string("Cannot open " + path_sd + ".");
+	}
+	file::rtbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y, 2, repres);
 	sout.close();
 }
 

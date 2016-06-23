@@ -42,13 +42,13 @@ void tbp3D::allocate_storage()
 
 void tbp3D::allocate_host_storage()
 {
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp3D_t::metadata_t));
+	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp_t::metadata_t));
 	ALLOCATE_HOST_VECTOR((void**)&(h_epoch), n_obj * sizeof(var_t));
 }
 
 void tbp3D::allocate_device_storage()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp3D_t::metadata_t));
+	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp_t::metadata_t));
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_epoch), n_obj * sizeof(var_t));
 }
 
@@ -88,7 +88,7 @@ void tbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 void tbp3D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	var_t r  = sqrt( SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) );
 	var_t v2 = SQR(h_y[3]) + SQR(h_y[4]) + SQR(h_y[5]);
@@ -103,7 +103,7 @@ void tbp3D::calc_integral()
 
 void tbp3D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	var_t r = sqrt( SQR(y_temp[0]) + SQR(y_temp[1]) + SQR(y_temp[2]) );
 	var_t r3 = r*r*r;
@@ -161,7 +161,7 @@ void tbp3D::load(string& path)
 
 void tbp3D::load_ascii(ifstream& input)
 {
-	tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
+	tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
@@ -169,7 +169,7 @@ void tbp3D::load_ascii(ifstream& input)
 	}
 }
 
-void tbp3D::load_ascii_record(ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
+void tbp3D::load_ascii_record(ifstream& input, var_t* t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v)
 {
 	string name;
 

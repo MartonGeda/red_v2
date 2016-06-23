@@ -78,6 +78,17 @@ namespace redutil2
 		void print_parameter(const pp_disk_t::param_t *p);
 		void print_body_metadata(const pp_disk_t::body_metadata_t *b);
 
+		namespace tbp
+		{
+		//! Calculate the energy
+		/*!
+			\param mu  the parameter of the problem
+			\param r   the physical position vector of the object
+			\param v   the physical velocity vector of the object
+		*/
+		var_t calc_integral(var_t mu, var2_t r, var2_t v);
+		} /* tbp */
+
 		namespace rtbp1D
 		{
 		//! Calculate parametric coordinate and velocity
@@ -100,22 +111,31 @@ namespace redutil2
 
 		namespace rtbp2D
 		{
-		//! Calculate parametric coordinate and velocity
+		//! Calculate parametric coordinate from physical coordinate
 		/*!
 			\param x   the (x1, x2) physical coordinates of the object
-			\param xd  the (x1d, x2d) physical velocity of the object (xd = x dot)
+			\param u   the parametric (u1, u2) position of the object
+		*/
+		void transform_x2u(var2_t x, var2_t& u);
+
+		//! Calculate parametric velocity from physical velocity
+		/*!
+			\param u   the parametric (u1, u2) position of the object
+			\param xd  the (xd1, xd2) physical velocity of the object (xd = x dot)
+			\param up  the parametric velocity of the object (up = u prime)
+		*/
+		void transform_xd2up(var2_t u, var2_t xd, var2_t& up);
+
+		void transform_u2x(var2_t u, var2_t& x);
+		void transform_up2xd(var2_t u, var2_t up, var2_t& xd);
+		
+		//! Calculate the energy for the regularized problem
+		/*!
+			\param mu  the parameter of the problem
 			\param u   the parametric (u1, u2) position of the object
 			\param up  the parametric velocity of the object (up = u prime)
 		*/
-		void transform_x2u(var2_t x, var2_t xd, var2_t& u, var2_t& up);
-		//! Calculate physical coordinate and velocity
-		/*!
-			\param u   the parametric (u1, u2) position of the object
-			\param up  the parametric velocity of the object (up = u prime)
-			\param x   the (x1, x2) physical coordinates of the object
-			\param xd  the (x1d, x2d) physical velocity of the object (xd = x dot)
-		*/
-		void transform_u2x(var2_t u, var2_t up, var2_t& x, var2_t& xd);
+		var_t calc_integral(var_t mu, var2_t u, var2_t up);
 		} /* namespace rtbp2D */
 
 	} /* tools */

@@ -40,9 +40,9 @@ void options::create_default()
 {
 	dyn_model           = DYN_MODEL_N;
 
-	test                = false;
 	verbose             = false;
 	print_to_screen     = false;
+	append              = false;
 	ef                  = false;
 
 	id_dev              = 0;
@@ -109,10 +109,6 @@ void options::parse(int argc, const char** argv)
 				throw string("Invalid dynamical model: " + value + ".");
 			}
 		}
-		else if (p == "-t")
-		{
-			test = true;
-		}
 		else if (p == "-v")
 		{
 			verbose = true;
@@ -121,6 +117,10 @@ void options::parse(int argc, const char** argv)
 		{
 			verbose = true;
 			print_to_screen = true;
+		}
+		else if (p == "-a")
+		{
+			append = true;
 		}
 		else if (p == "-ef")
 		{
@@ -263,41 +263,43 @@ ode* options::create_model()
 	case DYN_MODEL_TBP1D:
 		{
 		    model = new tbp1D(path_si, path_sd, 1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_TBP2D:
 		{
 		    model = new tbp2D(path_si, path_sd, 1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_TBP3D:
 		{
 		    model = new tbp3D(1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_RTBP1D:
 		{
 		    model = new rtbp1D(path_si, path_sd, 1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_RTBP2D:
 		{
 		    model = new rtbp2D(path_si, path_sd, 1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_RTBP3D:
 		{
 		    model = new rtbp3D(1, comp_dev);
-			return model;
+			break;
 		}
 	case DYN_MODEL_THREEBODY:
 		{
 	    	model = new threebody(1, comp_dev);
-			return model;
+			break;
 		}
 	default:
 		throw string("Invalid dynamical model.");
 	}
+
+	return model;
 }
 
 integrator* options::create_integrator(ode& f, var_t dt)
@@ -337,7 +339,6 @@ void options::print_usage()
 {
 	cout << "Usage: red.cuda <parameterlist>" << endl;
 	cout << "Parameters:" << endl;
-	cout << "     -b      | --benchmark                    : run benchmark to find out the optimal number of threads per block" << endl;
 	cout << "     -t      | --test                         : run tests" << endl;
 	cout << "     -v      | --verbose                      : verbose mode (log all event during the execution fo the code to the log file)" << endl;
 	cout << "     -pts    | --print_to_screen              : verbose mode and print everything to the standard output stream too" << endl;

@@ -47,12 +47,12 @@ void tbp1D::allocate_storage()
 
 void tbp1D::allocate_host_storage()
 {
-	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp1D_t::metadata_t));
+	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp_t::metadata_t));
 }
 
 void tbp1D::allocate_device_storage()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp1D_t::metadata_t));
+	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp_t::metadata_t));
 }
 
 void tbp1D::deallocate_storage()
@@ -89,7 +89,7 @@ void tbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 void tbp1D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp1D_t::param_t* p = (tbp1D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	integral.h = 0.5 * SQR(h_y[1]) - p[0].mu / h_y[0];
 
@@ -102,7 +102,7 @@ void tbp1D::calc_integral()
 
 void tbp1D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	const tbp1D_t::param_t* p = (tbp1D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	dy[0] = y_temp[1];                    // dx1 / dt = x2
 	dy[1] = -p[0].mu / SQR(y_temp[0]);    // dx2 / dt = -mu / (x1*x1)
@@ -216,59 +216,37 @@ void tbp1D::print_solution(std::string& path_si, std::string& path_sd, data_rep_
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path_si.c_str(), ios::out);
-		if (sout)
-		{
-			file::tbp1D::print_solution_info_ascii(sout, t, dt);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
+		sout.open(path_si.c_str(), ios::out | ios::app);
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path_si.c_str(), ios::out | ios::binary);
-		if (sout)
-		{
-			file::tbp1D::print_solution_info_binary(sout, t, dt);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
+		sout.open(path_si.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
 	}
+	if (!sout)
+	{
+		throw string("Cannot open " + path_si + ".");
+	}
+	file::tbp::print_solution_info(sout, t, dt, repres);
 	sout.close();
 
 	switch (repres)
 	{
 	case DATA_REPRESENTATION_ASCII:
-		sout.open(path_sd.c_str(), ios::out);
-		if (sout)
-		{
-            file::tbp1D::print_solution_data_ascii(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
+		sout.open(path_sd.c_str(), ios::out | ios::app);
 		break;
 	case DATA_REPRESENTATION_BINARY:
-		sout.open(path_sd.c_str(), ios::out | ios::binary);
-		if (sout)
-		{
-            file::tbp1D::print_solution_data_binary(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y);
-		}
-		else
-		{
-			throw string("Cannot open " + path_si + ".");
-		}
+		sout.open(path_sd.c_str(), ios::out | ios::app | ios::binary);
 		break;
 	default:
 		throw string("Parameter 'repres' is out of range.");
 	}
+	if (!sout)
+	{
+		throw string("Cannot open " + path_sd + ".");
+	}
+	file::tbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y, repres);
 	sout.close();
 }
 

@@ -31,6 +31,7 @@ typedef enum dyn_model
 			DYN_MODEL_TBP1D,
 			DYN_MODEL_TBP2D,
 			DYN_MODEL_TBP3D,
+			DYN_MODEL_NBODY,
 
 			DYN_MODEL_RTBP1D,
 			DYN_MODEL_RTBP2D,
@@ -254,17 +255,17 @@ typedef struct ode_data
 
 typedef struct integral
 {
-	var_t h0;            //! Energy of the system at the beginning
-	var_t h;             //! Energy of the system
-	var3_t c0;           //! Angular momentum the system at the beginning
-	var3_t c;            //! Angular momentum the system
-	var3_t R0;           //! Position of the system's barycenter at the beginning
-	var3_t R;            //! Position of the system's barycenter
-	var3_t V0;           //! Velocity of the system's barycenter at the beginning
-	var3_t V;            //! Velocity of the system's barycenter
-} integral_t;
+	var_t h0;            //! Energy of the system at the beginning                  [ 8 byte]
+	var_t h;             //! Energy of the system                                   [ 8 byte]
+	var3_t c0;           //! Angular momentum the system at the beginning           [24 byte]
+	var3_t c;            //! Angular momentum the system                            [24 byte]
+	var3_t R0;           //! Position of the system's barycenter at the beginning   [24 byte]
+	var3_t R;            //! Position of the system's barycenter                    [24 byte]
+	var3_t V0;           //! Velocity of the system's barycenter at the beginning   [24 byte]
+	var3_t V;            //! Velocity of the system's barycenter                    [24 byte]
+} integral_t;            // [160 byte]
 
-namespace tbp1D_t
+namespace tbp_t
 {
 	typedef struct metadata
 	{
@@ -275,20 +276,7 @@ namespace tbp1D_t
 	{
 		var_t mu;
 	} param_t;
-} /* namespace tbp1D_t */
-
-namespace tbp3D_t
-{
-	typedef struct metadata
-	{
-		int32_t id;
-	} metadata_t;
-
-	typedef struct param
-	{
-		var_t mu;
-	} param_t;
-} /* namespace tbp3D_t */
+} /* namespace tbp_t */
 
 namespace threebody_t
 {
@@ -303,7 +291,7 @@ namespace threebody_t
 	} param_t;
 } /* namespace threebody_t */
 
-namespace nbody_t
+namespace nbp_t
 {
 	// body_metadata_t gets aligned to 16 bytes.
 	typedef struct __BUILTIN_ALIGN__ body_metadata
@@ -314,7 +302,7 @@ namespace nbody_t
 		bool	active;         // [ 1 byte]
 		bool	unused;         // [ 1 byte]
 		var_t   mig_stop_at;    // [ 8 byte]
-	} body_metadata_t;      // [16 byte]
+	} metadata_t;               // [16 byte]
 
 	// param_t gets aligned to 16 bytes.
 	typedef struct __BUILTIN_ALIGN__ param
@@ -324,16 +312,7 @@ namespace nbody_t
 		var_t density;          // [ 8 byte]
 		var_t cd;	            // [ 8 byte]
 	} param_t;                  // [32 byte]
-
-	typedef struct integral
-	{			
-		var3_t R;               //!< Position vector of the system's barycenter [24 byte]
-		var3_t V;               //!< Velocity vector of the system's barycenter [24 byte]
-		var3_t C;               //!< Angular momentum vector of the system      [24 byte]
-		var_t E;                //!< Total energy of the system                 [ 8 byte]
-	} integral_t;               // [80 byte]
-
-} /* nbody_t */
+} /* nbp_t */
 
 namespace pp_disk_t
 {

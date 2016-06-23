@@ -71,5 +71,5 @@ private:
 	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
-	tbp1D_t::metadata_t *h_md, *d_md, *md;
+	tbp_t::metadata_t *h_md, *d_md, *md;
 };

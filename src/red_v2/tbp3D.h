@@ -12,7 +12,7 @@ public:
 
 	void load(std::string& path);
 	void load_ascii(std::ifstream& input);
-	void load_ascii_record(std::ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v);
+	void load_ascii_record(std::ifstream& input, var_t* t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v);
 	void load_binary(std::ifstream& input);
 
 	//! Print the solution (the numerical approximation of the solution)
@@ -57,9 +57,9 @@ public:
 
 	var_t h;               //! Energy of the system
 
-	tbp3D_t::metadata_t* h_md;
-	tbp3D_t::metadata_t* d_md;
-	tbp3D_t::metadata_t* md;
+	tbp_t::metadata_t* h_md;
+	tbp_t::metadata_t* d_md;
+	tbp_t::metadata_t* md;
 
 	var_t* h_epoch;
 	var_t* d_epoch;

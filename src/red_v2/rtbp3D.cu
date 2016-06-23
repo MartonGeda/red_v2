@@ -43,13 +43,13 @@ void rtbp3D::allocate_storage()
 
 void rtbp3D::allocate_host_storage()
 {
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp3D_t::metadata_t));
+	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp_t::metadata_t));
 	ALLOCATE_HOST_VECTOR((void**)&(h_epoch), n_obj * sizeof(var_t));
 }
 
 void rtbp3D::allocate_device_storage()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp3D_t::metadata_t));
+	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp_t::metadata_t));
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_epoch), n_obj * sizeof(var_t));
 }
 
@@ -127,7 +127,7 @@ void rtbp3D::calc_integral()
 {
 	static bool first_call = true;
 
-	const tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	var_t r  = SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) + SQR(h_y[3]);
 	var_t vx = (2.0/r) * (h_y[0] * h_y[4] - h_y[1] * h_y[5] - h_y[2] * h_y[6] + h_y[3] * h_y[7]);		// vx = 2/r * (u1*vu1 - u2*vu2 - u3*vu3 + u4*vu4)
@@ -202,7 +202,7 @@ void rtbp3D::load(string& path)
 
 void rtbp3D::load_ascii(ifstream& input)
 {
-	tbp3D_t::param_t* p = (tbp3D_t::param_t*)h_p;
+	tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
@@ -210,7 +210,7 @@ void rtbp3D::load_ascii(ifstream& input)
 	}
 }
 
-void rtbp3D::load_ascii_record(ifstream& input, var_t* t, tbp3D_t::metadata_t *md, tbp3D_t::param_t* p, var_t* r, var_t* v)
+void rtbp3D::load_ascii_record(ifstream& input, var_t* t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v)
 {
 	string name;
 

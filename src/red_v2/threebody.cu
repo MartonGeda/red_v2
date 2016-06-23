@@ -90,19 +90,22 @@ void threebody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 	}
 }
 
-void threebody::calc_integral() // check!!!
+void threebody::calc_integral()
 {
 	static bool first_call = true;
 	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
 
 	var3_t q1, q2, q3, p1, p2, p3;
+	/* Eq. (4.51): */
 	const var4_t Q1 = {h_y[0], h_y[1], h_y[2], h_y[3]};
 	const var4_t Q2 = {h_y[4], h_y[5], h_y[6], h_y[7]};
+	/* Eq. (4.52): */
 	const var4_t P1 = {h_y[8], h_y[9], h_y[10], h_y[11]};
 	const var4_t P2 = {h_y[12], h_y[13], h_y[14], h_y[15]};
 
 	tools::trans_to_descartes(p[0].m, p[1].m, p[2].m, q1, p1, q2, p2, q3, p3, Q1, P1, Q2, P2);
 
+	/* Eq. (4.9): */
 	var_t R = sqrt(SQR(q1.x - q2.x) + SQR(q1.y - q2.y) + SQR(q1.z - q2.z));
 	var_t R1 = sqrt(SQR(q1.x - q3.x) + SQR(q1.y - q3.y) + SQR(q1.z - q3.z));
 	var_t R2 = sqrt(SQR(q2.x - q3.x) + SQR(q2.y - q3.y) + SQR(q2.z - q3.z));
@@ -113,7 +116,8 @@ void threebody::calc_integral() // check!!!
 
 	var_t u = -((p[0].m * p[2].m) / R1 + (p[1].m * p[2].m) / R2 + (p[0].m * p[1].m) / R);
 
-	h = k1+k2+k3 + u;
+	/* Eq. (4.10): */
+	h = (k1 + k2 + k3) + u;
 
 	if (first_call)
 	{
@@ -133,31 +137,42 @@ void threebody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, v
 	P5 = y_temp[12], P6 = y_temp[13], P7 = y_temp[14], P8 = y_temp[15]
 	*/
 
+	/* Eq. (4.46): */
 	var_t R_temp1 = SQR(y_temp[0]) - SQR(y_temp[1]) - SQR(y_temp[2]) + SQR(y_temp[3]) - SQR(y_temp[4]) + SQR(y_temp[5]) + SQR(y_temp[6]) - SQR(y_temp[7]);
 	var_t R_temp2 = 2 * (y_temp[0]*y_temp[1] - y_temp[2]*y_temp[3] - y_temp[4]*y_temp[5] + y_temp[6]*y_temp[7]);
 	var_t R_temp3 = 2 * (y_temp[0]*y_temp[2] + y_temp[1]*y_temp[3] - y_temp[4]*y_temp[6] - y_temp[5]*y_temp[7]);
 	
+	/* Eq. (4.45): */
 	var_t R = sqrt(SQR(R_temp1) + SQR(R_temp2) + SQR(R_temp3));
 	var_t R1 = SQR(y_temp[0]) + SQR(y_temp[1]) + SQR(y_temp[2]) + SQR(y_temp[3]);
 	var_t R2 = SQR(y_temp[4]) + SQR(y_temp[5]) + SQR(y_temp[6]) + SQR(y_temp[7]);
 
+	/* Eq. (4.19): */
 	var_t mu13 =  (p[0].m * p[2].m) / (p[0].m + p[2].m);
 	var_t mu23 =  (p[1].m * p[2].m) / (p[1].m + p[2].m);
+
 	threebody::calc_integral(); // check if its needed or not!!
+
+	/* p. 25 last paragraph */
 	var_t P9 = -h; // check!!!!!
 
-	// create KS matrices
-	matrix4_t Q1 = {{y_temp[0],  -y_temp[1],  -y_temp[2],  y_temp[3]}, {y_temp[1],  y_temp[0],  -y_temp[3],  -y_temp[2]}, {y_temp[2],  y_temp[3],  y_temp[0],  y_temp[1]}, {0.0, 0.0, 0.0, 0.0}};	
-	matrix4_t Q5 = {{y_temp[4],  -y_temp[5],  -y_temp[6],  y_temp[7]}, {y_temp[5],  y_temp[4],  -y_temp[7],  -y_temp[6]}, {y_temp[6],  y_temp[7],  y_temp[4],  y_temp[5]}, {0.0, 0.0, 0.0, 0.0}};
-	matrix4_t P1 = {{y_temp[8],  -y_temp[9],  -y_temp[10], y_temp[11]},{y_temp[9],  y_temp[8],  -y_temp[11], -y_temp[10]},{y_temp[10], y_temp[11], y_temp[8],  y_temp[9]}, {0.0, 0.0, 0.0, 0.0}};
-	matrix4_t P5 = {{y_temp[12], -y_temp[13], -y_temp[14], y_temp[15]},{y_temp[13], y_temp[12], -y_temp[15], -y_temp[14]},{y_temp[14], y_temp[15], y_temp[12], y_temp[13]},{0.0, 0.0, 0.0, 0.0}};
 
+	/* Eq. (4.51): */
 	var4_t q1 = {y_temp[0], y_temp[1], y_temp[2], y_temp[3]};
 	var4_t q5 = {y_temp[4], y_temp[5], y_temp[6], y_temp[7]};
+	/* Eq. (4.52): */
 	var4_t p1 = {y_temp[8], y_temp[9], y_temp[10], y_temp[11]};
 	var4_t p5 = {y_temp[12], y_temp[13], y_temp[14], y_temp[15]};
 	var_t sqr_p1 = SQR(y_temp[8]) + SQR(y_temp[9]) + SQR(y_temp[10]) + SQR(y_temp[11]);
 	var_t sqr_p5 = SQR(y_temp[12]) + SQR(y_temp[13]) + SQR(y_temp[14]) + SQR(y_temp[15]);
+
+	// create KS matrices
+	/* Eq. (4.53): */
+	matrix4_t Q1 = {{y_temp[0],  -y_temp[1],  -y_temp[2],  y_temp[3]}, {y_temp[1],  y_temp[0],  -y_temp[3],  -y_temp[2]}, {y_temp[2],  y_temp[3],  y_temp[0],  y_temp[1]}, {0.0, 0.0, 0.0, 0.0}};	
+	matrix4_t Q5 = {{y_temp[4],  -y_temp[5],  -y_temp[6],  y_temp[7]}, {y_temp[5],  y_temp[4],  -y_temp[7],  -y_temp[6]}, {y_temp[6],  y_temp[7],  y_temp[4],  y_temp[5]}, {0.0, 0.0, 0.0, 0.0}};
+	/* Eq. (4.54): */
+	matrix4_t P1 = {{y_temp[8],  -y_temp[9],  -y_temp[10], y_temp[11]},{y_temp[9],  y_temp[8],  -y_temp[11], -y_temp[10]},{y_temp[10], y_temp[11], y_temp[8],  y_temp[9]}, {0.0, 0.0, 0.0, 0.0}};
+	matrix4_t P5 = {{y_temp[12], -y_temp[13], -y_temp[14], y_temp[15]},{y_temp[13], y_temp[12], -y_temp[15], -y_temp[14]},{y_temp[14], y_temp[15], y_temp[12], y_temp[13]},{0.0, 0.0, 0.0, 0.0}};
 
 	var_t c1 = 1/(4*p[2].m);
 	var_t c2 = R2/(4*mu13);
@@ -172,6 +187,7 @@ void threebody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, v
 	var_t c9 = 2*R1*P9 - 2*p[0].m*p[2].m + sqr_p1/(4*mu13) - 2*p[0].m*p[1].m*R1/R;
 	var_t c10 = 2*p[0].m*p[1].m*R1*R2/CUBE(R);
 
+	/* Eq. (4.50): */
 	//Qdot (1-8)
 	dy[0] = c1 * c4.x + c2 * p1.x;
 	dy[1] = c1 * c4.y + c2 * p1.y;
@@ -194,19 +210,7 @@ void threebody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, v
 	dy[14] = -(c1 * c7.z + c9 * q5.z - c10 * ( R_temp1*q5.z + R_temp2*q5.w - R_temp3*q5.x ) ); 
 	dy[15] = -(c1 * c7.w + c9 * q5.w - c10 * ( R_temp1*q5.w - R_temp2*q5.z + R_temp3*q5.y ) );
 
-	// dt = R1*R2*dtau
 	dy[16] = R1*R2;
-
-	//dy[0] = 0.25 / p[2].m * ( y_temp[12] * ( y_temp[0]*y_temp[4] + y_temp[1]*y_temp[5] + y_temp[2]*y_temp[6] ) + y_temp[13] * ( y_temp[1]*y_temp[4] - y_temp[0]*y_temp[5] + y_temp[2]*y_temp[7] ) - y_temp[14] * ( y_temp[0]*y_temp[6] - y_temp[2]*y_temp[4] + y_temp[1]*y_temp[7] ) + y_temp[15] * ( y_temp[0]*y_temp[7] - y_temp[1]*y_temp[6] + y_temp[2]*y_temp[5] ) ) + 0.25 / mu13 * y_temp[8] * R2; 
-	//dy[1] = 0.25 / p[2].m * ( y_temp[12] * ( y_temp[0]*y_temp[5] - y_temp[1]*y_temp[4] + y_temp[3]*y_temp[6] ) + y_temp[13] * ( y_temp[0]*y_temp[4] + y_temp[1]*y_temp[5] + y_temp[3]*y_temp[7] ) + y_temp[14] * ( y_temp[1]*y_temp[6] - y_temp[0]*y_temp[7] + y_temp[3]*y_temp[4] ) - y_temp[15] * ( y_temp[0]*y_temp[6] + y_temp[1]*y_temp[7] - y_temp[3]*y_temp[5] ) ) + 0.25 / mu13 * y_temp[9] * R2; 
-	//dy[2] = 0.25 / p[2].m * (-y_temp[12] * ( y_temp[2]*y_temp[4] - y_temp[0]*y_temp[6] + y_temp[3]*y_temp[5] ) + y_temp[13] * ( y_temp[0]*y_temp[7] + y_temp[2]*y_temp[5] - y_temp[3]*y_temp[4] ) + y_temp[14] * ( y_temp[0]*y_temp[4] - y_temp[2]*y_temp[6] + y_temp[3]*y_temp[7] ) + y_temp[15] * ( y_temp[0]*y_temp[5] - y_temp[2]*y_temp[7] + y_temp[3]*y_temp[6] ) ) + 0.25 / mu13 * y_temp[10] * R2;
-	//dy[3] = 0.25 / p[2].m * ( y_temp[12] * ( y_temp[1]*y_temp[6] - y_temp[2]*y_temp[5] + y_temp[3]*y_temp[4] ) - y_temp[13] * ( y_temp[2]*y_temp[4] - y_temp[1]*y_temp[7] + y_temp[3]*y_temp[5] ) + y_temp[14] * ( y_temp[1]*y_temp[4] + y_temp[2]*y_temp[7] - y_temp[3]*y_temp[6] ) + y_temp[15] * ( y_temp[1]*y_temp[5] + y_temp[2]*y_temp[6] + y_temp[3]*y_temp[7] ) ) + 0.25 / mu13 * y_temp[11] * R2; 
-
-	//dy[4] = 0.25 / p[2].m * ( y_temp[4] * ( y_temp[8]*y_temp[0] - y_temp[9]*y_temp[1] - y_temp[10]*y_temp[2] + y_temp[11]*y_temp[3] ) + y_temp[5] * ( y_temp[8]*y_temp[1] + y_temp[9]*y_temp[0] - y_temp[10]*y_temp[3] - y_temp[11]*y_temp[2] ) + y_temp[6] * ( y_temp[8]*y_temp[2] + y_temp[10]*y_temp[0] + y_temp[9]*y_temp[3] + y_temp[11]*y_temp[1] ) ) + 0.25 / mu23 * y_temp[12] * R1; 
-	//dy[5] = 0.25 / p[2].m * ( y_temp[4] * ( y_temp[8]*y_temp[1] + y_temp[9]*y_temp[0] - y_temp[10]*y_temp[3] - y_temp[11]*y_temp[2] ) - y_temp[5] * ( y_temp[8]*y_temp[0] - y_temp[9]*y_temp[1] - y_temp[10]*y_temp[2] + y_temp[11]*y_temp[3] ) + y_temp[7] * ( y_temp[8]*y_temp[2] + y_temp[10]*y_temp[0] + y_temp[9]*y_temp[3] + y_temp[11]*y_temp[1] ) ) + 0.25 / mu23 * y_temp[13] * R1;
-	//dy[6] = 0.25 / p[2].m * ( y_temp[4] * ( y_temp[8]*y_temp[2] + y_temp[10]*y_temp[0] + y_temp[9]*y_temp[3] + y_temp[11]*y_temp[1] ) - y_temp[6] * ( y_temp[8]*y_temp[0] - y_temp[9]*y_temp[1] - y_temp[10]*y_temp[2] + y_temp[11]*y_temp[3] ) - y_temp[7] * ( y_temp[8]*y_temp[1] + y_temp[9]*y_temp[0] - y_temp[10]*y_temp[3] - y_temp[11]*y_temp[2] ) ) + 0.25 / mu23 * y_temp[14] * R1;
-	//dy[7] = 0.25 / p[2].m * ( y_temp[5] * ( y_temp[8]*y_temp[2] + y_temp[10]*y_temp[0] + y_temp[9]*y_temp[3] + y_temp[11]*y_temp[1] ) - y_temp[6] * ( y_temp[8]*y_temp[1] + y_temp[9]*y_temp[0] - y_temp[10]*y_temp[3] - y_temp[11]*y_temp[2] ) + y_temp[7] * ( y_temp[8]*y_temp[0] - y_temp[9]*y_temp[1] - y_temp[10]*y_temp[2] + y_temp[11]*y_temp[3] ) ) + 0.25 / mu23 * y_temp[15] * R1;
-	
 }
 
 void threebody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
