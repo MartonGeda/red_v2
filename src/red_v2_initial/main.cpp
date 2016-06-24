@@ -365,7 +365,8 @@ namespace model
 			var2_t v02D = {v0.x, v0.y};
 			var2_t u    = {0, 0};
 			var2_t up   = {0, 0};
-			tools::rtbp2D::transform_x2u(r02D, v02D, u, up);
+			tools::rtbp2D::transform_x2u(r02D, u);
+            tools::rtbp2D::transform_xd2up(u, v02D, up);
 
 			y[0] = u.x;
 			y[1] = u.y;

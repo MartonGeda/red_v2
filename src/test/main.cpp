@@ -265,7 +265,9 @@ int main()
 	{
 		//test_calc_ephemeris();
 		//test_rtbp2d_trans();
-		//test_rtbp2d_calc_energy();
+		test_rtbp2d_calc_energy();
+
+        return 0;
 
 		var_t mu = constants::Gauss2*(1.0 + 1.0);
 		orbelem_t oe = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
