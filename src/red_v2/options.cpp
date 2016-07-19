@@ -16,6 +16,7 @@
 #include "rtbp2D.h"
 #include "rtbp3D.h"
 #include "threebody.h"
+#include "nbody.h"
 
 #include "redutil2.h"
 #include "constants.h"
@@ -103,6 +104,10 @@ void options::parse(int argc, const char** argv)
 			else if (value == "threebody")
 			{
 				dyn_model = DYN_MODEL_THREEBODY;
+			}
+			else if (value == "nbody")
+			{
+				dyn_model = DYN_MODEL_NBODY;
 			}
 			else
 			{
@@ -293,6 +298,26 @@ ode* options::create_model()
 	case DYN_MODEL_THREEBODY:
 		{
 	    	model = new threebody(1, comp_dev);
+			break;
+		}
+	case DYN_MODEL_NBODY:
+		{
+			uint32_t n_obj = 0;
+			{
+				ifstream input;
+				input.open(path_si.c_str(), ios::in);
+				if (input) 
+				{
+					var_t t, dt;
+					input >> t >> dt >> n_obj;
+				}
+				else 
+				{
+					throw string("Cannot open " + path_si + ".");
+				}
+				input.close();
+			}
+			model = new nbody(path_si, path_sd, n_obj, 1, comp_dev);
 			break;
 		}
 	default:

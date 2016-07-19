@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-odir C:\Work\red.cuda.Results\v2.0\Test_Copy\rtbp2D\e_0.1 -f input</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-odir C:\Work\red.cuda.Results\v2.0\Test\nbp\01 -f input -n_obj 100</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

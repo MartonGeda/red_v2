@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>-m rtbp2D -v -ef -a -idir C:\Work\red.cuda.Results\v2.0\Test_Copy\rtbp2D\e_0.1 -i start_files.txt -p parameters.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-m nbody -v -ef -idir C:\Work\red.cuda.Results\v2.0\Test\nbp\01 -i start_files.txt -p parameters.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

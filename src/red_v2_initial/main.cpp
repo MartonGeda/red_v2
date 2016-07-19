@@ -1,3 +1,4 @@
+#include <time.h>       /* time                      */
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -287,23 +288,6 @@ namespace model
         // Initial stepsize for the integrator
         var_t ds0;
         
-		var_t reg_calc_integral(var_t mu, var_t* y)
-		{
-			var_t r  = SQR(y[0]) + SQR(y[1]);
-			var_t v2 = SQR(y[2]) + SQR(y[3]);
-			var_t h = (2.0*v2 - mu) / r;
-
-			return h;
-		}
-
-		var_t calc_integral(var_t mu, var_t* y)
-		{
-			var_t r  = sqrt(SQR(y[0]) + SQR(y[1]));
-			var_t v2 = SQR(y[2]) + SQR(y[3]);
-			var_t h = 0.5*v2 - mu/r;
-			return h;
-		}
-
 		void print(string& dir, string& filename)
         {
            	ofstream sout;
@@ -355,23 +339,23 @@ namespace model
 			// Set and compute the initial conditions at s0 (fictitious time)
             s0   = 0.0;
 			// Set the initial orbital elements
-			orbelem_t oe = {1.0, 0.1, 0.0, 0.0, 0.0, 0.0};
+			orbelem_t oe = {1.0, 0.8, 0.0, 0.0, 0.0, 0.0};
 			var3_t r0 = {0, 0, 0};
 			var3_t v0 = {0, 0, 0};
 			// Calculate the initial position and velocity vectors
 			tools::calc_phase(p.mu, &oe, &r0, &v0);
 
-			var2_t r02D = {r0.x, r0.y};
-			var2_t v02D = {v0.x, v0.y};
-			var2_t u    = {0, 0};
-			var2_t up   = {0, 0};
-			tools::rtbp2D::transform_x2u(r02D, u);
-            tools::rtbp2D::transform_xd2up(u, v02D, up);
+			var2_t x0  = {r0.x, r0.y};
+			var2_t xd0 = {v0.x, v0.y};
+			var2_t u0  = {0, 0};
+			var2_t up0 = {0, 0};
+			tools::rtbp2D::transform_x2u(x0, u0);
+            tools::rtbp2D::transform_xd2up(u0, xd0, up0);
 
-			y[0] = u.x;
-			y[1] = u.y;
-			y[2] = up.x;
-			y[3] = up.y;
+			y[0] = u0.x;
+			y[1] = u0.y;
+			y[2] = up0.x;
+			y[3] = up0.y;
 			y[4] = 0.0;   // t0
 			// Set the object metadata
             md.id = 1;
@@ -386,13 +370,110 @@ namespace model
 
 	namespace nbody
 	{
+        // parameters of the problem (masses)
+        nbp_t::param_t* p;
+       	// Epoch for the initial condition
+        var_t t0;
+        // Initial conditions
+        var_t* y;
+        // Metadata of the object
+        nbp_t::metadata_t* md;
+        // Initial stepsize for the integrator
+        var_t dt0;
 
+		var_t random(var_t x0, var_t x1)
+		{
+			return (x0 + ((var_t)rand() / RAND_MAX) * (x1 - x0));
+		}
+
+        void print(string& dir, string& filename, uint32_t n_obj)
+        {
+           	ofstream sout;
+
+            string path = file::combine_path(dir, fn_info);
+	        printf("Writing %s to disk.\n", path.c_str());
+       		sout.open(path.c_str(), ios::out);
+            if (sout)
+            {
+                file::nbp::print_solution_info(sout, t0, dt0, n_obj, DATA_REPRESENTATION_ASCII);
+            }
+            else
+            {
+                throw string("Cannot open " + path + ".");
+            }
+            sout.close();
+
+	        path = file::combine_path(dir, fn_data);
+	        printf("Writing %s to disk.\n", path.c_str());
+       		sout.open(path.c_str(), ios::out);
+            if (sout)
+            {
+                file::nbp::print_solution_data(sout, n_obj, 1, 6, md, (var_t*)p, y, DATA_REPRESENTATION_ASCII);
+            }
+            else
+            {
+                throw string("Cannot open " + path + ".");
+            }
+            sout.close();
+
+			print_start_files(dir);
+        } /* print() */
+
+		void create(string& dir, string& filename, uint32_t n_obj)
+        {
+	        /*
+	         * The units are:
+	         *     Unit name         | Unit symbol | Quantity name
+	         *     -----------------------------------------------
+	         *     Astronomical unit |          AU | length
+	         *     Solar mass        |           S | mass
+	         *     Mean solar day    |           D | time
+	         */
+            
+			uint32_t n_var = 6 * n_obj;
+			uint32_t n_par = n_obj;
+            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
+			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
+			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+
+			srand(time(NULL));
+			// Set the parameters of the problem
+			for (uint32_t i = 0; i < n_obj; i++)
+			{
+				p[i].mass = random(0.1, 1.0);
+				// Set the object metadata
+	            md[i].id = i + 1;
+			}
+			// Set the initial conditions at t0
+            t0   = 0.0;
+			uint32_t offset = 3 * n_obj;
+			for (uint32_t i = 0; i < n_obj; i++)
+			{
+				uint32_t j = 3 * i;
+				y[j  ] = random(-100.0, 100.0);
+				y[j+1] = random(-100.0, 100.0);
+				y[j+2] = random(-100.0, 100.0);
+
+				y[offset + j  ] = random(-0.01, 0.01);
+				y[offset + j+1] = random(-0.01, 0.01);
+				y[offset + j+2] = random(-0.01, 0.01);
+			}
+			
+			// Set the initial stepsize for the integrator (should be model dependent)
+            dt0   = 1.0e-4;
+
+            print(dir, filename, n_obj);
+
+            FREE_HOST_VECTOR((void **)&y);
+			FREE_HOST_VECTOR((void **)&p);
+			FREE_HOST_VECTOR((void **)&md);
+        }
 	} /* namespace nbody */
 
 } /* namespace model */
 
 
-int parse_options(int argc, const char **argv, string &odir, string &filename)
+int parse_options(int argc, const char **argv, string &odir, string &filename, uint32_t& n_obj)
 {
 	int i = 1;
 
@@ -410,6 +491,11 @@ int parse_options(int argc, const char **argv, string &odir, string &filename)
 			i++;
 			filename = argv[i];
 		}
+		else if (p == "-n_obj")
+		{
+			i++;
+			n_obj = atoi(argv[i]);
+		}
 		else
 		{
 			throw string("Invalid switch on command-line.");
@@ -424,21 +510,24 @@ int main(int argc, const char **argv)
 {
 	string odir;
 	string filename;
+	uint32_t n_obj;
 
+	n_obj = 0;
 	try
 	{
         if (2 > argc)
         {
             throw string("Missing command line arguments.");
         }
-		parse_options(argc, argv, odir, filename);
+		parse_options(argc, argv, odir, filename, n_obj);
 
 		fn_info = filename + ".info.txt";
 		fn_data = filename + ".data.txt";
         //model::tbp1D::create(odir, filename);
         //model::tbp2D::create(odir, filename);
         //model::rtbp1D::create(odir, filename);
-        model::rtbp2D::create(odir, filename);
+        //model::rtbp2D::create(odir, filename);
+		model::nbody::create(odir, filename, n_obj);
 	}
 	catch (const string& msg)
 	{

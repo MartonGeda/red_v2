@@ -138,5 +138,16 @@ namespace redutil2
 		var_t calc_integral(var_t mu, var2_t u, var2_t up);
 		} /* namespace rtbp2D */
 
-	} /* tools */
-} /* redutil2 */
+		namespace nbp
+		{
+			var_t get_total_mass(uint32_t n, nbp_t::param_t* p);
+			var_t calc_total_energy(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v);
+			var_t calc_kinetic_energy(uint32_t n, nbp_t::param_t* p, var3_t* v);
+			var_t calc_potential_energy(uint32_t n, nbp_t::param_t* p, var3_t* r);
+			var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v);
+			var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r);
+			var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v);
+		} /* namespace nbp */
+
+	} /* namespace tools */
+} /* namespace redutil2 */

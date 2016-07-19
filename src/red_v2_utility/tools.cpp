@@ -1257,5 +1257,105 @@ var_t calc_integral(var_t mu, var2_t u, var2_t up)
 
 } /* namespace rtbp2D */
 
+namespace nbp
+{
+var_t get_total_mass(uint32_t n, nbp_t::param_t* p)
+{
+	var_t M0 = 0.0;
+
+	for (uint32_t i = 0; i < n; i++)
+	{
+		M0 += p[i].mass;
+	}
+
+	return M0 ;
+}
+	
+var_t calc_total_energy(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+{
+	var_t E_k = calc_kinetic_energy(n, p, r);
+	var_t E_p = calc_potential_energy(n, p, r);
+	return (E_k + E_p);
+}
+
+var_t calc_kinetic_energy(uint32_t n, nbp_t::param_t* p, var3_t* v)
+{	
+	var_t result = 0.0;
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        result += p[i].mass * (SQR(v[i].x) + SQR(v[i].y) + SQR(v[i].z));
+    }
+
+    return (result / 2.0);
+}
+
+var_t calc_potential_energy(uint32_t n, nbp_t::param_t* p, var3_t* r)
+{
+	var_t result = 0.0;
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        for (uint32_t j = 0; j < n; j++)
+        {
+            if (i == j)
+            {
+                continue;
+            }
+            var_t r_ij = sqrt(SQR(r[j].x - r[i].x) + SQR(r[j].y - r[i].y) + SQR(r[j].z - r[i].z));
+            result += p[i].mass * p[j].mass / r_ij;
+        }
+	}
+
+    return (result / 2.0);
+}
+
+var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+{
+    var3_t result = {0.0, 0.0, 0.0};
+    
+    for (uint32_t i = 0; i < n; i++)
+    {
+        var3_t c = calc_cross_product(r[i], v[i]);
+
+		c.x *= p[i].mass; c.y *= p[i].mass; c.z *= p[i].mass;
+		result.x += c.x; result.y += c.y; result.z += c.z;
+	}
+
+	return result;
+}
+
+var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r)
+{
+    var3_t R0 = {0.0, 0.0, 0.0};
+
+	for (int i = 0; i < n; i++)
+	{
+		var_t m_i = p[i].mass;
+		R0.x += m_i * r[i].x; R0.y += m_i * r[i].y; R0.z += m_i * r[i].z;
+	}
+	var_t M0 = get_total_mass(n, p);
+	R0.x /= M0; R0.y /= M0; R0.z /= M0;
+
+	return R0;
+}
+
+var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v)
+{
+    var3_t V0 = {0.0, 0.0, 0.0};
+
+	for (int i = 0; i < n; i++)
+	{
+		var_t m_i = p[i].mass;
+		V0.x += m_i * v[i].x; V0.y += m_i * v[i].y; V0.z += m_i * v[i].z;
+	}
+	var_t M0 = get_total_mass(n, p);
+	V0.x /= M0; V0.y /= M0; V0.z /= M0;
+
+	return V0;
+}
+} /* namespace nbp */
+
+
 } /* tools */
 } /* redutil2 */
