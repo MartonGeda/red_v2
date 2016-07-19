@@ -7,12 +7,6 @@
 // include CUDA
 #include "cuda_runtime.h"
 
-#ifdef _WIN64
-#define __BUILTIN_ALIGN__ __builtin_align__(16)
-#else
-#define __BUILTIN_ALIGN__
-#endif
-
 typedef double        var_t;
 typedef bool          bool_t;
 typedef int2          int2_t;
@@ -28,16 +22,16 @@ typedef enum copy_direction
 
 typedef enum dyn_model
 		{
-			DYN_MODEL_TBP1D,
-			DYN_MODEL_TBP2D,
-			DYN_MODEL_TBP3D,
-			DYN_MODEL_NBODY,
+			DYN_MODEL_TBP1D,     /* 0 */
+			DYN_MODEL_TBP2D,     /* 1 */
+			DYN_MODEL_TBP3D,     /* 2 */
 
-			DYN_MODEL_RTBP1D,
-			DYN_MODEL_RTBP2D,
-			DYN_MODEL_RTBP3D,
+			DYN_MODEL_RTBP1D,    /* 3 */
+			DYN_MODEL_RTBP2D,    /* 4 */
+			DYN_MODEL_RTBP3D,    /* 5 */
 
-			DYN_MODEL_THREEBODY,
+			DYN_MODEL_THREEBODY, /* 6 */
+			DYN_MODEL_NBODY,     /* 7 */
 
 			DYN_MODEL_N
 		} dyn_model_t;
@@ -165,14 +159,14 @@ typedef enum body_type
 		} body_type_t;
 
 // var2_t gets aligned to 16 bytes.
-typedef struct __BUILTIN_ALIGN__ var2
+typedef struct  var2
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
 		} var2_t;        // [16 byte]
 
 // var3_t gets aligned to 16 bytes.
-typedef struct __BUILTIN_ALIGN__ var3
+typedef struct  var3
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
@@ -180,7 +174,7 @@ typedef struct __BUILTIN_ALIGN__ var3
 		} var3_t;        // [24 byte]
 
 // var4_t gets aligned to 16 bytes.
-typedef struct __BUILTIN_ALIGN__ var4
+typedef struct  var4
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
@@ -255,14 +249,14 @@ typedef struct ode_data
 
 typedef struct integral
 {
-	var_t h0;            //! Energy of the system at the beginning                  [ 8 byte]
-	var_t h;             //! Energy of the system                                   [ 8 byte]
-	var3_t c0;           //! Angular momentum the system at the beginning           [24 byte]
-	var3_t c;            //! Angular momentum the system                            [24 byte]
-	var3_t R0;           //! Position of the system's barycenter at the beginning   [24 byte]
-	var3_t R;            //! Position of the system's barycenter                    [24 byte]
-	var3_t V0;           //! Velocity of the system's barycenter at the beginning   [24 byte]
-	var3_t V;            //! Velocity of the system's barycenter                    [24 byte]
+	var_t h0;            //! Energy of the system at t0                  [ 8 byte]
+	var_t h;             //! Energy of the system                        [ 8 byte]
+	var3_t c0;           //! Angular momentum the system at t0           [24 byte]
+	var3_t c;            //! Angular momentum the system                 [24 byte]
+	var3_t R0;           //! Position of the system's barycenter at t0   [24 byte]
+	var3_t R;            //! Position of the system's barycenter         [24 byte]
+	var3_t V0;           //! Velocity of the system's barycenter at t0   [24 byte]
+	var3_t V;            //! Velocity of the system's barycenter         [24 byte]
 } integral_t;            // [160 byte]
 
 namespace tbp_t
@@ -293,31 +287,21 @@ namespace threebody_t
 
 namespace nbp_t
 {
-	// body_metadata_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ body_metadata
+	typedef struct body_metadata
 	{
 		int32_t id;             // [ 4 byte]
-		uchar_t body_type;      // [ 1 byte]
-		uchar_t mig_type;       // [ 1 byte]
-		bool	active;         // [ 1 byte]
-		bool	unused;         // [ 1 byte]
-		var_t   mig_stop_at;    // [ 8 byte]
-	} metadata_t;               // [16 byte]
+	} metadata_t;               // [ 4 byte]
 
-	// param_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ param
+	typedef struct param
 	{
 		var_t mass;             // [ 8 byte]
-		var_t radius;           // [ 8 byte]
-		var_t density;          // [ 8 byte]
-		var_t cd;	            // [ 8 byte]
-	} param_t;                  // [32 byte]
+	} param_t;                  // [ 8 byte]
 } /* nbp_t */
 
 namespace pp_disk_t
 {
 	// body_metadata_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ body_metadata
+	typedef struct  body_metadata
 	{
 		int32_t id;             // [ 4 byte]
 		uchar_t body_type;      // [ 1 byte]
@@ -328,7 +312,7 @@ namespace pp_disk_t
 	} body_metadata_t;          // [16 byte]
 
 	// param_t gets aligned to 16 bytes.
-	typedef struct __BUILTIN_ALIGN__ param
+	typedef struct  param
 	{
 		var_t mass;             // [ 8 byte]
 		var_t radius;           // [ 8 byte]

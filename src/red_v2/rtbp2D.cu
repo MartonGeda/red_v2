@@ -89,11 +89,11 @@ void rtbp2D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* d
 void rtbp2D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	static var_t mu = h_p[0];
 
-	var_t r  = SQR(h_y[0]) + SQR(h_y[1]);
-	var_t v2 = SQR(h_y[2]) + SQR(h_y[3]);
-	integral.h = (2.0 * v2 - p->mu) / r;
+	var2_t u  = {h_y[0], h_y[1]};
+	var2_t up = {h_y[2], h_y[3]};
+	integral.h = tools::rtbp2D::calc_integral(mu, u, up);
 
 	if (first_call)
 	{

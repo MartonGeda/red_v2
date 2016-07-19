@@ -10,10 +10,11 @@ public:
 	/*!
         \param path_si   the path of the file which conatins data about the initial conditions
         \param path_sd   the path of the file which conatins the initial conditions
+        \param n_obj     the number of objects
 		\param n_ppo     the number of parameters per object
 		\param comp_dev  the name of the executing device
 	*/
-	nbody(std::string& path_si, std::string& path_sd, uint32_t n, uint16_t n_ppo, comp_dev_t comp_dev);
+	nbody(std::string& path_si, std::string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev);
 	//! Destructor
 	~nbody();
 
@@ -71,5 +72,5 @@ private:
 	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
-	tbp_t::metadata_t *h_md, *d_md, *md;
+	nbp_t::metadata_t *h_md, *d_md, *md;
 };

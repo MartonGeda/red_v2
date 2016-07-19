@@ -174,19 +174,55 @@ void test_rtbp2d_calc_energy()
 
 			var_t hs = tools::tbp::calc_integral(mu, r, v);
 			var_t hr = tools::rtbp2D::calc_integral(mu, u, up);
-			var_t d = sqrt(SQR(r.x) + SQR(r.y));
-			printf("mean = %25.15le d = %25.15le hs = %25.15le hr = %25.15le\n", oe.mean * constants::RadianToDegree, d, hs, hr);
+			printf("%25.15le %25.15le %25.15le\n", oe.mean, hs, hr);
 
 			oe.mean += 1.0 * constants::DegreeToRadian;
 		} while (oe.mean <= TWOPI);
 	} /* Test tools::rtbp2D::transform_x2u() and tools::rtbp2D::transform_u2x() functions */
 }
 
-void test_rtbp2d_trans()
+void test_rtbp2d_transform()
 {
-	// Test ...
+	// Test square (section lines)
 	{
-		const char func_name[] = "tools::rtbp2D::transform_x2u";
+		var_t d = 0.01;
+		// Q4 -> Q1
+		var2_t x = {0.5, -0.5};
+		var2_t u  = {0, 0};
+		do
+		{
+			tools::rtbp2D::transform_x2u(x, u);
+			printf("%23.15le %23.15le %23.15le %23.15le\n", x.x, x.y, u.x, u.y);
+			x.y += d;
+		} while (0.5 >= x.y);
+		// Q1 -> Q2
+		do
+		{
+			tools::rtbp2D::transform_x2u(x, u);
+			printf("%23.15le %23.15le %23.15le %23.15le\n", x.x, x.y, u.x, u.y);
+			x.x -= d;
+		} while (-0.5 <= x.x);
+		// Q2 -> Q3
+		do
+		{
+			tools::rtbp2D::transform_x2u(x, u);
+			printf("%23.15le %23.15le %23.15le %23.15le\n", x.x, x.y, u.x, u.y);
+			x.y -= d;
+		} while (-0.5 <= x.y);
+		// Q3 -> Q4
+		do
+		{
+			tools::rtbp2D::transform_x2u(x, u);
+			printf("%23.15le %23.15le %23.15le %23.15le\n", x.x, x.y, u.x, u.y);
+			x.x += d;
+		} while (0.5 >= x.x);
+	}
+
+	return;
+
+	// Test ellipse
+	{
+		const char func_name[] = "tools::rtbp2D::transform___";
 		char lpad[] = "        ";
 
 	    /*
@@ -200,64 +236,64 @@ void test_rtbp2d_trans()
 
 		srand(0);
 
-		var_t tol = 1.0e-15;
-		for (int i = 0; i < 100; i++)
+		const var_t mu = constants::Gauss2*(1.0 + 1.0);
+		orbelem_t oe = {0.5, 0.8, 0.0, 0.0, 0.0, 0.0};
+		var3_t r0 = {0, 0, 0};
+		var3_t v0 = {0, 0, 0};
+		int i = 0;
+		do
 		{
-			// Set the starting coordinate and velocity vectors
-			var2_t r1 = {0.1 - random(0, 2.0), 0.1 - random(0, 2.0)};
-			var2_t v1 = {-i*0.05, -i*0.025};
-
-			var2_t r2 = {0.0, 0.0};
-			var2_t v2 = {0.0, 0.0};
+			oe.mean = i * constants::DegreeToRadian;
+			tools::calc_phase(mu, &oe, &r0, &v0);
+			var2_t x  = {r0.x, r0.y};
+			var2_t xd = {v0.x, v0.y};
 			var2_t u  = {0, 0};
 			var2_t up = {0, 0};
-			tools::rtbp2D::transform_x2u(r1, u);
-			tools::rtbp2D::transform_xd2up(u, v1, up);
-			tools::rtbp2D::transform_u2x(u, r2);
-			tools::rtbp2D::transform_up2xd(u, up, v2);
 
-			int ret_val = comp_2D_vectors(r1, r2, tol, lpad); 
-			if (0 < ret_val)
-			{
-				printf("    TEST '%s' failed with tolerance level: %g\n", func_name, tol);
-			}
-			else
-			{
-				printf("    TEST '%s' passed with tolerance level: %g\n", func_name, tol);
-			}
-			ret_val = comp_2D_vectors(v1, v2, tol, lpad); 
-			if (0 < ret_val)
-			{
-				printf("    TEST '%s' failed with tolerance level: %g\n", func_name, tol);
-			}
-			else
-			{
-				printf("    TEST '%s' passed with tolerance level: %g\n", func_name, tol);
-			}
-		}
-		// Calculate the energy
-		//y[0] = r0.x, y[1] = r0.y;
-		//y[2] = v0.x, y[3] = v0.y;
-		//var_t h = calc_integral(p.mu, y);
+			tools::rtbp2D::transform_x2u(x, u);
+			tools::rtbp2D::transform_xd2up(u, xd, up);
+			x.x  = x.y  = 0.0;
+			xd.x = xd.y = 0.0;
 
-		//y[0] = u.x;
-		//y[1] = u.y;
-		//y[2] = up.x;
-		//y[3] = up.y;
-		//var_t reg_h = reg_calc_integral(p.mu, y);
+			tools::rtbp2D::transform_u2x(u, x);
+			tools::rtbp2D::transform_up2xd(u, up, xd);
+			// Compare the original position and velocitiy vectors with the calculated ones
+			{
+				var_t tol = 1.0e-15;
+				var2_t x0  = {r0.x, r0.y};
+				var2_t x0d = {v0.x, v0.y};
+				comp_2D_vectors(x0, x, tol, lpad);
+				comp_2D_vectors(x0d, xd, tol, lpad);
+			}
 
+			printf("%23.15le %23.15le %23.15le %23.15le %23.15le %23.15le %23.15le %23.15le %23.15le\n", oe.mean, x.x, x.y, u.x, u.y, xd.x, xd.y, up.x, up.y);
+			if (0 < i && 0 == (i+1) % 90)
+			{
+				printf("\n");
+			}
+			i++;
+		} while (360 > i);
 	} /* Test tools::rtbp2D::transform_x2u() and tools::rtbp2D::transform_u2x() functions */
 }
 
 
 /*
-p [-1:1][-1:1]'x2u_1.txt' u 2:3 w l, '' u 4:5 w l, 'x2u_2.txt' u 2:3 w l, '' u 4:5 w l, 'x2u_3.txt' u 2:3 w l, '' u 4:5 w l, 'x2u_4.txt' u 2:3 w l, '' u 4:5 w l
-p [-1:1][-1:1]'_x2u_1.txt' u 2:3 w l, '' u 4:5 w l, '_x2u_2.txt' u 2:3 w l, '' u 4:5 w l, '_x2u_3.txt' u 2:3 w l, '' u 4:5 w l, '_x2u_4.txt' u 2:3 w l, '' u 4:5 w l
 
-p [-1:1][-1:1]'q1.txt' u 2:3 w l, '' u 4:5 w l, 'q2.txt' u 2:3 w l, '' u 4:5 w l, 'q3.txt' u 2:3 w l, '' u 4:5 w l, 'q4.txt' u 2:3 w l, '' u 4:5 w l
+cd 'C:\Work\red.cuda.Results\v2.0\Test_Copy\rtbp2D\Test_transform
+a=1.0
+p [-1:1][-1:1]'e_0.0_q1.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.0_q2.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.0_q3.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.0_q4.txt' u 2:3 w l, '' u 4:5 w l
 a=0.05
-p [-a:a][-a:a]'q1.txt' u 6:7 w l, '' u 8:9 w l, 'q2.txt' u 6:7 w l, '' u 8:9 w l, 'q3.txt' u 6:7 w l, '' u 8:9 w l, 'q4.txt' u 6:7 w l, '' u 8:9 w l
+p [-a:a][-a:a]'e_0.0_q1.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.0_q2.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.0_q3.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.0_q4.txt' u 6:7 w l, '' u 8:9 w l
 
+a=1.0
+p [-1:1][-1:1]'e_0.2_q1.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.2_q2.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.2_q3.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.2_q4.txt' u 2:3 w l, '' u 4:5 w l
+a=0.05
+p [-a:a][-a:a]'e_0.2_q1.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.2_q2.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.2_q3.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.2_q4.txt' u 6:7 w l, '' u 8:9 w l
+
+a=1.0
+p [-1:1][-1:1]'e_0.8_q1.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.8_q2.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.8_q3.txt' u 2:3 w l, '' u 4:5 w l, 'e_0.8_q4.txt' u 2:3 w l, '' u 4:5 w l
+a=0.05
+p [-a:a][-a:a]'e_0.8_q1.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.8_q2.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.8_q3.txt' u 6:7 w l, '' u 8:9 w l, 'e_0.8_q4.txt' u 6:7 w l, '' u 8:9 w l
 */
 int main()
 {
@@ -265,45 +301,16 @@ int main()
 	{
 		//test_calc_ephemeris();
 		//test_rtbp2d_trans();
+		//test_rtbp2d_transform();
 		test_rtbp2d_calc_energy();
 
-        return 0;
-
-		var_t mu = constants::Gauss2*(1.0 + 1.0);
-		orbelem_t oe = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-		var3_t r0 = {0, 0, 0};
-		var3_t v0 = {0, 0, 0};
-
-		var_t R = 0.5;
-		oe.sma = R;
-		var_t alpha = 3.0*TWOPI/4.0;
-		oe.mean = alpha;
-		do
-		{
-			var2_t x = {R * cos(alpha), R * sin(alpha)};
-			var2_t u = {0.0, 0.0};
-			tools::rtbp2D::transform_x2u(x, u);
-			x.x = x.y = 0.0;
-			tools::rtbp2D::transform_u2x(u, x);
-			
-			tools::calc_phase(mu, &oe, &r0, &v0);
-			var2_t r  = {r0.x, r0.y};
-			var2_t xd = {v0.x, v0.y};
-			var2_t up = {0.0, 0.0};
-			tools::rtbp2D::transform_xd2up(u, xd, up);
-			xd.x = xd.y = 0.0;
-			tools::rtbp2D::transform_up2xd(u, up, xd);
-
-			printf("%22.15le %22.15le %22.15le %22.15le %22.15le %22.15le %22.15le %22.15le %22.15le\n", alpha, x.x, x.y, u.x, u.y, xd.x, xd.y, up.x, up.y);
-			alpha += 0.01;
-			oe.mean = alpha;
-		} while (4.0*TWOPI/4.0 >= alpha);
 	}
 	catch (const string& msg)
 	{
 		cerr << "Error: " << msg << endl;
 	}
 
+    return 0;
 }
 
 #endif
