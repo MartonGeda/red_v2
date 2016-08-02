@@ -46,12 +46,12 @@ void euler::calc_y_np1()
 {
 	if (COMP_DEV_GPU == comp_dev)
 	{
-		euler_kernel::sum_vector<<<grid, block>>>(f.d_yout, f.d_y, dt_try, d_k[0], f.n_var);
+		euler_kernel::sum_vector<<<grid, block>>>(f.yout, f.y, dt_try, k[0], f.n_var);
 		CUDA_CHECK_ERROR();
 	}
 	else
 	{
-		cpu_sum_vector(f.h_yout, f.h_y, dt_try, h_k[0], f.n_var);
+		cpu_sum_vector(f.yout, f.y, dt_try, k[0], f.n_var);
 	}
 }
 
@@ -65,7 +65,7 @@ var_t euler::step()
 	uint16_t stage = 0;
 	t = f.t;
 	// Calculate initial differentials and store them into h_k
-	f.calc_dy(stage, t, f.h_y, h_k[stage]);
+	f.calc_dy(stage, t, f.y, k[stage]);
 
 	calc_y_np1();
 

@@ -24,6 +24,7 @@ public:
 	bool print_to_screen;           //!< Print every event to the standard output stream (cout) 
 	bool append;                    //!< If true than only one file will hold the solution
 	bool ef;                        //!< Extend the file names with command line information. Only for developer and debugger purposes.
+	bool benchmark;                 //!< Run benchmark to measure the time it takes to compute the right-hand-side
 
 	uint32_t id_dev;                //!< The id of the device which will execute the code
 	uint32_t n_change_to_cpu;       //!< The threshold value for the total number of SI bodies to change to the CPU

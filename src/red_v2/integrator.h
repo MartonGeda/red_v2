@@ -43,7 +43,7 @@ protected:
 //	void calc_grid(int nData, int threads_per_block);
 	var_t get_max_error(uint32_t n_var);
 
-	comp_dev_t comp_dev;        //!< The computing device to carry out the calculations (cpu or gpu)
+	comp_dev_t comp_dev;                //!< The computing device to carry out the calculations (cpu or gpu)
 
 	dim3 grid;
 	dim3 block;
@@ -61,22 +61,26 @@ protected:
 	uint16_t n_order;                   //!< The order of the embedded RK formulae
 	uint16_t n_stage;                   //!< The number of the method's stages
 
-	uint32_t n_var;                     //! The total number of variables of the problem
- 
 	std::vector<var_t *> h_k;           //!< Differentials in the HOST memory
 	std::vector<var_t *> d_k;           //!< Differentials in the DEVICE memory
+	std::vector<var_t *> k;             //!< Alias to the differentials (either in the HOST or the DEVICE memory)
+	var_t** d_ck;                       //!< Holds copy of d_k: a vector in DEVICE memory
+
 
 	var_t* h_ytemp;	                    //!< Holds the temporary solution approximation along the step in the HOST memory
 	var_t* d_ytemp;	                    //!< Holds the temporary solution approximation along the step in the DEVICE memory
+	var_t* ytemp;	                    //!< Alias either to h_ytemp or d_ytemp (either in the HOST or the DEVICE memory)
 
 	var_t* h_err;	                    //!< Holds the leading local truncation error for each variable in HOST memory
 	var_t* d_err;	                    //!< Holds the leading local truncation error for each variable in DEVICE memory
+	var_t* err;  	                    //!< Alias either to h_err or d_err (either in the HOST or the DEVICE memory)
 
 	uint16_t max_iter;
 	var_t dt_min;
 private:
 	void initialize();
-//	void create_aliases();
+	void create_aliases();
+	void set_computing_device(comp_dev_t device);
 
 	//! Allocates storage for data on the host and device memory
 	void allocate_storage(       uint32_t n_var);

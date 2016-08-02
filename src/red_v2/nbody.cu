@@ -3,6 +3,9 @@
 #include <fstream>
 #include <string>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
 #include "nbody.h"
 
 #include "redutil2.h"
@@ -11,6 +14,52 @@
 using namespace std;
 using namespace redutil2;
 
+namespace kernel_nbody
+{
+__global__
+void calc_grav_accel_naive
+	(
+		uint32_t n_obj, 
+		const nbp_t::body_metadata* bmd,
+		const nbp_t::param_t* p, 
+		const var3_t* r, 
+		var3_t* a
+	)
+{
+	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < n_obj)
+	{
+		a[i].x = a[i].y = a[i].z = 0.0;
+		var3_t r_ij = {0, 0, 0};
+		for (uint32_t j = 0; j < n_obj; j++) 
+		{
+			/* Skip the body with the same index */
+			if (i == j)
+			{
+				continue;
+			}
+			// 3 FLOP
+			r_ij.x = r[j].x - r[i].x;
+			r_ij.y = r[j].y - r[i].y;
+			r_ij.z = r[j].z - r[i].z;
+			// 5 FLOP
+			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);	// = r2
+			// 20 FLOP
+			var_t d = sqrt(d2);								    // = r
+			// 2 FLOP
+			var_t s = p[j].mass / (d*d2);
+			// 6 FLOP
+			a[i].x += s * r_ij.x;
+			a[i].y += s * r_ij.y;
+			a[i].z += s * r_ij.z;
+		} // 36 FLOP
+		a[i].x *= K2;
+		a[i].y *= K2;
+		a[i].z *= K2;
+	}
+}
+} /* kernel_nbody */
 
 nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(3, n_obj, 6, n_ppo, comp_dev)
@@ -20,6 +69,11 @@ nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, c
 
     load_solution_info(path_si);
     load_solution_data(path_sd);
+
+	if (COMP_DEV_GPU == comp_dev)
+	{
+		copy_to_device();
+	}
 
 	calc_integral();
 	tout = t;
@@ -75,11 +129,23 @@ void nbody::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(d_md));
 }
 
+void nbody::copy_to_host()
+{
+	copy_vector_to_host(h_y, d_y, n_var*sizeof(var_t));
+	copy_vector_to_host(h_p, d_p, n_par*sizeof(var_t));
+}
+
+void nbody::copy_to_device()
+{
+	copy_vector_to_device(d_y, h_y, n_var*sizeof(var_t));
+	copy_vector_to_device(d_p, h_p, n_par*sizeof(var_t));
+}
+
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (COMP_DEV_CPU == comp_dev)
 	{
-		cpu_calc_dy(stage, curr_t, y_temp, dy);
+		cpu_calc_dy(stage, curr_t, y_temp, dy, true);
 	}
 	else
 	{
@@ -110,39 +176,87 @@ void nbody::calc_integral()
 	}
 }
 
-void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
+void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
 {
 	memcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t));
 
+	var3_t* r = (var3_t*)y_temp;
+	var3_t* a = (var3_t*)(dy + 3*n_obj);
 	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-	uint32_t offset = 3*n_obj;
-	for (uint32_t i = 0; i < n_obj; i++)
+
+	if (use_symm_prop)
 	{
-		var3_t r_ij = {0, 0, 0};
-		for (uint32_t j = i+1; j < n_obj; j++)
+		for (uint32_t i = 0; i < n_obj; i++)
 		{
-			r_ij.x = y_temp[j+0] - y_temp[i+0];
-			r_ij.y = y_temp[j+1] - y_temp[i+1];
-			r_ij.z = y_temp[j+2] - y_temp[i+2];
+			var3_t r_ij = {0, 0, 0};
+			for (uint32_t j = i+1; j < n_obj; j++)
+			{
+				r_ij.x = r[j].x - r[i].x;
+				r_ij.y = r[j].y - r[i].y;
+				r_ij.z = r[j].z - r[i].z;
 
-			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-			var_t d = sqrt(d2);
-			var_t d_3 = 1.0 / (d*d2);
+				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = 1.0 / (d*d2);
 
-			dy[offset + i + 0] += p[j].mass * d_3 * r_ij.x;
-			dy[offset + i + 1] += p[j].mass * d_3 * r_ij.y;
-			dy[offset + i + 2] += p[j].mass * d_3 * r_ij.z;
+				var_t s = p[j].mass * d_3;
+				a[i].x += s * r_ij.x;
+				a[i].y += s * r_ij.y;
+				a[i].z += s * r_ij.z;
 
-			dy[offset + j + 0] -= p[i].mass * d_3 * r_ij.x;
-			dy[offset + j + 1] -= p[i].mass * d_3 * r_ij.y;
-			dy[offset + j + 2] -= p[i].mass * d_3 * r_ij.z;
+				s = p[i].mass * d_3;
+				a[j].x -= s * r_ij.x;
+				a[j].y -= s * r_ij.y;
+				a[j].z -= s * r_ij.z;
+			}
+			a[i].x *= K2;
+			a[i].y *= K2;
+			a[i].z *= K2;
+		}
+	}
+	else
+	{
+		for (uint32_t i = 0; i < n_obj; i++)
+		{
+			var3_t r_ij = {0, 0, 0};
+			for (uint32_t j = 0; j < n_obj; j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
+				r_ij.x = r[j].x - r[i].x;
+				r_ij.y = r[j].y - r[i].y;
+				r_ij.z = r[j].z - r[i].z;
+
+				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = 1.0 / (d*d2);
+
+				var_t s = p[j].mass * d_3;
+				a[i].x += s * r_ij.x;
+				a[i].y += s * r_ij.y;
+				a[i].z += s * r_ij.z;
+			}
+			a[i].x *= K2;
+			a[i].y *= K2;
+			a[i].z *= K2;
 		}
 	}
 }
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	throw string("The gpu_calc_dy() is not implemented.");
+	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
+
+	set_kernel_launch_param(n_obj, n_tpb, grid, block);
+
+	var3_t* r = (var3_t*)y_temp;
+	var3_t* a = (var3_t*)(dy + 3*n_obj);
+	nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+
+	kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, p, r, a);
+	CUDA_CHECK_ERROR();
 }
 
 void nbody::load_solution_info(string& path)

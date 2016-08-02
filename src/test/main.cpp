@@ -303,7 +303,6 @@ int main()
 		//test_rtbp2d_trans();
 		//test_rtbp2d_transform();
 		test_rtbp2d_calc_energy();
-
 	}
 	catch (const string& msg)
 	{

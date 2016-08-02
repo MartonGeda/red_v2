@@ -145,7 +145,7 @@ var_t int_rungekutta5::step()
 		for (stage = 1; stage < 6; stage++)
 		{
 			t = f.t + c[stage] * dt_try;
-			// Calculate the y_temp for the next f evaulation
+			// Calculate the y_temp for the next f evaluation
 			cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
 			f.calc_dy(stage, t, h_ytemp, h_k[stage]);
 		}
