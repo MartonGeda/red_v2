@@ -25,9 +25,7 @@
     <ClInclude Include="int_rungekutta4.h" />
     <ClInclude Include="int_rungekutta5.h" />
     <ClInclude Include="int_rungekutta7.h" />
-    <ClInclude Include="nbody.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="nbody.h" />
     <ClInclude Include="ode.h" />
     <ClInclude Include="options.h" />
     <ClInclude Include="parameter.h" />
@@ -47,9 +45,7 @@
     <CudaCompile Include="int_rungekutta5.cu" />
     <CudaCompile Include="int_rungekutta7.cu" />
     <CudaCompile Include="main.cu" />
-    <CudaCompile Include="nbody.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </CudaCompile>
+    <CudaCompile Include="nbody.cu" />
     <CudaCompile Include="ode.cu" />
     <CudaCompile Include="rtbp1D.cu" />
     <CudaCompile Include="rtbp2D.cu" />
