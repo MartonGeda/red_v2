@@ -42,6 +42,7 @@ static __global__
 		tid += stride;
 	}
 }
+
 } /* namespace rk4_kernel */
 
 int_rungekutta4::int_rungekutta4(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
@@ -67,19 +68,6 @@ void int_rungekutta4::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coe
 	}
 }
 
-//void int_rungekutta4::calc_ytemp(uint16_t stage)
-//{
-//	if (COMP_DEV_GPU == comp_dev)
-//	{
-//		// rk4_kernel::calc_ytemp
-//		CUDA_CHECK_ERROR();
-//	}
-//	else
-//	{
-//		cpu_calc_ytemp(stage);
-//	}
-//}
-
 void int_rungekutta4::calc_error(uint32_t n)
 {
 	if (COMP_DEV_GPU == comp_dev)
@@ -92,28 +80,6 @@ void int_rungekutta4::calc_error(uint32_t n)
 		cpu_calc_error(n);
 	}
 }
-
-//void int_rungekutta4::calc_y_np1()
-//{
-//	if (COMP_DEV_GPU == comp_dev)
-//	{
-//		// rk4_kernel::calc_y_np1
-//		CUDA_CHECK_ERROR();
-//	}
-//	else
-//	{
-//		cpu_calc_y_np1();
-//	}
-//}
-
-// a_i = b_i + F * c_i
-//void int_rungekutta4::cpu_sum_vector(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
-//{
-//	for (uint32_t tid = 0; tid < n; tid++)
-//	{
-//		a[tid] = b[tid] + F * c[tid];
-//	}
-//}
 
 void int_rungekutta4::cpu_calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
 {
@@ -131,41 +97,6 @@ void int_rungekutta4::cpu_calc_lin_comb(var_t* y, const var_t* y_n, const var_t*
 		y[i] = y_n[i] + dy;
 	}
 }
-
-//void int_rungekutta4::cpu_calc_ytemp(uint16_t stage)
-//{
-//	for (uint32_t i = 0; i < f.n_var; i++)
-//	{
-//		var_t dy = 0.0;
-//		for (uint16_t j = 0; j < stage; j++)
-//		{
-//			if (0.0 == a[a_idx[stage-1] + j])
-//			{
-//				continue;
-//			}
-//			dy += a[a_idx[stage-1] + j] * h_k[j][i];
-//		}
-//
-//		h_ytemp[i] = f.h_y[i] + dt_try * dy;
-//	}
-//}
-//
-//void int_rungekutta4::cpu_calc_y_np1()
-//{
-//	for (uint32_t i = 0; i < f.n_var; i++)
-//	{
-//		var_t dy = 0.0;
-//		for (uint16_t j = 0; j < n_order; j++)
-//		{
-//			if (0.0 == b[j])
-//			{
-//				continue;
-//			}
-//			dy += b[j] * h_k[j][i];
-//		}
-//		f.h_yout[i] = f.h_y[i] + dt_try * dy;
-//	}
-//}
 
 void int_rungekutta4::cpu_calc_error(uint32_t n)
 {
@@ -213,13 +144,11 @@ var_t int_rungekutta4::step()
 		{
 			t = f.t + c[stage] * dt_try;
 			cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
-			//calc_ytemp(stage);
 			f.calc_dy(stage, t, h_ytemp, h_k[stage]);
 		}
 		// y_(n+1) = yn + dt*(1/6*k1 + 1/3*k2 + 1/3*k3 + 1/6*k4) + O(dt^5)
 		// So far we have stage (=4) number of k vectors
 		cpu_calc_lin_comb(f.h_yout, f.h_y, bb, stage, f.n_var);
-		//calc_y_np1();
 
 		if (adaptive)
 		{

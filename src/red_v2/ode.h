@@ -42,7 +42,16 @@ public:
 	void deallocate_host_storage();
 	void deallocate_device_storage();
 
+	void create_aliases();
+	//! Copies ODE variables between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
 	void copy_vars(copy_direction_t dir);
+	//! Copies ODE parameters between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
 	void copy_params(copy_direction_t dir);
 
 	void swap();
@@ -50,7 +59,6 @@ public:
 	virtual void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;
 
-	//virtual void print_solution_info(std::string& path, data_rep_t repres) = 0;
 	virtual void print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres) = 0;
 	virtual void print_integral(std::string& path) = 0;
 

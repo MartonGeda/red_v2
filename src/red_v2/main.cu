@@ -100,6 +100,10 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 	}
 }
 
+void run_benchmark(options* opt, ode* f, integrator* intgr, ofstream& slog)
+{
+}
+
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
 	static string prefix = create_prefix(opt);
@@ -209,9 +213,16 @@ int main(int argc, const char** argv, const char** env)
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies
 		intgr->set_dt_min(1.0e-20); // day
-		intgr->set_max_iter(10);
+		intgr->set_max_iter(100);
 
-		run_simulation(opt, f, intgr, *slog);
+		if (opt->benchmark && DYN_MODEL_NBODY == opt->dyn_model)
+		{
+			run_benchmark(opt, f, intgr, *slog);
+		}
+		else
+		{
+			run_simulation(opt, f, intgr, *slog);
+		}
 	} /* try */
 	catch (const string& msg)
 	{

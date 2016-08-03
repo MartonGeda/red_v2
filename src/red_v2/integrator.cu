@@ -20,9 +20,8 @@ integrator::integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_
 {
 	initialize();
 
-	//n_var  = f.n_obj * f.n_vpo;
-	n_var  = f.n_var;
-	allocate_storage(n_var);
+	allocate_storage(f.n_var);
+	create_aliases();
 }
 
 integrator::~integrator()
@@ -30,21 +29,25 @@ integrator::~integrator()
 
 void integrator::initialize()
 {
-	n_tried_step  = 0;
-	n_passed_step = 0;
-	n_failed_step = 0;
-
 	t             = f.t;
 	dt_did        = 0.0;
 
+	d_ck          = 0x0;
+
 	h_ytemp       = 0x0;
 	d_ytemp       = 0x0;
+	ytemp         = 0x0;
 
 	h_err         = 0x0;
 	d_err         = 0x0;
+	err           = 0x0;
 
 	max_iter      = 100;
 	dt_min        = 1.0e10;
+
+	n_tried_step  = 0;
+	n_passed_step = 0;
+	n_failed_step = 0;
 }
 
 void integrator::allocate_storage(uint32_t n_var)
@@ -58,6 +61,7 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
+	k.resize(n_stage);
 	h_k.resize(n_stage);
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
@@ -73,9 +77,11 @@ void integrator::allocate_host_storage(uint32_t n_var)
 void integrator::allocate_device_storage(uint32_t n_var)
 {
 	d_k.resize(n_stage);
+	ALLOCATE_DEVICE_VECTOR((void**)&d_ck, n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		ALLOCATE_DEVICE_VECTOR((void**)&(d_k[i]), n_var*sizeof(var_t));
+		copy_vector_to_device((void*)&d_ck[i], &d_k[i], sizeof(var_t*));
 	}
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
@@ -108,16 +114,80 @@ void integrator::deallocate_host_storage()
 
 void integrator::deallocate_device_storage()
 {
+	FREE_DEVICE_VECTOR((void **)&(d_ck));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		FREE_HOST_VECTOR((void **)&(d_k[i]));
+		FREE_DEVICE_VECTOR((void **)&(d_k[i]));
 	}
-	FREE_HOST_VECTOR((void **)&(d_ytemp));
+	FREE_DEVICE_VECTOR((void **)&(d_ytemp));
 	if (adaptive)
 	{
-		FREE_HOST_VECTOR((void **)&(d_err));
+		FREE_DEVICE_VECTOR((void **)&(d_err));
 	}
 }
+
+// Date of creation: 2016.08.02.
+// Last edited: 
+// Status: Not tested
+void integrator::create_aliases()
+{
+	switch (comp_dev)
+	{
+	case COMP_DEV_CPU:
+		ytemp = h_ytemp;
+		for (int r = 0; r < n_stage; r++) 
+		{
+			k[r] = h_k[r];
+		}
+		if (adaptive)
+		{
+			err = h_err;
+		}
+		break;
+	case COMP_DEV_GPU:
+		ytemp = d_ytemp;
+		for (int r = 0; r < n_stage; r++) 
+		{
+			k[r] = d_k[r];
+		}
+		if (adaptive)
+		{
+			err = d_err;
+		}
+		break;
+	default:
+		throw string("Parameter 'comp_dev' is out of range.");
+	}
+}
+
+void integrator::set_computing_device(comp_dev_t device)
+{
+	// If the execution is already on the requested device than nothing to do
+	if (this->comp_dev == device)
+	{
+		return;
+	}
+	// TODO: implement
+
+	//int n_body = ppd->n_bodies->get_n_total_playing();
+
+	//switch (device)
+	//{
+	//case COMP_DEV_CPU:
+	//	deallocate_device_storage();
+	//	break;
+	//case COMP_DEV_GPU:
+	//	allocate_device_storage(n_body);
+	//	break;
+	//default:
+	//	throw string("Parameter 'device' is out of range.");
+	//}
+
+	//this->comp_dev = device;
+	//create_aliases();
+	//f->set_computing_device(device);
+}
+
 
 var_t integrator::get_max_error(uint32_t n_var)
 {
@@ -142,8 +212,6 @@ var_t integrator::get_max_error(uint32_t n_var)
 			}
 		}		
 	}
-
-	//return (dt_try * lambda * max_err);
 	return (max_err);
 }
 

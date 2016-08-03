@@ -74,6 +74,7 @@ namespace redutil2
 		void calc_oe(   var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe);
 		var_t calc_orbital_period(var_t mu, var_t a);
 
+		void print_vector(const var3_t *v);
 		void print_vector(const var4_t *v);
 		void print_parameter(const pp_disk_t::param_t *p);
 		void print_body_metadata(const pp_disk_t::body_metadata_t *b);

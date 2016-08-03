@@ -1064,6 +1064,17 @@ var_t calc_orbital_period(var_t mu, var_t a)
 	return (two_pi*sqrt(CUBE(a)/mu));
 }
 
+void print_vector(const var3_t *v)
+{
+	cout.precision(16);
+	cout.setf(ios::right);
+	cout.setf(ios::scientific);
+
+	cout << setw(VAR_T_W) << v->x << SEP
+		 << setw(VAR_T_W) << v->y << SEP
+		 << setw(VAR_T_W) << v->z << endl;
+}
+
 void print_vector(const var4_t *v)
 {
 	cout.precision(16);
@@ -1273,9 +1284,10 @@ var_t get_total_mass(uint32_t n, nbp_t::param_t* p)
 	
 var_t calc_total_energy(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
 {
-	var_t E_k = calc_kinetic_energy(n, p, r);
-	var_t E_p = calc_potential_energy(n, p, r);
-	return (E_k + E_p);
+	var_t T = calc_kinetic_energy(n, p, v);
+	var_t U = calc_potential_energy(n, p, r);
+	var_t h = T - U;
+	return h;
 }
 
 var_t calc_kinetic_energy(uint32_t n, nbp_t::param_t* p, var3_t* v)
@@ -1307,7 +1319,7 @@ var_t calc_potential_energy(uint32_t n, nbp_t::param_t* p, var3_t* r)
         }
 	}
 
-    return (result / 2.0);
+	return (K2 * result / 2.0);
 }
 
 var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)

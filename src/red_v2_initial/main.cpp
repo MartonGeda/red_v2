@@ -450,15 +450,72 @@ namespace model
 			for (uint32_t i = 0; i < n_obj; i++)
 			{
 				uint32_t j = 3 * i;
-				y[j  ] = random(-100.0, 100.0);
-				y[j+1] = random(-100.0, 100.0);
-				y[j+2] = random(-100.0, 100.0);
+				y[j  ] = random(-1.0e1, 1.0e1);
+				y[j+1] = random(-1.0e1, 1.0e1);
+				y[j+2] = random(-1.0e1, 1.0e1);
 
-				y[offset + j  ] = random(-0.01, 0.01);
-				y[offset + j+1] = random(-0.01, 0.01);
-				y[offset + j+2] = random(-0.01, 0.01);
+				y[offset + j  ] = random(-1.0e-5, 1.0e-5);
+				y[offset + j+1] = random(-1.0e-5, 1.0e-5);
+				y[offset + j+2] = random(-1.0e-5, 1.0e-5);
 			}
 			
+			// Set the initial stepsize for the integrator (should be model dependent)
+            dt0   = 1.0e-4;
+
+            print(dir, filename, n_obj);
+
+            FREE_HOST_VECTOR((void **)&y);
+			FREE_HOST_VECTOR((void **)&p);
+			FREE_HOST_VECTOR((void **)&md);
+        }
+
+		void create(string& dir, string& filename)
+        {
+	        /*
+	         * The units are:
+	         *     Unit name         | Unit symbol | Quantity name
+	         *     -----------------------------------------------
+	         *     Astronomical unit |          AU | length
+	         *     Solar mass        |           S | mass
+	         *     Mean solar day    |           D | time
+	         */
+            uint32_t n_obj = 2;
+			uint32_t n_var = 6 * n_obj;
+			uint32_t n_par = n_obj;
+            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
+			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
+			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+
+			srand(time(NULL));
+			// Set the parameters of the problem
+			p[0].mass = 1.0;
+			p[1].mass = 1.0;
+			// Set the object metadata
+            md[0].id = 1;
+            md[1].id = 2;
+
+			// Set the initial conditions at t0
+            t0 = 0.0;
+			const var_t mu = K2*(p[0].mass + p[1].mass);
+			orbelem_t oe = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+			var3_t r = {0, 0, 0};
+			var3_t v = {0, 0, 0};
+			tools::calc_phase(mu, &oe, &r, &v);
+
+			var_t s = p[1].mass/(p[0].mass + p[1].mass);
+			var3_t r1 = {-s*r.x, -s*r.y, -s*r.z};
+			var3_t v1 = {-s*v.x, -s*v.y, -s*v.z};
+
+			s = p[0].mass/(p[0].mass + p[1].mass);
+			var3_t r2 = {s*r.x, s*r.y, s*r.z};
+			var3_t v2 = {s*v.x, s*v.y, s*v.z};
+
+			y[0] = r1.x, y[1] = r1.y, y[2] = r1.z;
+			y[3] = r2.x, y[4] = r2.y, y[5] = r2.z;
+
+			y[6] = v1.x, y[ 7] = v1.y, y[ 8] = v1.z;
+			y[9] = v2.x, y[10] = v2.y, y[11] = v2.z;
+
 			// Set the initial stepsize for the integrator (should be model dependent)
             dt0   = 1.0e-4;
 
@@ -527,7 +584,8 @@ int main(int argc, const char **argv)
         //model::tbp2D::create(odir, filename);
         //model::rtbp1D::create(odir, filename);
         //model::rtbp2D::create(odir, filename);
-		model::nbody::create(odir, filename, n_obj);
+		//model::nbody::create(odir, filename, n_obj);
+		model::nbody::create(odir, filename);               // The two-body problem
 	}
 	catch (const string& msg)
 	{

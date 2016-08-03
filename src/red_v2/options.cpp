@@ -45,6 +45,7 @@ void options::create_default()
 	print_to_screen     = false;
 	append              = false;
 	ef                  = false;
+	benchmark           = false;
 
 	id_dev              = 0;
 	n_change_to_cpu     = 100;
@@ -130,6 +131,10 @@ void options::parse(int argc, const char** argv)
 		else if (p == "-ef")
 		{
 			ef = true;
+		}
+		else if (p == "-b")
+		{
+			benchmark = true;
 		}
 
 		else if (p == "-id_dev")
