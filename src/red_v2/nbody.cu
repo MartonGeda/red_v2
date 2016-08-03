@@ -72,7 +72,8 @@ nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, c
 
 	if (COMP_DEV_GPU == comp_dev)
 	{
-		copy_to_device();
+		copy_vars(COPY_DIRECTION_TO_DEVICE);
+		copy_params(COPY_DIRECTION_TO_DEVICE);
 	}
 
 	calc_integral();
@@ -127,18 +128,6 @@ void nbody::deallocate_host_storage()
 void nbody::deallocate_device_storage()
 {
 	FREE_DEVICE_VECTOR((void **)&(d_md));
-}
-
-void nbody::copy_to_host()
-{
-	copy_vector_to_host(h_y, d_y, n_var*sizeof(var_t));
-	copy_vector_to_host(h_p, d_p, n_par*sizeof(var_t));
-}
-
-void nbody::copy_to_device()
-{
-	copy_vector_to_device(d_y, h_y, n_var*sizeof(var_t));
-	copy_vector_to_device(d_p, h_p, n_par*sizeof(var_t));
 }
 
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)

@@ -42,7 +42,16 @@ public:
 	void deallocate_host_storage();
 	void deallocate_device_storage();
 
+	void create_aliases();
+	//! Copies ODE variables between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
 	void copy_vars(copy_direction_t dir);
+	//! Copies ODE parameters between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
 	void copy_params(copy_direction_t dir);
 
 	void swap();

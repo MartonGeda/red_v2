@@ -57,12 +57,12 @@ void int_rungekutta2::calc_y_np1()
 {
 	if (COMP_DEV_GPU == comp_dev)
 	{
-		rk2_kernel::sum_vector<<<grid, block>>>(f.d_yout, f.d_y, dt_try, d_k[1], f.n_var);
+		rk2_kernel::sum_vector<<<grid, block>>>(f.yout, f.y, dt_try, k[1], f.n_var);
 		CUDA_CHECK_ERROR();
 	}
 	else
 	{
-		cpu_sum_vector(f.h_yout, f.h_y, dt_try, h_k[1], f.n_var);
+		cpu_sum_vector(f.yout, f.y, dt_try, k[1], f.n_var);
 	}
 }
 
@@ -73,9 +73,9 @@ void int_rungekutta2::calc_ytemp(uint16_t stage)
 		var_t dy = 0.0;
 		for (uint16_t j = 0; j < stage; j++)
 		{
-			dy += a[stage * n_stage + j] * h_k[j][i];
+			dy += a[stage * n_stage + j] * k[j][i];
 		}
-		h_ytemp[i] = f.h_y[i] + dt_try * dy;
+		ytemp[i] = f.y[i] + dt_try * dy;
 	}
 }
 
@@ -89,12 +89,12 @@ var_t int_rungekutta2::step()
 	uint16_t stage = 0;
 	t = f.t;
 	// Calculate initial differentials and store them into h_k
-	f.calc_dy(stage, t, f.h_y, h_k[stage]);
+	f.calc_dy(stage, t, f.y, k[stage]);
 
 	stage = 1;
 	t = f.t + c[stage] * dt_try;
 	calc_ytemp(stage);
-	f.calc_dy(stage, t, h_ytemp, h_k[stage]);
+	f.calc_dy(stage, t, ytemp, k[stage]);
 
 	calc_y_np1();
 

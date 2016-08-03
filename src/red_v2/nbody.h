@@ -18,11 +18,6 @@ public:
 	//! Destructor
 	~nbody();
 
-	//! Copies ODE parameters and variables from the cuda device to the host
-	void copy_to_host();
-	//! Copies ODE parameters and variables from the host to the cuda device
-	void copy_to_device();
-
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
 		\param path_si  full file path where the info about the solution will be printed

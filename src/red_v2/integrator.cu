@@ -20,8 +20,8 @@ integrator::integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_
 {
 	initialize();
 
-	//n_var = f.n_var;
 	allocate_storage(f.n_var);
+	create_aliases();
 }
 
 integrator::~integrator()
@@ -61,6 +61,7 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
+	k.resize(n_stage);
 	h_k.resize(n_stage);
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
