@@ -25,22 +25,27 @@ integrator::integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_
 }
 
 integrator::~integrator()
-{}
+{
+	deallocate_storage();
+}
 
 void integrator::initialize()
 {
 	t             = f.t;
 	dt_did        = 0.0;
 
-	d_ck          = 0x0;
+	//d_ck          = NULL;
+	h_k           = NULL;
+	d_k           = NULL;
+	k             = NULL;
 
-	h_ytemp       = 0x0;
-	d_ytemp       = 0x0;
-	ytemp         = 0x0;
+	h_ytemp       = NULL;
+	d_ytemp       = NULL;
+	ytemp         = NULL;
 
-	h_err         = 0x0;
-	d_err         = 0x0;
-	err           = 0x0;
+	h_err         = NULL;
+	d_err         = NULL;
+	err           = NULL;
 
 	max_iter      = 100;
 	dt_min        = 1.0e10;
@@ -61,8 +66,12 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	k.resize(n_stage);
-	h_k.resize(n_stage);
+	//k.resize(n_stage);
+	//h_k.resize(n_stage);
+
+	ALLOCATE_HOST_VECTOR((void**)&h_k, n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_VECTOR((void**)&k, n_stage*sizeof(var_t*));
+
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		ALLOCATE_HOST_VECTOR((void**)&(h_k[i]), n_var*sizeof(var_t));
@@ -76,12 +85,14 @@ void integrator::allocate_host_storage(uint32_t n_var)
 
 void integrator::allocate_device_storage(uint32_t n_var)
 {
-	d_k.resize(n_stage);
-	ALLOCATE_DEVICE_VECTOR((void**)&d_ck, n_stage*sizeof(var_t*));
+	//d_k.resize(n_stage);
+
+	ALLOCATE_DEVICE_VECTOR((void**)&d_k, n_stage*sizeof(var_t*));
+	//ALLOCATE_DEVICE_VECTOR((void**)&d_ck, n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		ALLOCATE_DEVICE_VECTOR((void**)&(d_k[i]), n_var*sizeof(var_t));
-		copy_vector_to_device((void*)&d_ck[i], &d_k[i], sizeof(var_t*));
+		//copy_vector_to_device((void*)&d_ck[i], &d_k[i], sizeof(var_t*));
 	}
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
@@ -105,6 +116,9 @@ void integrator::deallocate_host_storage()
 	{
 		FREE_HOST_VECTOR((void **)&(h_k[i]));
 	}
+	FREE_HOST_VECTOR((void **)&(h_k));
+	FREE_HOST_VECTOR((void **)&(k));
+
 	FREE_HOST_VECTOR((void **)&(h_ytemp));
 	if (adaptive)
 	{
@@ -114,11 +128,13 @@ void integrator::deallocate_host_storage()
 
 void integrator::deallocate_device_storage()
 {
-	FREE_DEVICE_VECTOR((void **)&(d_ck));
+	//FREE_DEVICE_VECTOR((void **)&(d_ck));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		FREE_DEVICE_VECTOR((void **)&(d_k[i]));
 	}
+	FREE_DEVICE_VECTOR((void **)&(d_k));
+
 	FREE_DEVICE_VECTOR((void **)&(d_ytemp));
 	if (adaptive)
 	{

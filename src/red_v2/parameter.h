@@ -20,8 +20,8 @@ public:
 
 	integrator_type_t int_type;	       //! type of the integrator
 	var_t tolerance;                   //! tolerance/eps/accuracy of the simulation
-	bool_t error_check_for_tp;         //! Check the error also for the test particle
-	bool_t adaptive;                   //! Adaptive step size
+	bool error_check_for_tp;           //! Check the error also for the test particle
+	bool adaptive;                     //! Adaptive step size
 								       
 	var_t simulation_length;           //! length of the simulation [day]
 	var_t output_interval;             //! interval between two succesive output epoch [day]

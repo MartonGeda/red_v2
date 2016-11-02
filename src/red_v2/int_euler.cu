@@ -7,11 +7,13 @@
 #include "redutil2.h"
 #include "macro.h"
 
+using namespace redutil2;
+
 namespace euler_kernel
 {
 // a_i = b_i + F * c_i
 static __global__
-	void sum_vector(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
+	void calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
 {
 	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 	uint32_t stride = gridDim.x * blockDim.x;
@@ -24,14 +26,6 @@ static __global__
 }
 } /* namespace euler_kernel */
 
-void euler::cpu_sum_vector(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
-{
-	for (uint32_t tid = 0; tid < n; tid++)
-	{
-		a[tid] = b[tid] + F * c[tid];
-	}
-}
-
 euler::euler(ode& f, var_t dt, comp_dev_t comp_dev) :
 	integrator(f, dt, false, 0.0, 1, comp_dev)
 {
@@ -42,16 +36,25 @@ euler::euler(ode& f, var_t dt, comp_dev_t comp_dev) :
 euler::~euler()
 {}
 
+void euler::calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
+{
+	for (uint32_t tid = 0; tid < n; tid++)
+	{
+		a[tid] = b[tid] + F * c[tid];
+	}
+}
+
 void euler::calc_y_np1()
 {
 	if (COMP_DEV_GPU == comp_dev)
 	{
-		euler_kernel::sum_vector<<<grid, block>>>(f.yout, f.y, dt_try, k[0], f.n_var);
+		euler_kernel::calc_lin_comb<<<grid, block>>>(f.yout, f.y, dt_try, k[0], f.n_var);
 		CUDA_CHECK_ERROR();
 	}
 	else
 	{
-		cpu_sum_vector(f.yout, f.y, dt_try, k[0], f.n_var);
+		tools::calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var);
+		//calc_lin_comb(f.yout, f.y, dt_try, k[0], f.n_var);
 	}
 }
 
@@ -73,8 +76,7 @@ var_t euler::step()
 
 	update_counters(1);
 
-	t = f.t + dt_did;
-	f.tout = t;
+	f.tout = t = f.t + dt_did;
 	f.swap();
 
 	return dt_did;

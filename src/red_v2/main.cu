@@ -19,42 +19,8 @@
 using namespace std;
 using namespace redutil2;
 
-string create_prefix(const options* opt)
-{
-	static const char* integrator_type_short_name[] = 
-	{
-				"E",
-				"RK2",
-				"RK4",
-				"RKF5",
-				"RKF7"
-	};
-
-	string prefix;
-
-	if (opt->ef)
-	{
-		char sep = '_';
-		string config;
-#ifdef _DEBUG
-		config = "D";
-#else
-		config = "R";
-#endif
-		string dev = (opt->comp_dev == COMP_DEV_CPU ? "cpu" : "gpu");
-		// as: adaptive step-size, fs: fix step-size
-		string adapt = (opt->param->adaptive == true ? "as" : "fs");
-		
-		string int_name(integrator_type_short_name[opt->param->int_type]);
-		prefix += config + sep + dev + sep + adapt + sep + int_name + sep;
-	}
-
-	return prefix;
-}
-
 void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
-	static string prefix = create_prefix(opt);
 	static string ext = (DATA_REPRESENTATION_ASCII == opt->param->output_data_rep ? "txt" : "dat");
 
 	string fn_info;
@@ -64,10 +30,10 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 
 	if (opt->append)
 	{
-		fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "." + ext;
+		fn_info = opt->fn_prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "." + ext;
 		path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
 
-		fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "." + ext;
+		fn_data = opt->fn_prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "." + ext;
 		path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
 
 		f->print_solution(path_si, path_sd, opt->param->output_data_rep);
@@ -76,10 +42,10 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 	{
 		string n_print_str = redutil2::number_to_string(n_print, OUTPUT_ORDINAL_NUMBER_WIDTH, true);
 
-		fn_info = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "_" + n_print_str + "." + ext;
+		fn_info = opt->fn_prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_INFO] + "_" + n_print_str + "." + ext;
 		path_si = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_info);
 
-		fn_data = prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "_" + n_print_str + "." + ext;
+		fn_data = opt->fn_prefix + opt->out_fn[OUTPUT_NAME_SOLUTION_DATA] + "_" + n_print_str + "." + ext;
 		path_sd = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], fn_data);
 
 		f->print_solution(path_si, path_sd, opt->param->output_data_rep);
@@ -106,13 +72,13 @@ void run_benchmark(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
-	static string prefix = create_prefix(opt);
 	static string ext = (DATA_REPRESENTATION_ASCII == opt->param->output_data_rep ? "txt" : "dat");
 
-	static string path_info           = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INFO] + ".txt");
-	static string path_event          = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_EVENT] + ".txt");
-	static string path_integral       = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL] + ".txt");
-	static string path_integral_event = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
+	static string outdir = opt->dir[DIRECTORY_NAME_OUT];
+	static string path_info           = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_INFO] + ".txt");
+	static string path_event          = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_EVENT] + ".txt");
+	static string path_integral       = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL] + ".txt");
+	static string path_integral_event = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
 
 	var_t ps = 0.0;
 
@@ -170,8 +136,8 @@ int main(int argc, const char** argv, const char** env)
 {
 	time_t start = time(NULL);
 
-	ofstream* slog = 0x0;
-	//options*   opt = 0x0;
+	ofstream* slog = NULL;
+	//options*   opt = NULL;
 
 	//matrix4_t m = {{10,8,10,7},{1,9,10,7},{8,8,4,7},{2,8,1,3}};
 	//var4_t v = {4,10,1,5};
@@ -199,8 +165,7 @@ int main(int argc, const char** argv, const char** env)
 	try
 	{
 		options* opt = new options(argc, argv);
-		string prefix = create_prefix(opt);
-		string path_log = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], prefix + opt->out_fn[OUTPUT_NAME_LOG]) + ".txt";
+		string path_log = file::combine_path(opt->dir[DIRECTORY_NAME_OUT], opt->fn_prefix + opt->out_fn[OUTPUT_NAME_LOG]) + ".txt";
 		slog = new ofstream(path_log.c_str(), ios::out | ios::app);
 		if (!slog)
 		{
@@ -226,14 +191,14 @@ int main(int argc, const char** argv, const char** env)
 	} /* try */
 	catch (const string& msg)
 	{
-		if (0x0 != slog)
+		if (NULL != slog)
 		{
 			file::log_message(*slog, "Error: " + msg, false);
 		}
 		cerr << "Error: " << msg << endl;
 	}
 
-	if (0x0 != slog)
+	if (NULL != slog)
 	{
 		file::log_message(*slog, "Total time: " + tools::convert_time_t(time(NULL) - start) + " s", false);
 	}

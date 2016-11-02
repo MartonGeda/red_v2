@@ -61,10 +61,13 @@ protected:
 	uint16_t n_order;                   //!< The order of the embedded RK formulae
 	uint16_t n_stage;                   //!< The number of the method's stages
 
-	std::vector<var_t *> h_k;           //!< Differentials in the HOST memory
-	std::vector<var_t *> d_k;           //!< Differentials in the DEVICE memory
-	std::vector<var_t *> k;             //!< Alias to the differentials (either in the HOST or the DEVICE memory)
-	var_t** d_ck;                       //!< Holds copy of d_k: a vector in DEVICE memory
+	//std::vector<var_t *> h_k;           //!< Differentials in the HOST memory
+	//std::vector<var_t *> d_k;           //!< Differentials in the DEVICE memory
+	//std::vector<var_t *> k;             //!< Alias to the differentials (either in the HOST or the DEVICE memory)
+	var_t** h_k;           //!< Differentials in the HOST memory
+	var_t** d_k;           //!< Differentials in the DEVICE memory
+	var_t** k;             //!< Alias to the differentials (either in the HOST or the DEVICE memory)
+	//var_t** d_ck;                       //!< Holds copy of d_k: a vector in DEVICE memory
 
 
 	var_t* h_ytemp;	                    //!< Holds the temporary solution approximation along the step in the HOST memory

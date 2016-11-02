@@ -26,11 +26,30 @@ using namespace std;
 using namespace redutil2;
 
 options::options(int argc, const char** argv) :
-	param(0x0)
+	param(NULL)
 {
+	static const char* integrator_type_short_name[] = {"E",	"RK2",	"RK4",	"RKF5",	"RKF7" };
+
 	create_default();
 	parse(argc, argv);
 	param = new parameter(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_PARAMETER], print_to_screen);
+
+	if (ef)
+	{
+		char sep = '_';
+		string config;
+#ifdef _DEBUG
+		config = "D";
+#else
+		config = "R";
+#endif
+		string dev = (comp_dev == COMP_DEV_CPU ? "cpu" : "gpu");
+		// as: adaptive step-size, fs: fix step-size
+		string adapt = (param->adaptive == true ? "as" : "fs");
+		
+		string int_name(integrator_type_short_name[param->int_type]);
+		fn_prefix += config + sep + dev + sep + adapt + sep + int_name + sep;
+	}
 }
 
 options::~options() 
@@ -334,7 +353,7 @@ ode* options::create_model()
 
 integrator* options::create_integrator(ode& f, var_t dt)
 {
-	integrator* intgr = 0x0;
+	integrator* intgr = NULL;
 
 	switch (param->int_type)
 	{

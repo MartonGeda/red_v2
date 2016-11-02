@@ -46,18 +46,18 @@ void ode::initialize()
 	tout   = 0.0;
 	dt     = 0.0;
 
-	h_y    = 0x0;
-	h_yout = 0x0;
+	h_y    = NULL;
+	h_yout = NULL;
 
-	d_y	   = 0x0;
-	d_yout = 0x0;
+	d_y	   = NULL;
+	d_yout = NULL;
 
-	y	   = 0x0;
-	yout   = 0x0;
+	y	   = NULL;
+	yout   = NULL;
 	
-	h_p    = 0x0;
-	d_p	   = 0x0;
-	p	   = 0x0;
+	h_p    = NULL;
+	d_p	   = NULL;
+	p	   = NULL;
 
 	n_tpb  = 1;
 
@@ -147,7 +147,6 @@ void ode::copy_vars(copy_direction_t dir)
 		copy_vector_to_device(h_y, d_y, n_var*sizeof(var_t));
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
-		break;
 	}
 }
 
@@ -162,7 +161,6 @@ void ode::copy_params(copy_direction_t dir)
 		copy_vector_to_device(h_p, d_p, n_par*sizeof(var_t));
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
-		break;
 	}
 }
 

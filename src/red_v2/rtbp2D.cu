@@ -14,6 +14,8 @@ using namespace redutil2;
 rtbp2D::rtbp2D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(2, 1, 4, n_ppo, 5, 1, comp_dev)
 {
+	name = "Regularized 2D two-body problem";
+
 	initialize();
 	allocate_storage();
 
@@ -31,9 +33,9 @@ rtbp2D::~rtbp2D()
 
 void rtbp2D::initialize()
 {
-	h_md = 0x0;
-	d_md = 0x0;
-	md   = 0x0;
+	h_md = NULL;
+	d_md = NULL;
+	md   = NULL;
 }
 
 void rtbp2D::allocate_storage()

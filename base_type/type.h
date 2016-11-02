@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstring>     // memcpy
+//#include <cstring>     // memcpy
 #include <stdint.h>
 #include <vector>
 
@@ -8,7 +8,6 @@
 #include "cuda_runtime.h"
 
 typedef double        var_t;
-typedef bool          bool_t;
 typedef int2          int2_t;
 typedef uint2         uint2_t;
 typedef unsigned char uchar_t;
@@ -487,18 +486,21 @@ typedef struct n_objects
 {
 	n_objects(uint32_t n_s, uint32_t n_gp, uint32_t n_rp, uint32_t n_pp, uint32_t n_spl, uint32_t n_pl, uint32_t n_tp)
 	{
-		initial[BODY_TYPE_STAR]              = n_s;
-		initial[BODY_TYPE_GIANTPLANET]       = n_gp;
-		initial[BODY_TYPE_ROCKYPLANET]       = n_rp;
-		initial[BODY_TYPE_PROTOPLANET]       = n_pp;
-		initial[BODY_TYPE_SUPERPLANETESIMAL] = n_spl;
-		initial[BODY_TYPE_PLANETESIMAL]      = n_pl;
-		initial[BODY_TYPE_TESTPARTICLE]      = n_tp;
+		inactive[BODY_TYPE_STAR]              = removed[BODY_TYPE_STAR]              = 0;
+		inactive[BODY_TYPE_GIANTPLANET]       = removed[BODY_TYPE_GIANTPLANET]       = 0;
+		inactive[BODY_TYPE_ROCKYPLANET]       = removed[BODY_TYPE_ROCKYPLANET]       = 0;
+		inactive[BODY_TYPE_PROTOPLANET]       = removed[BODY_TYPE_PROTOPLANET]       = 0;
+		inactive[BODY_TYPE_SUPERPLANETESIMAL] = removed[BODY_TYPE_SUPERPLANETESIMAL] = 0;
+		inactive[BODY_TYPE_PLANETESIMAL]      = removed[BODY_TYPE_PLANETESIMAL]      = 0;
+		inactive[BODY_TYPE_TESTPARTICLE]      = removed[BODY_TYPE_TESTPARTICLE]      = 0;
 
-		memcpy(playing, initial, sizeof(playing));
-
-		memset(inactive, 0, sizeof(inactive));
-		memset(removed,  0, sizeof(removed));
+		playing[BODY_TYPE_STAR]               = initial[BODY_TYPE_STAR]              = n_s;
+		playing[BODY_TYPE_GIANTPLANET]        = initial[BODY_TYPE_GIANTPLANET]       = n_gp;
+		playing[BODY_TYPE_ROCKYPLANET]        = initial[BODY_TYPE_ROCKYPLANET]       = n_rp;
+		playing[BODY_TYPE_PROTOPLANET]        = initial[BODY_TYPE_PROTOPLANET]       = n_pp;
+		playing[BODY_TYPE_SUPERPLANETESIMAL]  = initial[BODY_TYPE_SUPERPLANETESIMAL] = n_spl;
+		playing[BODY_TYPE_PLANETESIMAL]       = initial[BODY_TYPE_PLANETESIMAL]      = n_pl;
+		playing[BODY_TYPE_TESTPARTICLE]       = initial[BODY_TYPE_TESTPARTICLE]      = n_tp;
 
 		n_removed = 0;
 

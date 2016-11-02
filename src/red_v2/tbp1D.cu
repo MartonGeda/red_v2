@@ -14,6 +14,8 @@ using namespace redutil2;
 tbp1D::tbp1D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(1, 1, 2, n_ppo, comp_dev)
 {
+	name = "Singular 1D two-body problem";
+
 	initialize();
 	allocate_storage();
 
@@ -31,9 +33,9 @@ tbp1D::~tbp1D()
 
 void tbp1D::initialize()
 {
-	h_md       = 0x0;
-	d_md       = 0x0;
-	md         = 0x0;
+	h_md       = NULL;
+	d_md       = NULL;
+	md         = NULL;
 }
 
 void tbp1D::allocate_storage()

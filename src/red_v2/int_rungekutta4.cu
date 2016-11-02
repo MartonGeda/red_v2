@@ -140,7 +140,7 @@ var_t int_rungekutta4::step()
 			bb[i] = dt_try * bh[i];
 		}
 
-		for (stage = 1; stage < 4; stage++)
+		for (stage = 1; stage < n_order; stage++)
 		{
 			t = f.t + c[stage] * dt_try;
 			cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);

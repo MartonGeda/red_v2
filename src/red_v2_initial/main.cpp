@@ -436,7 +436,7 @@ namespace model
 			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
 			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
-			srand(time(NULL));
+			srand((unsigned int)time(NULL));
 			// Set the parameters of the problem
 			for (uint32_t i = 0; i < n_obj; i++)
 			{
@@ -486,7 +486,7 @@ namespace model
 			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
 			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
-			srand(time(NULL));
+			srand((unsigned int)time(NULL));
 			// Set the parameters of the problem
 			p[0].mass = 1.0;
 			p[1].mass = 1.0;

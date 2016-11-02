@@ -34,6 +34,7 @@ public:
 
 	parameter* param;
 
+	std::string fn_prefix;
 	std::string out_fn[OUTPUT_NAME_N];   //!< Array for the output filenames
 	std::string in_fn[INPUT_NAME_N];     //!< Array for the input filenames
 	std::string dir[DIRECTORY_NAME_N];   //!< Array for the input and output directories

@@ -65,7 +65,7 @@ void test_calc_ephemeris()
 		 *     Mean solar day    |           D | time
 		 */
 
-		srand (time(NULL));
+		srand((unsigned int)time(NULL));
 		// parameter of the problem
 		tbp_t::param_t p;
             
@@ -276,6 +276,129 @@ void test_rtbp2d_transform()
 	} /* Test tools::rtbp2D::transform_x2u() and tools::rtbp2D::transform_u2x() functions */
 }
 
+void test_calc_lin_comb()
+{
+	// Test calculate linear combination of vectors
+	{
+		const char func_name[] = "calc_lin_comb";
+		char lpad[] = "        ";
+
+		uint32_t n_var = 2;
+		uint16_t n_vct = 3;
+
+		var_t* a = NULL;
+		var_t* b = NULL;
+		var_t** c = NULL;
+		var_t* coeff = NULL;
+
+		ALLOCATE_HOST_VECTOR((void**)&(a), n_var*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&(b), n_var*sizeof(var_t));
+		
+		ALLOCATE_HOST_VECTOR((void**)&c, n_vct*sizeof(var_t*));
+		for (uint16_t i = 0; i < n_vct; i++)
+		{
+			ALLOCATE_HOST_VECTOR((void**)&(c[i]), n_var*sizeof(var_t));
+		}
+		ALLOCATE_HOST_VECTOR((void**)&coeff, n_vct*sizeof(var_t));
+	
+		// Populate vectors
+		memset(a, 0, n_var*sizeof(var_t));
+		for (int i = 0; i < n_var; i++)
+		{
+			b[i] = -(i+1);
+		}
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			for (uint32_t j = 0; j < n_var; j++)
+			{
+				c[i][j] = i+j+1;
+			}
+		}
+		for (int i = 0; i < n_vct; i++)
+		{
+			coeff[i] = 10*i;
+		}
+
+		printf("The data in the vectors:\n");
+		printf("a:\n");
+		print_array("", n_var, a, COMP_DEV_CPU);
+		printf("b:\n");
+		print_array("", n_var, b, COMP_DEV_CPU);
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			printf("c[%d]:\n", i);
+			print_array("", n_var, c[i], COMP_DEV_CPU);
+		}
+		printf("The coefficients:\n");
+		print_array("", n_vct, coeff, COMP_DEV_CPU);
+
+		// Calculate the linear combination of the vectors
+		tools::calc_lin_comb(a, c, coeff, n_vct, n_var);
+		printf("The linear combination of the vectors:\n");
+		printf("a:\n");
+		print_array("", n_var, a, COMP_DEV_CPU);
+
+		// Calculate the special case of linear combination of the vectors
+		tools::calc_lin_comb_s(a, b, c, coeff, n_vct, n_var);
+		printf("The special linear combination of the vectors:\n");
+		printf("a:\n");
+		print_array("", n_var, a, COMP_DEV_CPU);
+
+		FREE_HOST_VECTOR((void **)&(coeff));
+		for (uint16_t i = 0; i < n_vct; i++)
+		{
+			FREE_HOST_VECTOR((void **)&(c[i]));
+		}
+		FREE_HOST_VECTOR((void **)&(c));
+		FREE_HOST_VECTOR((void **)&(b));
+		FREE_HOST_VECTOR((void **)&(a));
+	}	
+
+	// Test calculate linear combination of two vectors
+	{
+		const char func_name[] = "calc_lin_comb_s";
+		char lpad[] = "        ";
+
+		uint32_t n_var = 2;
+
+		var_t* a = NULL;
+		var_t* b = NULL;
+		var_t* c = NULL;
+		var_t f = 3;
+
+		ALLOCATE_HOST_VECTOR((void**)&(a), n_var*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&(b), n_var*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&(c), n_var*sizeof(var_t));	
+
+		// Populate vectors
+		memset(a, 0, n_var*sizeof(var_t));
+		for (int i = 0; i < n_var; i++)
+		{
+			b[i] = -(i+1);
+			c[i] = i+1;
+		}
+
+		printf("The data in the vectors:\n");
+		printf("a:\n");
+		print_array("", n_var, a, COMP_DEV_CPU);
+		printf("b:\n");
+		print_array("", n_var, b, COMP_DEV_CPU);
+		printf("c:\n");
+		print_array("", n_var, c, COMP_DEV_CPU);
+		printf("The coefficient:\n");
+		printf("%5e\n", f);
+
+		// Calculate the special case of linear combination of the vectors
+		tools::calc_lin_comb_s(a, b, c, f, n_var);
+		printf("The special linear combination of two vectors:\n");
+		printf("a:\n");
+		print_array("", n_var, a, COMP_DEV_CPU);
+
+		FREE_HOST_VECTOR((void **)&(c));
+		FREE_HOST_VECTOR((void **)&(b));
+		FREE_HOST_VECTOR((void **)&(a));
+	}	
+}
 
 /*
 
@@ -302,7 +425,8 @@ int main()
 		//test_calc_ephemeris();
 		//test_rtbp2d_trans();
 		//test_rtbp2d_transform();
-		test_rtbp2d_calc_energy();
+		//test_rtbp2d_calc_energy();
+		test_calc_lin_comb();
 	}
 	catch (const string& msg)
 	{

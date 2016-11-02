@@ -74,6 +74,35 @@ namespace redutil2
 		void calc_oe(   var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe);
 		var_t calc_orbital_period(var_t mu, var_t a);
 
+		//! Calculate the special linear combination of two vectors, a[i] = b[i] + f*c[i]
+		/*
+			\param a     vector which will contain the result
+			\param b     vector to which the linear combination will be added
+			\param c     vector to add with weight f
+			\param f     the weight of c
+			\param n_var the number of elements in the vectors
+		*/
+		void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var);
+		//! Calculate the linear combination of vectors, a[i] = sum (coeff[j] * c[j][i])
+		/*
+			\param a     vector which will contain the result
+			\param c     vectors which will linear combined
+			\param coeff vector which contains the weights (coefficients)
+			\param n_vct the number of vectors to combine
+			\param n_var the number of elements in the vectors
+		*/
+		void calc_lin_comb(var_t* a, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var);
+		//! Calculate the special case of linear combination of vectors, a[i] = b[i] + sum (coeff[j] * c[j][i])
+		/*
+			\param a     vector which will contain the result
+			\param b     vector to which the linear combination will be added
+			\param c     vectors which will linear combined
+			\param coeff vector which contains the weights (coefficients)
+			\param n_vct the number of vectors to combine
+			\param n_var the number of elements in the vectors
+		*/
+		void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var);
+
 		void print_vector(const var3_t *v);
 		void print_vector(const var4_t *v);
 		void print_parameter(const pp_disk_t::param_t *p);

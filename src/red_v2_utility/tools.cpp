@@ -1064,6 +1064,56 @@ var_t calc_orbital_period(var_t mu, var_t a)
 	return (two_pi*sqrt(CUBE(a)/mu));
 }
 
+// Date of creation: 2016.11.02.
+// Last edited: 
+// Status: Tested
+void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var)
+{
+	for (uint32_t i = 0; i < n_var; i++)
+	{
+		a[i] = b[i] + f*c[i];
+	}
+}
+
+// Date of creation: 2016.11.02.
+// Last edited: 
+// Status: Tested
+void calc_lin_comb(var_t* a, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var)
+{
+	for (uint32_t i = 0; i < n_var; i++)
+	{
+		a[i] = 0.0;
+		for (uint16_t j = 0; j < n_vct; j++)
+		{
+			if (0.0 == coeff[j])
+			{
+				continue;
+			}
+			a[i] += coeff[j] * c[j][i];
+		}
+	}
+}
+
+// Date of creation: 2016.11.02.
+// Last edited: 
+// Status: Tested
+void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var)
+{
+	for (uint32_t i = 0; i < n_var; i++)
+	{
+		var_t d = 0.0;
+		for (uint16_t j = 0; j < n_vct; j++)
+		{
+			if (0.0 == coeff[j])
+			{
+				continue;
+			}
+			d += coeff[j] * c[j][i];
+		}
+		a[i] = b[i] + d;
+	}
+}
+
 void print_vector(const var3_t *v)
 {
 	cout.precision(16);
@@ -1341,7 +1391,7 @@ var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r)
 {
     var3_t R0 = {0.0, 0.0, 0.0};
 
-	for (int i = 0; i < n; i++)
+	for (uint32_t i = 0; i < n; i++)
 	{
 		var_t m_i = p[i].mass;
 		R0.x += m_i * r[i].x; R0.y += m_i * r[i].y; R0.z += m_i * r[i].z;
@@ -1356,7 +1406,7 @@ var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v)
 {
     var3_t V0 = {0.0, 0.0, 0.0};
 
-	for (int i = 0; i < n; i++)
+	for (uint32_t i = 0; i < n; i++)
 	{
 		var_t m_i = p[i].mass;
 		V0.x += m_i * v[i].x; V0.y += m_i * v[i].y; V0.z += m_i * v[i].z;

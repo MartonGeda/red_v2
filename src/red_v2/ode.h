@@ -62,20 +62,22 @@ public:
 	virtual void print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres) = 0;
 	virtual void print_integral(std::string& path) = 0;
 
+	std::string name;     //! Name of the model
 
 	var_t t;              //! Independent variable (e.g. time or fictitious time)
 	var_t tout;           //! Independent variable at the end of the integration step
-	var_t dt;             //! Step for the integrator
+	var_t dt;             //! Increment/decrement of the independent variable (step-size for the integrator)
 
 	var_t* h_y;           //! Host vector (size of n_var) of the dependent variables at t
 	var_t* h_yout;        //! Host vector (size of n_var) of the dependent variables at tout
+	var_t* h_p;           //! Host vector (size of n_par) of parameters
+
 	var_t* d_y;           //! Device vector (size of n_var) of the dependent variables at t
 	var_t* d_yout;        //! Device vector (size of n_var) of the dependent variables at tout
+	var_t* d_p;           //! Device vector (size of n_par) of parameters
+
 	var_t* y;             //! Alias to Host or Device vector of the dependent variables at t depeding on the execution device
 	var_t* yout;          //! Alias to Host or Device vector of the dependent variables at tout depeding on the execution device
-
-	var_t* h_p;           //! Host vector (size of n_par) of parameters
-	var_t* d_p;           //! Device vector (size of n_par) of parameters
 	var_t* p;             //! Alias to Host or Device vector of parameters depeding on the execution device
 
 	uint16_t n_dim;       //! The space dimension of the problem 

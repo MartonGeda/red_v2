@@ -14,6 +14,8 @@ using namespace redutil2;
 tbp3D::tbp3D(uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(3, 1, 6, n_ppo, comp_dev)
 {
+	name = "Singular 3D two-body problem";
+
 	initialize();
 	allocate_storage();
 }
@@ -25,8 +27,8 @@ tbp3D::~tbp3D()
 
 void tbp3D::initialize()
 {
-	h_md    = 0x0;
-	h_epoch = 0x0;
+	h_md    = NULL;
+	h_epoch = NULL;
 
 	h       = 0.0;
 }

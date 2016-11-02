@@ -14,6 +14,8 @@ using namespace redutil2;
 rtbp3D::rtbp3D(uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(3, 1, 9, n_ppo, comp_dev)
 {
+	name = "Regularized 3D two-body problem";
+
 	initialize();
 	allocate_storage();
 }
@@ -25,8 +27,8 @@ rtbp3D::~rtbp3D()
 
 void rtbp3D::initialize()
 {
-	h_md    = 0x0;
-	h_epoch = 0x0;
+	h_md    = NULL;
+	h_epoch = NULL;
 
 	h       = 0.0;            // energy
 	h_y[8]  = 0.0;            // s_0: fictitious time (4 position, 4 velocity, 1 time)

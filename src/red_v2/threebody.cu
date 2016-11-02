@@ -16,6 +16,8 @@ using namespace redutil2;
 threebody::threebody(uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(3, 3, 8, n_ppo, 17, 3, comp_dev)
 {
+	name = "Regularized 3D three-body problem";
+	
 	initialize();
 	allocate_storage();
 }
@@ -27,8 +29,8 @@ threebody::~threebody()
 
 void threebody::initialize()
 {
-	h_md    = 0x0;
-	h_epoch = 0x0;
+	h_md    = NULL;
+	h_epoch = NULL;
 
 	h       = 0.0;
 

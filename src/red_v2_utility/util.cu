@@ -246,7 +246,7 @@ void device_query(ostream& sout, int id_dev, bool print_to_screen)
 void allocate_host_vector(void **ptr, size_t size, const char *file, int line)
 {
 	*ptr = (void *)malloc(size);
-	if (0x0 == ptr)
+	if (NULL == ptr)
 	{
 		throw string("malloc failed (allocate_host_vector)");
 	}
@@ -277,19 +277,19 @@ void allocate_vector(void **ptr, size_t size, bool cpu, const char *file, int li
 
 void free_host_vector(void **ptr, const char *file, int line)
 {
-	if (0x0 != *ptr)
+	if (NULL != *ptr)
 	{
 		delete[] *ptr;
-		*ptr = (void *)0x0;
+		*ptr = NULL;
 	}
 }
 
 void free_device_vector(void **ptr, const char *file, int line)
 {
-	if (0x0 != *ptr)
+	if (NULL != *ptr)
 	{
 		CUDA_SAFE_CALL(cudaFree(*ptr));
-		*ptr = (void *)0x0;
+		*ptr = NULL;
 	}
 }
 
@@ -410,9 +410,9 @@ void set_device(int id_of_target_dev, ostream& sout)
 
 void print_array(string path, int n, var_t *data, comp_dev_t comp_dev)
 {
-	var_t* h_data = 0x0;
+	var_t* h_data = NULL;
 
-	ostream *out = 0x0;
+	ostream *out = NULL;
 	if (0 < path.length())
 	{
 		out = new ofstream(path.c_str(), ios::app);

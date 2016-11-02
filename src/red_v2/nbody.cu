@@ -64,6 +64,8 @@ void calc_grav_accel_naive
 nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev) :
 	ode(3, n_obj, 6, n_ppo, comp_dev)
 {
+	name = "Singular 3D n-body problem";
+	
 	initialize();
 	allocate_storage();
 
@@ -87,9 +89,9 @@ nbody::~nbody()
 
 void nbody::initialize()
 {
-	h_md       = 0x0;
-	d_md       = 0x0;
-	md         = 0x0;
+	h_md       = NULL;
+	d_md       = NULL;
+	md         = NULL;
 }
 
 void nbody::allocate_storage()
@@ -145,6 +147,7 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 void nbody::calc_integral()
 {
 	static bool first_call = true;
+
 	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
 	var3_t* r = (var3_t*)h_y;
@@ -158,6 +161,7 @@ void nbody::calc_integral()
 	if (first_call)
 	{
 		first_call = false;
+
 		integral.R0 = integral.R;
 		integral.V0 = integral.V;
 		integral.c0 = integral.c;
@@ -167,6 +171,7 @@ void nbody::calc_integral()
 
 void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
 {
+	// Copy the velocities into dy
 	memcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t));
 
 	var3_t* r = (var3_t*)y_temp;
