@@ -176,6 +176,9 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
 	var3_t* r = (var3_t*)y_temp;
 	var3_t* a = (var3_t*)(dy + 3*n_obj);
+	// Clear the acceleration array: the += op can be used
+	memset(a, 0, 3*n_obj*sizeof(var_t));
+
 	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
 	if (use_symm_prop)

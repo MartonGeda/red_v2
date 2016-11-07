@@ -7,28 +7,36 @@
 #include "macro.h"
 #include "redutil2.h"
 
-#define	LAMBDA	5.0/66.0
-
 using namespace std;
+using namespace redutil2;
 
+#define	LAMBDA	1.0/60.0
+
+/*
+ * Fehlberg, E.
+ * "Classical Fifth-, Sixth-, Seventh-, and Eighth-Order Runge-Kutta Formulas with Stepsize Control"
+ * NASA-TR-R-287 (https://nix.nasa.gov/search.jsp?R=19680027281&qs=N%253D4294957355)
+ * p. 26 Table II. RK5(6)
+ */
 // The Runge-Kutta matrix
 var_t int_rungekutta5::a[] = 
 { 
-/* 1 */   1.0/6.0,
-/* 2 */   4.0/75.0,   16.0/75.0,
-/* 3 */   5.0/6.0,    -8.0/3.0 ,   5.0/2.0  ,
-/* 4 */  -8.0/5.0,   144.0/25.0,        -4.0,  16.0/25.0,
-/* 5 */ 361.0/320.0, -18.0/5.0 , 407.0/128.0, -11.0/80.0,  55.0/128.0,
-/* 6 */ -11.0/640.0,        0.0,  11.0/256.0, -11.0/160.0, 11.0/256.0, 0.0,
-/* 7 */  93.0/640.0, -18.0/5.0 , 803.0/256.0, -11.0/160.0, 99.0/256.0, 0.0, 1.0
+/* 0 */         0.0,           0.0,              0.0,              0.0,           0.0,    0.0, 
+/* 1 */   1.0/8.0,             0.0,              0.0,              0.0,           0.0,    0.0, 
+/* 2 */         0.0,     1.0/4.0,                0.0,              0.0,           0.0,    0.0, 
+/* 3 */ 196.0/729.0,  -320.0/729.0,    448.0/729.0,                0.0,           0.0,    0.0,
+/* 4 */ 836.0/2875.0,   64.0/575.0, -13376.0/20125.0,  21384.0/20125.0,           0.0,    0.0, 
+/* 5 */ -73.0/48.0,            0.0,   1312.0/231.0,    -2025.0/448.0,   2875.0/2112.0,    0.0, 
+/* 6 */  17.0/192.0,           0.0,     64.0/231.0,     2187.0/8960.0,  2875.0/8448.0, 1.0/20
 };
 // weights
-var_t int_rungekutta5::b[]  = { 31.0/384.0,  0, 1125.0/2816.0, 9.0/32.0, 125.0/768.0, 5.0/66.0  };
-var_t int_rungekutta5::bh[] = {  7.0/1408.0, 0, 1125.0/2816.0, 9.0/32.0, 125.0/768.0,        0, 5.0/66.0, 5.0/66.0 };
+var_t int_rungekutta5::bh[] = { 17.0/192.0, 0.0, 64.0/231.0, 2187.0/8960.0, 2875.0/8448.0, 1.0/20 };
 // nodes
-var_t int_rungekutta5::c[]  = { 0, 1.0/6.0, 4.0/15.0, 2.0/3.0, 4.0/5.0, 1.0, 0.0, 1.0  };
-// The starting index of the RK matrix for the stages
-uint16_t int_rungekutta5::a_idx[] = {0, 1, 3, 6, 10, 15, 21};
+var_t int_rungekutta5::c[]  = { 0.0, 1.0/8.0, 1.0/4.0, 4.0/9.0, 4.0/5.0, 1.0, 1.0 };
+
+// These arrays will contain the stepsize multiplied by the constants
+var_t int_rungekutta5::_a[ sizeof(int_rungekutta5::a ) / sizeof(var_t)];
+var_t int_rungekutta5::_bh[ sizeof(int_rungekutta5::bh ) / sizeof(var_t)];
 
 namespace rk5_kernel
 {
@@ -45,10 +53,10 @@ static __global__
 		tid += stride;
 	}
 }
-} /* namespace rk8_kernel */
+} /* namespace rk5_kernel */
 
 int_rungekutta5::int_rungekutta5(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
-	integrator(f, dt, adaptive, tolerance, (adaptive ? 8 : 6), comp_dev)
+	integrator(f, dt, adaptive, tolerance, (adaptive ? 7 : 6), comp_dev)
 {
 	name    = "Runge-Kutta5";
 	n_order = 5;
@@ -56,6 +64,30 @@ int_rungekutta5::int_rungekutta5(ode& f, var_t dt, bool adaptive, var_t toleranc
 
 int_rungekutta5::~int_rungekutta5()
 {}
+
+void int_rungekutta5::calc_ytemp(uint16_t stage)
+{
+	if (COMP_DEV_GPU == comp_dev)
+	{
+	}
+	else
+	{
+		var_t* coeff = _a + stage * n_stage;
+		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
+	}
+}
+
+void int_rungekutta5::calc_y_np1()
+{
+	if (COMP_DEV_GPU == comp_dev)
+	{
+	}
+	else
+	{
+		var_t* coeff = _bh;
+		tools::calc_lin_comb_s(f.yout, f.y, k, coeff, 4, f.n_var);
+	}
+}
 
 void int_rungekutta5::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
 {
@@ -104,7 +136,7 @@ void int_rungekutta5::cpu_calc_error(uint32_t n)
 {
 	for (uint32_t i = 0; i < n; i++)
 	{
-		h_err[i] = fabs(h_k[0][i] + h_k[5][i] - h_k[6][i] - h_k[7][i]);
+		h_err[i] = fabs(k[5][i] - k[6][i]);
 	}
 }
 
@@ -112,10 +144,9 @@ var_t int_rungekutta5::step()
 {
 	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 
-	static const uint16_t n_a = sizeof(int_rungekutta5::a) / sizeof(int_rungekutta5::a[0]);
-	static const uint16_t n_b = sizeof(int_rungekutta5::b) / sizeof(int_rungekutta5::b[0]);
-	static var_t aa[n_a];
-	static var_t bb[n_b];
+	static const uint16_t n_a = sizeof(int_rungekutta5::a) / sizeof(var_t);
+	static const uint16_t n_bh = sizeof(int_rungekutta5::bh) / sizeof(var_t);
+	static bool first_call = true;
 
 	if (COMP_DEV_GPU == comp_dev)
 	{
@@ -124,8 +155,7 @@ var_t int_rungekutta5::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-	// Calculate initial differentials and store them into h_k
-	f.calc_dy(stage, t, f.h_y, h_k[stage]);
+	f.calc_dy(stage, t, f.y, k[stage]); // -> k1
 
 	var_t max_err = 0.0;
 	uint16_t iter = 0;
@@ -135,22 +165,24 @@ var_t int_rungekutta5::step()
 		// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
 		for (uint16_t i = 0; i < n_a; i++)
 		{
-			aa[i] = dt_try * a[i];
+			_a[i] = dt_try * a[i];
 		}
-		for (uint16_t i = 0; i < n_b; i++)
+		for (uint16_t i = 0; i < n_bh; i++)
 		{
-			bb[i] = dt_try * b[i];
+			_bh[i] = dt_try * bh[i];
 		}
 
 		for (stage = 1; stage < 6; stage++)
 		{
 			t = f.t + c[stage] * dt_try;
 			// Calculate the y_temp for the next f evaluation
-			cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
-			f.calc_dy(stage, t, h_ytemp, h_k[stage]);
+			calc_ytemp(stage);
+			//cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
+			f.calc_dy(stage, t, h_ytemp, h_k[stage]); // -> k2, k3, k4, k5, k6
 		}
 		// So far we have stage (=6) number of k vectors
-		cpu_calc_lin_comb(f.h_yout, f.h_y, bb, stage, f.n_var);
+		//cpu_calc_lin_comb(f.h_yout, f.h_y, bb, stage, f.n_var);
+		calc_y_np1();
 
 		if (adaptive)
 		{
@@ -159,21 +191,14 @@ var_t int_rungekutta5::step()
 			{
 				t = f.t + c[stage] * dt_try;
 				// Calculate the y_temp for the next f evaulation
-				cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
-				f.calc_dy(stage, t, h_ytemp, h_k[stage]);
+				calc_ytemp(stage);
+				//cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
+				f.calc_dy(stage, t, h_ytemp, h_k[stage]); // -> k7
 			}
-			// calculate: err = abs(k0 + k5 - k6 - k7)
 			calc_error(f.n_var);
 			max_err = get_max_error(f.n_var);
-			if (1.0e-20 < max_err)
-			{
-				max_err *= dt_try * LAMBDA;
-				dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
-			}
-			else
-			{
-				dt_try *= 5.0;
-			}
+			max_err *= dt_try * LAMBDA;
+			calc_dt_try(max_err);
 		}
 		iter++;
 	} while (adaptive && max_iter > iter && dt_min < dt_try && max_err > tolerance);
@@ -186,11 +211,9 @@ var_t int_rungekutta5::step()
 	{
 		throw string(err_msg1 + " The stepsize is smaller than the limit.");
 	}
-
 	update_counters(iter);
 
-	t = f.t + dt_did;
-	f.tout = t;
+	t = f.tout = f.t + dt_did;
 	f.swap();
 
 	return dt_did;

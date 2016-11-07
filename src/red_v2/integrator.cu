@@ -4,6 +4,7 @@
 
 #include "integrator.h"
 #include "ode.h"
+#include "macro.h"
 
 #include "redutil2.h"
 
@@ -66,15 +67,23 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	//k.resize(n_stage);
-	//h_k.resize(n_stage);
+	h_k = (var_t**)malloc(n_stage*sizeof(var_t*));
+	if (NULL == h_k)
+	{
+		throw string("Host memory allocation failed.");
+	}
+	memset(h_k, 0, n_stage*sizeof(var_t*));
 
-	ALLOCATE_HOST_VECTOR((void**)&h_k, n_stage*sizeof(var_t*));
-	ALLOCATE_HOST_VECTOR((void**)&k, n_stage*sizeof(var_t*));
+	k = (var_t**)malloc(n_stage*sizeof(var_t*));
+	if (NULL == k)
+	{
+		throw string("Host memory allocation failed.");
+	}
+	memset(k, 0, n_stage*sizeof(var_t*));
 
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		ALLOCATE_HOST_VECTOR((void**)&(h_k[i]), n_var*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_var*sizeof(var_t));
 	}
 	ALLOCATE_HOST_VECTOR((void**)&(h_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
@@ -87,7 +96,17 @@ void integrator::allocate_device_storage(uint32_t n_var)
 {
 	//d_k.resize(n_stage);
 
-	ALLOCATE_DEVICE_VECTOR((void**)&d_k, n_stage*sizeof(var_t*));
+	// TODO: test this allocation. I think it is not correct now.
+	// Allocate memory
+	CUDA_SAFE_CALL(cudaMalloc((void**)d_k, n_stage*sizeof(var_t*)));
+	if (NULL == d_k)
+	{
+		throw string("Device memory allocation failed.");
+	}
+	// Clear memory 
+	CUDA_SAFE_CALL(cudaMemset((void**)d_k, 0, n_stage*sizeof(var_t)));
+
+	//ALLOCATE_DEVICE_VECTOR((void**)&d_k, n_stage*sizeof(var_t*));
 	//ALLOCATE_DEVICE_VECTOR((void**)&d_ck, n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
@@ -114,10 +133,10 @@ void integrator::deallocate_host_storage()
 {
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		FREE_HOST_VECTOR((void **)&(h_k[i]));
+		FREE_HOST_VECTOR((void **)(h_k + i));
 	}
-	FREE_HOST_VECTOR((void **)&(h_k));
-	FREE_HOST_VECTOR((void **)&(k));
+	free(h_k); h_k = NULL;
+	free(k);   k = NULL;
 
 	FREE_HOST_VECTOR((void **)&(h_ytemp));
 	if (adaptive)
@@ -229,6 +248,18 @@ var_t integrator::get_max_error(uint32_t n_var)
 		}		
 	}
 	return (max_err);
+}
+
+void integrator::calc_dt_try(var_t max_err)
+{
+	if (1.0e-20 < max_err)
+	{
+		dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
+	}
+	else
+	{
+		dt_try *= 5.0;
+	}
 }
 
 void integrator::update_counters(uint16_t iter)

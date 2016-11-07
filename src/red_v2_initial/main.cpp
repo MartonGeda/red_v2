@@ -497,7 +497,7 @@ namespace model
 			// Set the initial conditions at t0
             t0 = 0.0;
 			const var_t mu = K2*(p[0].mass + p[1].mass);
-			orbelem_t oe = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+			orbelem_t oe = {1.0, 0.9, 0.0, 0.0, 0.0, 0.0};
 			var3_t r = {0, 0, 0};
 			var3_t v = {0, 0, 0};
 			tools::calc_phase(mu, &oe, &r, &v);

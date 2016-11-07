@@ -1,4 +1,58 @@
+/*
+ * Allocation of array of pointers
+ * Allocation of each element in the array
+ */
 #if 1
+#include <stdio.h>      /* printf, scanf, puts, NULL */
+#include <stdlib.h>     /* srand, rand, malloc       */
+
+#include "type.h"
+#include "redutil2.h"
+
+using namespace redutil2;
+
+int main()
+{
+	static const uint32_t n_vct = 5;
+	static const uint32_t n_arr = 9;
+
+	int** k = NULL;
+
+	k = (int**)malloc(n_vct*sizeof(int*));
+	if (NULL == k)
+	{
+		fprintf(stderr, "Error: allocation failed at line %d.\n", __LINE__);
+		exit(1);
+	}
+	memset(k, 0, n_vct*sizeof(int*));
+
+	for (uint32_t i = 0; i < n_vct; i++)
+	{
+		ALLOCATE_HOST_VECTOR((void**)(k+i), n_arr*sizeof(int));
+	}
+
+	for (uint32_t i = 0; i < n_vct; i++)
+	{
+		for (uint32_t j = 0; j < n_arr; j++)
+		{
+			*(*(k+i)+j) = i*10 + j;
+			//printf("*(*(k+i)+j) = %3d, k[i][j] = %3d\n", *(*(k+i)+j), k[i][j]);
+		}
+		//printf("\n");
+	}
+
+	for (uint32_t i = 0; i < n_vct; i++)
+	{
+		FREE_HOST_VECTOR((void**)(k+i));
+	}	
+	free(k);
+
+	return 0;
+}
+
+#endif
+
+#if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
 #include <time.h>       /* time                      */

@@ -187,6 +187,12 @@ int main(int argc, const char** argv, const char** env)
 		else
 		{
 			run_simulation(opt, f, intgr, *slog);
+			if (opt->verbose && opt->print_to_screen)
+			{
+				printf("No. of passed steps: %20lu\n", intgr->get_n_passed_step());
+				printf("No. of failed steps: %20lu\n", intgr->get_n_failed_step());
+				printf("No. of  tried steps: %20lu\n", intgr->get_n_tried_step());
+			}
 		}
 	} /* try */
 	catch (const string& msg)

@@ -42,6 +42,7 @@ public:
 protected:
 //	void calc_grid(int nData, int threads_per_block);
 	var_t get_max_error(uint32_t n_var);
+	void calc_dt_try(var_t max_err);
 
 	comp_dev_t comp_dev;                //!< The computing device to carry out the calculations (cpu or gpu)
 

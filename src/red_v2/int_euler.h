@@ -15,6 +15,5 @@ public:
 	var_t step();
 
 private:
-	void calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n);
 	void calc_y_np1();
 };

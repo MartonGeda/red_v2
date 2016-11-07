@@ -9,7 +9,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>-cpu -m nbody -a -ef -v -idir C:\Work\red.cuda.Results\v2.0\Test\nbp\TwoBody -i start_files.txt -p parameters.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-m nbody -a -ef -v -pts -idir C:\Work\red.cuda.Results\v2.0\Test\_nbp\01 -i start_files.txt -p parameters.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

@@ -36,14 +36,6 @@ euler::euler(ode& f, var_t dt, comp_dev_t comp_dev) :
 euler::~euler()
 {}
 
-void euler::calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
-{
-	for (uint32_t tid = 0; tid < n; tid++)
-	{
-		a[tid] = b[tid] + F * c[tid];
-	}
-}
-
 void euler::calc_y_np1()
 {
 	if (COMP_DEV_GPU == comp_dev)
@@ -54,7 +46,6 @@ void euler::calc_y_np1()
 	else
 	{
 		tools::calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var);
-		//calc_lin_comb(f.yout, f.y, dt_try, k[0], f.n_var);
 	}
 }
 
