@@ -5,52 +5,119 @@
 #if 1
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
+#include <iostream>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 #include "type.h"
+#include "macro.h"
 #include "redutil2.h"
 
 using namespace redutil2;
+
+namespace kernel_test
+{
+__global__
+	void print_array(int **a, uint32_t n_vct)
+	{
+		int tid = threadIdx.x;
+		if (0 == tid)
+		{
+			printf("a: %p\n", a);
+			for (uint32_t i = 0; i < n_vct; i++)
+			{
+				printf("a[%u]: %p\n", i, a[i]);
+			}
+		}
+	}
+
+__global__
+	void print_array(int **a, uint32_t k, uint32_t n_arr)
+	{
+		int tid = threadIdx.x;
+		if (0 == tid)
+		{
+			printf("a[%u]: %p\n", k, a[k]);
+			for (uint32_t i = 0; i < n_arr; i++)
+			{
+				printf("a[%u][%u]: %p\n", k, i, a[k][i]);
+			}
+		}
+	}
+} /* kernel_test */
 
 int main()
 {
 	static const uint32_t n_vct = 5;
 	static const uint32_t n_arr = 9;
 
-	int** k = NULL;
+	int** h_k = NULL;
+	int** d_k = NULL;
 
-	k = (int**)malloc(n_vct*sizeof(int*));
-	if (NULL == k)
+	try
 	{
-		fprintf(stderr, "Error: allocation failed at line %d.\n", __LINE__);
-		exit(1);
-	}
-	memset(k, 0, n_vct*sizeof(int*));
-
-	for (uint32_t i = 0; i < n_vct; i++)
-	{
-		ALLOCATE_HOST_VECTOR((void**)(k+i), n_arr*sizeof(int));
-	}
-
-	for (uint32_t i = 0; i < n_vct; i++)
-	{
-		for (uint32_t j = 0; j < n_arr; j++)
+		// Allocate HOST memory
+		h_k = (int**)malloc(n_vct*sizeof(int*));
+		if (NULL == h_k)
 		{
-			*(*(k+i)+j) = i*10 + j;
-			//printf("*(*(k+i)+j) = %3d, k[i][j] = %3d\n", *(*(k+i)+j), k[i][j]);
+			fprintf(stderr, "Error: allocation failed at line %d.\n", __LINE__);
+			exit(1);
 		}
-		//printf("\n");
-	}
+		memset(h_k, 0, n_vct*sizeof(int*));
 
-	for (uint32_t i = 0; i < n_vct; i++)
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			ALLOCATE_HOST_VECTOR((void**)(h_k+i), n_arr*sizeof(int));
+		}
+
+		// Allocate DEVICE memory
+		CUDA_SAFE_CALL(cudaMalloc((void**)&d_k, n_vct*sizeof(int*)));
+		kernel_test::print_array<<<1,1>>>(d_k, n_vct);
+		cudaThreadSynchronize();
+
+		CUDA_SAFE_CALL(cudaMemset(d_k, 0, n_vct*sizeof(int*)));
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			// Allocate memory
+			CUDA_SAFE_CALL(cudaMalloc(d_k + i, n_arr*sizeof(int)));
+			kernel_test::print_array<<<1,1>>>(d_k, i, n_arr);
+			cudaThreadSynchronize();
+			// Clear memory 
+			CUDA_SAFE_CALL(cudaMemset(d_k + i, 0, n_arr*sizeof(int)));
+			kernel_test::print_array<<<1,1>>>(d_k, i, n_arr);
+			cudaThreadSynchronize();
+		}
+
+
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			for (uint32_t j = 0; j < n_arr; j++)
+			{
+				*(*(h_k+i)+j) = i*10 + j;
+				printf("*(*(h_k+i)+j) = %3d, h_k[i][j] = %3d\n", *(*(h_k+i)+j), h_k[i][j]);
+			}
+			printf("\n");
+		}
+
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			FREE_HOST_VECTOR((void**)(h_k + i));
+			CUDA_SAFE_CALL(cudaFree(d_k + i));
+		}	
+		free(h_k);	**h_k = NULL;
+		CUDA_SAFE_CALL(cudaFree(d_k));	**d_k = NULL;
+	}
+	catch (const std::string& msg)
 	{
-		FREE_HOST_VECTOR((void**)(k+i));
-	}	
-	free(k);
+		std::cerr << "Error: " << msg << std::endl;
+	}
 
 	return 0;
 }
-
 #endif
+
+
 
 #if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */
