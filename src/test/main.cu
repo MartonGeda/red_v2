@@ -27,7 +27,8 @@ __global__
 			printf("a: %p\n", a);
 			for (uint32_t i = 0; i < n_vct; i++)
 			{
-				printf("a[%u]: %p\n", i, a[i]);
+				printf("a+i: %p\n", a+i);
+				printf("a[%u]: %p (*(a+%u)): %p\n", i, a[i], i, *(a+i));
 			}
 		}
 	}
@@ -54,17 +55,20 @@ int main()
 
 	int** h_k = NULL;
 	int** d_k = NULL;
+	int** d_kh= NULL;
 
 	try
 	{
 		// Allocate HOST memory
 		h_k = (int**)malloc(n_vct*sizeof(int*));
-		if (NULL == h_k)
+		d_kh = (int**)malloc(n_vct*sizeof(int*));
+		if (NULL == h_k || NULL == d_kh)
 		{
 			fprintf(stderr, "Error: allocation failed at line %d.\n", __LINE__);
 			exit(1);
 		}
 		memset(h_k, 0, n_vct*sizeof(int*));
+		memset(d_kh, 0, n_vct*sizeof(int*));
 
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
@@ -75,17 +79,22 @@ int main()
 		CUDA_SAFE_CALL(cudaMalloc((void**)&d_k, n_vct*sizeof(int*)));
 		kernel_test::print_array<<<1,1>>>(d_k, n_vct);
 		cudaThreadSynchronize();
-
 		CUDA_SAFE_CALL(cudaMemset(d_k, 0, n_vct*sizeof(int*)));
+		kernel_test::print_array<<<1,1>>>(d_k, n_vct);
+		cudaThreadSynchronize();
+
+		cudaMemcpy(d_kh, d_k, n_vct * sizeof(int*), cudaMemcpyDeviceToHost);
+
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
 			// Allocate memory
-			CUDA_SAFE_CALL(cudaMalloc(d_k + i, n_arr*sizeof(int)));
-			kernel_test::print_array<<<1,1>>>(d_k, i, n_arr);
+			cudaMalloc(d_k + i, n_arr*sizeof(int));
+			//CUDA_SAFE_CALL();
+			kernel_test::print_array<<<1,1>>>(d_kh, i, n_arr);
 			cudaThreadSynchronize();
 			// Clear memory 
 			CUDA_SAFE_CALL(cudaMemset(d_k + i, 0, n_arr*sizeof(int)));
-			kernel_test::print_array<<<1,1>>>(d_k, i, n_arr);
+			kernel_test::print_array<<<1,1>>>(d_kh, i, n_arr);
 			cudaThreadSynchronize();
 		}
 
@@ -106,6 +115,7 @@ int main()
 			CUDA_SAFE_CALL(cudaFree(d_k + i));
 		}	
 		free(h_k);	**h_k = NULL;
+		free(d_kh);	**d_kh = NULL;
 		CUDA_SAFE_CALL(cudaFree(d_k));	**d_k = NULL;
 	}
 	catch (const std::string& msg)
