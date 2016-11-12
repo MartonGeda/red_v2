@@ -94,10 +94,6 @@ void integrator::allocate_host_storage(uint32_t n_var)
 
 void integrator::allocate_device_storage(uint32_t n_var)
 {
-	//d_k.resize(n_stage);
-
-	// TODO: test this allocation. I think it is not correct now.
-	// Allocate memory
 	CUDA_SAFE_CALL(cudaMalloc((void**)d_k, n_stage*sizeof(var_t*)));
 	if (NULL == d_k)
 	{
