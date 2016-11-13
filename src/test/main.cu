@@ -1,8 +1,9 @@
 /*
+ * 2016.11.11. - 11.13. TEST OK
  * Allocation of array of pointers
  * Allocation of each element in the array
  */
-#if 1
+#if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
 #include <iostream>
@@ -21,32 +22,48 @@ namespace kernel_test
 __global__
 	void print_array(int **a, uint32_t n_vct)
 	{
-		int tid = threadIdx.x;
+		const int tid = threadIdx.x;
+
 		if (0 == tid)
 		{
-			printf("a: %p\n", a);
 			for (uint32_t i = 0; i < n_vct; i++)
 			{
-				printf("a+i: %p\n", a+i);
-				printf("a[%u]: %p (*(a+%u)): %p\n", i, a[i], i, *(a+i));
+				printf("[%u]: %p *(_+%u): %p\n", i, a[i], i, *(a+i));
 			}
 		}
 	}
 
 __global__
-	void print_array(int **a, uint32_t k, uint32_t n_arr)
+	void print_array(int *a, uint32_t n_arr)
 	{
-		int tid = threadIdx.x;
+		const int tid = threadIdx.x;
+
 		if (0 == tid)
 		{
-			printf("a[%u]: %p\n", k, a[k]);
 			for (uint32_t i = 0; i < n_arr; i++)
 			{
-				printf("a[%u][%u]: %p\n", k, i, a[k][i]);
+				printf("\t[%u]: %d\n", i, a[i]);
 			}
 		}
 	}
 } /* kernel_test */
+
+void print_array(int **a, uint32_t n_vct)
+{
+	for (uint32_t i = 0; i < n_vct; i++)
+	{
+		printf(" +%u: %p\t", i, a+i);
+		printf("[%u]: %p *( +%u): %p\n", i, a[i], i, *(a+i));
+	}
+}
+
+void print_array(int *a, uint32_t n_arr)
+{
+	for (uint32_t i = 0; i < n_arr; i++)
+	{
+		printf("\t[%u]: %d\n", i, a[i]);
+	}
+}
 
 int main()
 {
@@ -55,68 +72,72 @@ int main()
 
 	int** h_k = NULL;
 	int** d_k = NULL;
-	int** d_kh= NULL;
+	int** tmp = NULL;
 
 	try
 	{
+		printf("h_k: %p\t", h_k);
+
 		// Allocate HOST memory
-		h_k = (int**)malloc(n_vct*sizeof(int*));
-		d_kh = (int**)malloc(n_vct*sizeof(int*));
-		if (NULL == h_k || NULL == d_kh)
-		{
-			fprintf(stderr, "Error: allocation failed at line %d.\n", __LINE__);
-			exit(1);
-		}
-		memset(h_k, 0, n_vct*sizeof(int*));
-		memset(d_kh, 0, n_vct*sizeof(int*));
+		ALLOCATE_HOST_VECTOR((void**)&h_k, n_vct*sizeof(int*));
+		printf("after allocation: %p\n", h_k);
 
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
-			ALLOCATE_HOST_VECTOR((void**)(h_k+i), n_arr*sizeof(int));
+			printf("h_k[%u]: %p\t", i, h_k[i]);
+			ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_arr*sizeof(int));
+			printf("after allocation: %p\n", h_k[i]);
+			print_array(*(h_k + i), n_arr);
 		}
+
+		printf("tmp: %p\t", tmp);
+		ALLOCATE_HOST_VECTOR((void**)&tmp, n_vct*sizeof(int*));
+		printf("after allocation: %p\n", tmp);
 
 		// Allocate DEVICE memory
-		CUDA_SAFE_CALL(cudaMalloc((void**)&d_k, n_vct*sizeof(int*)));
-		kernel_test::print_array<<<1,1>>>(d_k, n_vct);
-		cudaThreadSynchronize();
-		CUDA_SAFE_CALL(cudaMemset(d_k, 0, n_vct*sizeof(int*)));
-		kernel_test::print_array<<<1,1>>>(d_k, n_vct);
-		cudaThreadSynchronize();
-
-		cudaMemcpy(d_kh, d_k, n_vct * sizeof(int*), cudaMemcpyDeviceToHost);
+		printf("d_k: %p\t", d_k);
+		ALLOCATE_DEVICE_VECTOR((void**)(&d_k), n_vct*sizeof(int*));
+		printf("after allocation: %p\n", d_k);
 
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
-			// Allocate memory
-			cudaMalloc(d_k + i, n_arr*sizeof(int));
-			//CUDA_SAFE_CALL();
-			kernel_test::print_array<<<1,1>>>(d_kh, i, n_arr);
-			cudaThreadSynchronize();
-			// Clear memory 
-			CUDA_SAFE_CALL(cudaMemset(d_k + i, 0, n_arr*sizeof(int)));
-			kernel_test::print_array<<<1,1>>>(d_kh, i, n_arr);
+			printf("tmp[%u]: %p\t", i, tmp[i]);
+			ALLOCATE_DEVICE_VECTOR((void**)(tmp + i), n_arr*sizeof(int));
+			printf("after allocation: %p\n", tmp[i]);
+			kernel_test::print_array<<<1,  1>>>(*(tmp + i), n_arr);
 			cudaThreadSynchronize();
 		}
+		CUDA_SAFE_CALL(cudaMemcpy(d_k, tmp, n_vct * sizeof(int*), cudaMemcpyHostToDevice));
+		kernel_test::print_array<<<1,  1>>>(d_k, n_vct);
+		cudaThreadSynchronize();
 
 
+		// Populate data
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
 			for (uint32_t j = 0; j < n_arr; j++)
 			{
 				*(*(h_k+i)+j) = i*10 + j;
-				printf("*(*(h_k+i)+j) = %3d, h_k[i][j] = %3d\n", *(*(h_k+i)+j), h_k[i][j]);
 			}
+			printf("h_k[%u]: %p\n", i, h_k[i]);
+			print_array(*(h_k + i), n_arr);
 			printf("\n");
+
+			printf("tmp[%u]: %p\n", i, tmp[i]);
+			CUDA_SAFE_CALL(cudaMemcpy(tmp[i], h_k[i], n_arr * sizeof(int), cudaMemcpyHostToDevice));
+			kernel_test::print_array<<<1,  1>>>(tmp[i], n_arr);
+			cudaThreadSynchronize();
 		}
 
+		// Deallocate memory
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
 			FREE_HOST_VECTOR((void**)(h_k + i));
-			CUDA_SAFE_CALL(cudaFree(d_k + i));
-		}	
-		free(h_k);	**h_k = NULL;
-		free(d_kh);	**d_kh = NULL;
-		CUDA_SAFE_CALL(cudaFree(d_k));	**d_k = NULL;
+			FREE_DEVICE_VECTOR((void**)(tmp + i));
+		}
+		FREE_HOST_VECTOR((void**)&h_k);
+		FREE_HOST_VECTOR((void**)&tmp);
+		FREE_DEVICE_VECTOR((void**)&d_k);
 	}
 	catch (const std::string& msg)
 	{
@@ -127,6 +148,213 @@ int main()
 }
 #endif
 
+
+/*
+ * 2016.11.13. - 
+ * Compute the linear combination of arrays on the DEVICE
+ * and comapre the results those computed on the HOST
+ */
+#if 1
+#include <stdio.h>      /* printf, scanf, puts, NULL */
+#include <stdlib.h>     /* srand, rand, malloc       */
+#include <time.h>       /* time                      */
+#include <iostream>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+#include "type.h"
+#include "macro.h"
+#include "redutil2.h"
+
+using namespace redutil2;
+
+namespace kernel_test
+{
+__global__
+void print_array(var_t *a, uint32_t n_arr)
+{
+	const int tid = threadIdx.x;
+
+	if (0 == tid)
+	{
+		for (uint32_t i = 0; i < n_arr; i++)
+		{
+			printf("\t[%u]: %g\n", i, a[i]);
+		}
+	}
+}
+
+//! Calculate the special case of linear combination of vectors, a[i] = b[i] + sum (coeff[j] * c[j][i])
+/*
+	\param a     vector which will contain the result
+	\param b     vector to which the linear combination will be added
+	\param c     vectors which will linear combined
+	\param coeff vector which contains the weights (coefficients)
+	\param n_vct the number of vectors to combine
+	\param n_var the number of elements in the vectors
+*/
+__global__
+void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var)
+{
+	const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (tid < n_var)
+	{
+		var_t d = 0.0;
+		for (uint16_t j = 0; j < n_vct; j++)
+		{
+			if (0.0 == coeff[j])
+			{
+				continue;
+			}
+			d += coeff[j] * c[j][tid];
+		}
+		a[tid] = b[tid] + d;
+	}
+}
+} /* kernel_test */
+
+void print_array(var_t *a, uint32_t n_arr)
+{
+	for (uint32_t i = 0; i < n_arr; i++)
+	{
+		printf("\t[%u]: %g\n", i, a[i]);
+	}
+}
+
+int main()
+{
+	static const uint32_t n_vct = 5;
+	static const uint32_t n_arr = 3000000;
+
+	var_t** h_k = NULL;
+	var_t** d_k = NULL;
+	var_t** tmp = NULL;
+
+	var_t* h_a = NULL;
+	var_t* h_a0 = NULL;     // Will hold a copy of d_a
+	var_t* h_b = NULL;
+	var_t* h_coeff = NULL;
+
+	var_t* d_a = NULL;
+	var_t* d_b = NULL;
+	var_t* d_coeff = NULL;
+
+	try
+	{
+		// Allocate HOST memory
+		ALLOCATE_HOST_VECTOR((void**)&h_k, n_vct*sizeof(var_t*));
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_arr*sizeof(var_t));
+		}
+		ALLOCATE_HOST_VECTOR((void**)&tmp, n_vct*sizeof(var_t*));
+
+		ALLOCATE_HOST_VECTOR((void**)&h_a,     n_arr*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_a0,    n_arr*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_b,     n_arr*sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_coeff, n_vct*sizeof(var_t));
+
+		// Allocate DEVICE memory
+		ALLOCATE_DEVICE_VECTOR((void**)(&d_k), n_vct*sizeof(var_t*));
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			ALLOCATE_DEVICE_VECTOR((void**)(tmp + i), n_arr*sizeof(var_t));
+		}
+		CUDA_SAFE_CALL(cudaMemcpy(d_k, tmp, n_vct * sizeof(var_t*), cudaMemcpyHostToDevice));
+
+		ALLOCATE_DEVICE_VECTOR((void**)&d_a,     n_arr*sizeof(var_t));
+		ALLOCATE_DEVICE_VECTOR((void**)&d_b,     n_arr*sizeof(var_t));
+		ALLOCATE_DEVICE_VECTOR((void**)&d_coeff, n_vct*sizeof(var_t));
+
+		// Populate data
+		srand(time(NULL));
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			for (uint32_t j = 0; j < n_arr; j++)
+			{
+				var_t r = (var_t)rand()/RAND_MAX;    //returns a pseudo-random integer between 0 and RAND_MAX			
+				*(*(h_k+i)+j) = r;
+			}
+			CUDA_SAFE_CALL(cudaMemcpy(tmp[i], h_k[i], n_arr * sizeof(var_t), cudaMemcpyHostToDevice));
+		}
+		for (uint32_t j = 0; j < n_arr; j++)
+		{
+			h_a[j] = 0;
+			h_b[j] = 0;
+		}
+		for (uint32_t j = 0; j < n_vct; j++)
+		{
+			h_coeff[j] = 1;
+		}
+		h_coeff[4] = -1;
+
+		CUDA_SAFE_CALL(cudaMemcpy(d_a, h_a, n_arr * sizeof(var_t), cudaMemcpyHostToDevice));
+		CUDA_SAFE_CALL(cudaMemcpy(d_b, h_b, n_arr * sizeof(var_t), cudaMemcpyHostToDevice));
+		CUDA_SAFE_CALL(cudaMemcpy(d_coeff, h_coeff, n_vct * sizeof(var_t), cudaMemcpyHostToDevice));
+
+		tools::calc_lin_comb_s(h_a, h_b, h_k, h_coeff, n_vct, n_arr);
+
+		//printf("h_a:\n");
+		//print_array(h_a, n_arr);
+
+		dim3 grid;
+		dim3 block;
+		
+		uint32_t n_thread = min(128, n_arr);
+		uint32_t n_block = (n_arr + n_thread - 1)/n_thread;
+		printf("n_thread: %u\n", n_thread);
+		printf(" n_block: %u\n", n_block);
+
+		grid.x	= n_block;
+		block.x = n_thread;
+
+		kernel_test::calc_lin_comb_s<<<grid, block>>>(d_a, d_b, d_k, d_coeff, n_vct, n_arr);
+		cudaThreadSynchronize();
+		//printf("d_a:\n");
+		//kernel_test::print_array<<<1,  1>>>(d_a, n_arr);
+
+		// Copy down the data from the DEVICE
+		CUDA_SAFE_CALL(cudaMemcpy(h_a0, d_a, n_arr * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+		for (uint32_t j = 0; j < n_arr; j++)
+		{
+			if (0 != fabs(h_a[j] - h_a0[j]))
+			{
+				printf("Difference: j = %6u : %g\n", j, h_a[j] - h_a0[j]);
+			}
+		}
+
+		// Deallocate memory
+		for (uint32_t i = 0; i < n_vct; i++)
+		{
+			FREE_HOST_VECTOR((void**)(h_k + i));
+			FREE_DEVICE_VECTOR((void**)(tmp + i));
+		}
+		FREE_HOST_VECTOR((void**)&h_k);
+		FREE_HOST_VECTOR((void**)&tmp);
+		FREE_DEVICE_VECTOR((void**)&d_k);
+
+		FREE_HOST_VECTOR((void**)&h_a);
+		FREE_HOST_VECTOR((void**)&h_a0);
+		FREE_HOST_VECTOR((void**)&h_b);
+		FREE_HOST_VECTOR((void**)&h_coeff);
+
+		FREE_DEVICE_VECTOR((void**)&d_a);
+		FREE_DEVICE_VECTOR((void**)&d_b);
+		FREE_DEVICE_VECTOR((void**)&d_coeff);
+	}
+	catch (const std::string& msg)
+	{
+		std::cerr << "Error: " << msg << std::endl;
+	}
+
+	std::cout << "Compute the linear combination of arrays on the DEVICE and comapre the results those computed on the HOST done.\n";
+
+	return 0;
+}
+#endif
 
 
 #if 0
