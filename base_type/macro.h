@@ -15,13 +15,13 @@
 #define VAR_T_W                       25   // The minimum filed width used to print out an var_t type variable
 
 
-#define K			(var_t)0.01720209895
-#define K2			(var_t)0.0002959122082855911025
+#define K			0.01720209895
+#define K2			0.0002959122082855911025
 
-#define	PI			(var_t)3.1415926535897932384626
-#define	TWOPI		(var_t)6.2831853071795864769253
-#define	TORAD		(var_t)0.0174532925199432957692
-#define TODEG		(var_t)57.295779513082320876798
+#define	PI			3.1415926535897932384626
+#define	TWOPI		6.2831853071795864769253
+#define	TORAD		0.0174532925199432957692
+#define TODEG		57.295779513082320876798
 
 #define SEP			' '
 

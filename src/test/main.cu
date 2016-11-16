@@ -150,11 +150,11 @@ int main()
 
 
 /*
- * 2016.11.13. - 
+ * 2016.11.13. - 11.13.  TEST OK
  * Compute the linear combination of arrays on the DEVICE
  * and comapre the results those computed on the HOST
  */
-#if 1
+#if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
 #include <time.h>       /* time                      */
@@ -356,6 +356,575 @@ int main()
 }
 #endif
 
+
+/*
+ * 2016.11.14. - 
+ * Gravitational interaction computations
+ */
+#if 1
+/*
+Premature optimization is the root of all evil. Always remember the three rules of optimization!
+
+1. Don't optimize.
+2. If you are an expert, see rule #1
+3. If you are an expert and can justify the need, then use the following procedure:
+ - Code it unoptimized
+ - determine how fast is "Fast enough"--Note which user requirement/story requires that metric.
+ - Write a speed test
+ - Test existing code--If it's fast enough, you're done.
+ - Recode it optimized
+ - Test optimized code. IF it doesn't meet the metric, throw it away and keep the original.
+ - If it meets the test, keep the original code in as comments
+*/
+
+#include <stdio.h>      /* printf, scanf, puts, NULL */
+#include <stdlib.h>     /* srand, rand, malloc       */
+#include <time.h>       /* time                      */
+#include <iostream>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+#include "type.h"
+#include "macro.h"
+#include "redutil2.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <sys/time.h>
+#include <ctime>
+#endif
+
+using namespace redutil2;
+
+// Global variables
+uint32_t n_tpb = 128;
+
+uint32_t n_obj = 0;
+var_t* h_p = NULL;
+var_t* d_p = NULL;
+
+dim3 grid;
+dim3 block;
+
+
+namespace nbody_kernel
+{
+__global__
+void calc_gravity_accel_naive(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (n_obj > i)
+	{
+		var3_t r_ij = {0, 0, 0};
+		for (uint32_t j = 0; j < n_obj; j++)
+		{
+			if (i == j)
+			{
+				continue;
+			}
+			r_ij.x = r[j].x - r[i].x;
+			r_ij.y = r[j].y - r[i].y;
+			r_ij.z = r[j].z - r[i].z;
+
+			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+			var_t d = sqrt(d2);
+			var_t d_3 = 1.0 / (d*d2);
+
+			var_t s = p[j].mass * d_3;
+			a[i].x += s * r_ij.x;
+			a[i].y += s * r_ij.y;
+			a[i].z += s * r_ij.z;
+		}
+		a[i].x *= K2;
+		a[i].y *= K2;
+		a[i].z *= K2;
+	}
+}
+
+__global__
+void calc_gravity_accel_naive_sym(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (n_obj > i)
+	{
+		var3_t r_ij = {0, 0, 0};
+		for (uint32_t j = i+1; j < n_obj; j++)
+		{
+			r_ij.x = r[j].x - r[i].x;
+			r_ij.y = r[j].y - r[i].y;
+			r_ij.z = r[j].z - r[i].z;
+
+			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+			var_t d = sqrt(d2);
+			var_t d_3 = 1.0 / (d*d2);
+
+			var_t s = p[j].mass * d_3;
+			a[i].x += s * r_ij.x;
+			a[i].y += s * r_ij.y;
+			a[i].z += s * r_ij.z;
+
+			s = p[i].mass * d_3;
+			a[j].x -= s * r_ij.x;
+			a[j].y -= s * r_ij.y;
+			a[j].z -= s * r_ij.z;
+		}
+		a[i].x *= K2;
+		a[i].y *= K2;
+		a[i].z *= K2;
+	}
+}
+
+inline __host__ __device__
+	var3_t body_body_interaction(var3_t riVec, var3_t rjVec, var_t mj, var3_t aiVec)
+{
+	var3_t dVec = {0.0, 0.0, 0.0};
+
+	// compute d = r_i - r_j [3 FLOPS] [6 read, 3 write]
+	dVec.x = rjVec.x - riVec.x;
+	dVec.y = rjVec.y - riVec.y;
+	dVec.z = rjVec.z - riVec.z;
+
+	// compute norm square of d vector [5 FLOPS] [3 read, 1 write]
+	var_t r2 = SQR(dVec.x) + SQR(dVec.y) + SQR(dVec.z);
+	// compute norm of d vector [1 FLOPS] [1 read, 1 write] TODO: how long does it take to compute sqrt ???
+	var_t r = sqrt(r2);
+	// compute m_j / d^3 []
+	var_t s = mj * 1.0 / (r2 * r);
+
+	aiVec.x += s * dVec.x;
+	aiVec.y += s * dVec.y;
+	aiVec.z += s * dVec.z;
+
+	return aiVec;
+}
+
+__global__
+	void calc_gravity_accel_tile(interaction_bound int_bound, int tile_size, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+	extern __shared__ var3_t sh_pos[];
+
+	var3_t my_pos = {0.0, 0.0, 0.0};
+	var3_t acc    = {0.0, 0.0, 0.0};
+
+	// i is the index of the SINK body
+	const uint32_t i = int_bound.sink.x + blockIdx.x * blockDim.x + threadIdx.x;
+
+	// To avoid overruning the r buffer
+	if (int_bound.sink.y > i)
+	{
+		my_pos = r[i];
+	}
+	for (int tile = 0; (tile * tile_size) < int_bound.source.y; tile++)
+	{
+		// src_idx is the index of the SOURCE body in the tile
+		int src_idx = int_bound.source.x + tile * tile_size + threadIdx.x;
+		// To avoid overruning the r buffer
+		if (int_bound.source.y > src_idx)
+		{
+			sh_pos[threadIdx.x] = r[src_idx];
+		}
+		__syncthreads();
+		// j is the index of the SOURCE body in the current tile
+		for (int j = 0; j < blockDim.x; j++)
+		{
+			// To avoid overrun the mass buffer
+			if (int_bound.source.y <= int_bound.source.x + (tile * tile_size) + j)
+			{
+				break;
+			}
+			// To avoid self-interaction or mathematically division by zero
+			if (i != int_bound.source.x + (tile * tile_size)+j)
+			{
+				acc = body_body_interaction(my_pos, sh_pos[j], p[src_idx].mass, acc);
+			}
+		}
+		__syncthreads();
+	}
+
+	// To avoid overruning the a buffer
+	if (int_bound.sink.y > i)
+	{
+		a[i] = acc;
+	}
+}
+} /* nbody_kernel */
+
+
+/* 
+ *  -- Returns the amount of milliseconds elapsed since the UNIX epoch. Works on both --
+ * Returns the amount of microseconds elapsed since the UNIX epoch. Works on both
+ * windows and linux.
+ */
+uint64_t GetTimeMs64()
+{
+#ifdef _WIN32
+	/* Windows */
+	FILETIME ft;
+	LARGE_INTEGER li;
+
+	/* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC) and copy it
+	* to a LARGE_INTEGER structure. */
+	GetSystemTimeAsFileTime(&ft);
+	li.LowPart = ft.dwLowDateTime;
+	li.HighPart = ft.dwHighDateTime;
+
+	uint64_t ret = li.QuadPart;
+	ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
+	//ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
+	ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
+
+	return ret;
+#else
+	/* Linux */
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	uint64 ret = tv.tv_usec;
+	/* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
+	//ret /= 1000;
+
+	/* Adds the seconds (10^0) after converting them to milliseconds (10^-3) */
+	//ret += (tv.tv_sec * 1000);
+	/* Adds the seconds (10^0) after converting them to microseconds (10^-6) */
+	ret += (tv.tv_sec * 1000000);
+
+	return ret;
+#endif
+}
+
+
+float gpu_calc_dy(uint32_t n_var, uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
+{
+	set_kernel_launch_param(n_var, n_tpb, grid, block);
+		
+	printf(" grid: (%4u, %4u, %4u)\n", grid.x, grid.y, grid.z);
+	printf("block: (%4u, %4u, %4u)\n", block.x, block.y, block.z);
+
+	var3_t* r = (var3_t*)y_temp;
+	var3_t* a = (var3_t*)(dy + 3*n_obj);
+	nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+
+	cudaEvent_t t0, t1;
+	CUDA_SAFE_CALL(cudaEventCreate(&t0));
+	CUDA_SAFE_CALL(cudaEventCreate(&t1));
+
+	CUDA_SAFE_CALL(cudaEventRecord(t0));
+	// Clear the acceleration array: the += op can be used
+	CUDA_SAFE_CALL(cudaMemset(a, 0, n_obj*sizeof(var3_t)));
+
+	// Copy the velocities into dy
+	// TODO: implement the asynchronous version of cudaMemcpy: Performace ??
+	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
+
+	if (false == use_symm_prop)
+	{
+		nbody_kernel::calc_gravity_accel_naive<<<grid, block>>>(n_obj, r, p, a);
+	}
+	else
+	{
+		nbody_kernel::calc_gravity_accel_naive_sym<<<grid, block>>>(n_obj, r, p, a);
+	}
+	CUDA_CHECK_ERROR();
+	CUDA_SAFE_CALL(cudaEventRecord(t1));
+	CUDA_SAFE_CALL(cudaEventSynchronize(t1));
+
+	float dt = 0.0f;
+	CUDA_SAFE_CALL(cudaEventElapsedTime(&dt, t0, t1));
+
+	return dt;
+}
+
+float gpu_calc_grav_accel_tile(uint32_t n_var, uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
+{
+	set_kernel_launch_param(n_var, n_tpb, grid, block);
+		
+	printf(" grid: (%4u, %4u, %4u)\n", grid.x, grid.y, grid.z);
+	printf("block: (%4u, %4u, %4u)\n", block.x, block.y, block.z);
+
+	uint2_t sink   = {0, n_obj};
+	uint2_t source = {0, n_obj};
+	interaction_bound int_bound(sink, source);
+
+	var3_t* r = (var3_t*)y_temp;
+	var3_t* a = (var3_t*)(dy + 3*n_obj);
+	nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+
+	cudaEvent_t t0, t1;
+	CUDA_SAFE_CALL(cudaEventCreate(&t0));
+	CUDA_SAFE_CALL(cudaEventCreate(&t1));
+
+	CUDA_SAFE_CALL(cudaEventRecord(t0));
+	// Clear the acceleration array: the += op can be used
+	CUDA_SAFE_CALL(cudaMemset(a, 0, n_obj*sizeof(var3_t)));
+
+	// Copy the velocities into dy
+	// TODO: implement the asynchronous version of cudaMemcpy: Performace ??
+	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
+
+	nbody_kernel::calc_gravity_accel_tile<<<grid, block, n_tpb * sizeof(var3_t)>>>(int_bound, n_tpb, r, p, a);
+	CUDA_CHECK_ERROR();
+
+	CUDA_SAFE_CALL(cudaEventRecord(t1, 0));
+	CUDA_SAFE_CALL(cudaEventSynchronize(t1));
+
+	float elapsed_time = 0.0f;
+	CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, t0, t1));
+
+	return elapsed_time;
+}
+
+void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
+{
+	// Copy the velocities into dy
+	memcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t));
+
+	var3_t* r = (var3_t*)y_temp;
+	var3_t* a = (var3_t*)(dy + 3*n_obj);
+	// Clear the acceleration array: the += op can be used
+	memset(a, 0, 3*n_obj*sizeof(var_t));
+
+	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
+	if (use_symm_prop)
+	{
+		for (uint32_t i = 0; i < n_obj; i++)
+		{
+			var3_t r_ij = {0, 0, 0};
+			for (uint32_t j = i+1; j < n_obj; j++)
+			{
+				r_ij.x = r[j].x - r[i].x;
+				r_ij.y = r[j].y - r[i].y;
+				r_ij.z = r[j].z - r[i].z;
+
+				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = 1.0 / (d*d2);
+
+				var_t s = p[j].mass * d_3;
+				a[i].x += s * r_ij.x;
+				a[i].y += s * r_ij.y;
+				a[i].z += s * r_ij.z;
+
+				s = p[i].mass * d_3;
+				a[j].x -= s * r_ij.x;
+				a[j].y -= s * r_ij.y;
+				a[j].z -= s * r_ij.z;
+			}
+			a[i].x *= K2;
+			a[i].y *= K2;
+			a[i].z *= K2;
+		}
+	}
+	else
+	{
+		for (uint32_t i = 0; i < n_obj; i++)
+		{
+			var3_t r_ij = {0, 0, 0};
+			for (uint32_t j = 0; j < n_obj; j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
+				r_ij.x = r[j].x - r[i].x;
+				r_ij.y = r[j].y - r[i].y;
+				r_ij.z = r[j].z - r[i].z;
+
+				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = 1.0 / (d*d2);
+
+				var_t s = p[j].mass * d_3;
+				a[i].x += s * r_ij.x;
+				a[i].y += s * r_ij.y;
+				a[i].z += s * r_ij.z;
+			}
+			a[i].x *= K2;
+			a[i].y *= K2;
+			a[i].z *= K2;
+		}
+	}
+}
+
+void parse(int argc, const char** argv, uint32_t* n_obj)
+{
+	int i = 1;
+
+	if (1 >= argc)
+	{
+		throw std::string("Missing command line arguments. For help use -h.");
+	}
+
+	while (i < argc)
+	{
+		std::string p = argv[i];
+		if (     p == "-n")
+		{
+			i++;
+			if (!tools::is_number(argv[i])) 
+			{
+				throw std::string("Invalid number at: " + p);
+			}
+			*n_obj = atoi(argv[i]);
+		}
+		else
+		{
+			throw std::string("Invalid switch on command line: " + p + ".");
+		}
+		i++;
+	}
+}
+
+int main(int argc, const char *argv[])
+{
+	var_t* h_y = NULL;
+	var_t* h_dy = NULL;
+	var_t* h_dy0 = NULL;
+
+	var_t* d_y = NULL;
+	var_t* d_dy = NULL;
+
+	uint32_t n_var = 0;
+	uint32_t n_par = 0;
+
+	try
+	{
+		// n_obj is a global variable
+		parse(argc, argv, &n_obj);
+		n_var = 6 * n_obj;
+		n_par = 1 * n_obj;
+
+		// Allocate HOST memory
+		ALLOCATE_HOST_VECTOR((void**)&h_y,   n_var * sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_dy,  n_var * sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_dy0, n_var * sizeof(var_t));
+		ALLOCATE_HOST_VECTOR((void**)&h_p,   n_par * sizeof(var_t));
+
+		// Allocate DEVICE memory
+		ALLOCATE_DEVICE_VECTOR((void**)&d_y,  n_var * sizeof(var_t));
+		ALLOCATE_DEVICE_VECTOR((void**)&d_dy, n_var * sizeof(var_t));
+		ALLOCATE_DEVICE_VECTOR((void**)&d_p,  n_par * sizeof(var_t));
+
+		// Populate data
+		srand(time(NULL));
+		for (uint32_t i = 0; i < n_var; i++)
+		{
+			var_t r = (var_t)rand()/RAND_MAX;
+			*(h_y + i) = r;
+		}
+		for (uint32_t i = 0; i < n_par; i++)
+		{
+			var_t r = (var_t)rand()/RAND_MAX;
+			*(h_p + i) = 1;
+		}
+
+		CUDA_SAFE_CALL(cudaMemcpy(d_y, h_y, n_var * sizeof(var_t), cudaMemcpyHostToDevice));
+		CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, n_par * sizeof(var_t), cudaMemcpyHostToDevice));
+
+		var_t t0 = 0.0;
+		uint16_t stage = 0;
+
+		uint64_t T0 = GetTimeMs64();
+		cpu_calc_dy(stage, t0, h_y, h_dy, false);
+		uint64_t T1 = GetTimeMs64();
+		var_t DT_CPU = ((var_t)(T1 - T0))/1000.0f;
+		printf("CPU execution time: %16.4e [ms]\n", DT_CPU);
+
+		T0 = GetTimeMs64();
+		cpu_calc_dy(stage, t0, h_y, h_dy0, true);
+		T1 = GetTimeMs64();
+		DT_CPU = ((var_t)(T1 - T0))/1000.0f;
+		printf("CPU execution time: %16.4e [ms]\n", DT_CPU);
+
+		for (uint32_t j = 0; j < n_var; j++)
+		{
+			if (1.0e-15 < fabs(h_dy[j] - h_dy0[j]))
+			{
+				printf("Difference: j = %6u : %24.16e\n", j, h_dy[j] - h_dy0[j]);
+			}
+		}
+
+		T0 = GetTimeMs64();
+		float _DT_GPU = gpu_calc_dy(n_var, stage, t0, d_y, d_dy, false);
+		T1 = GetTimeMs64();
+		var_t DT_GPU = ((var_t)(T1 - T0))/1000.0f;
+		printf("GPU execution time: %16.4e [ms]\n", DT_GPU);
+		printf("GPU execution time: %16.4e [ms]\n", _DT_GPU);
+		printf("%10u %16.4e %16.4e %16.4e %16.4e\n", n_obj, DT_CPU, DT_GPU, _DT_GPU, DT_CPU/_DT_GPU);
+
+		// Copy down the data from the DEVICE
+		CUDA_SAFE_CALL(cudaMemcpy(h_dy0, d_dy, n_var * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+		for (uint32_t j = 0; j < n_var; j++)
+		{
+			if (1.0e-15 < fabs(h_dy[j] - h_dy0[j]))
+			{
+				printf("Difference: j = %6u : %24.16e\n", j, h_dy[j] - h_dy0[j]);
+			}
+		}
+
+		T0 = GetTimeMs64();
+		_DT_GPU = gpu_calc_dy(n_var, stage, t0, d_y, d_dy, true);
+		T1 = GetTimeMs64();
+		DT_GPU = ((var_t)(T1 - T0))/1000.0f;
+		printf("GPU execution time: %16.4e [ms]\n", DT_GPU);
+		printf("GPU execution time: %16.4e [ms]\n", _DT_GPU);
+		printf("%10u %16.4e %16.4e %16.4e %16.4e\n", n_obj, DT_CPU, DT_GPU, _DT_GPU, DT_CPU/_DT_GPU);
+
+		// Copy down the data from the DEVICE
+		CUDA_SAFE_CALL(cudaMemcpy(h_dy0, d_dy, n_var * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+		for (uint32_t j = 0; j < n_var; j++)
+		{
+			if (1.0e-15 < fabs(h_dy[j] - h_dy0[j]))
+			{
+				printf("Difference: j = %6u : %24.16e\n", j, h_dy[j] - h_dy0[j]);
+			}
+		}
+
+		T0 = GetTimeMs64();
+		_DT_GPU = gpu_calc_grav_accel_tile(n_var, stage, t0, d_y, d_dy);
+		T1 = GetTimeMs64();
+		DT_GPU = ((var_t)(T1 - T0))/1000.0f;
+		printf("GPU execution time: %16.4e [ms]\n", DT_GPU);
+		printf("GPU execution time: %16.4e [ms]\n", _DT_GPU);
+		printf("%10u %16.4e %16.4e %16.4e %16.4e\n", n_obj, DT_CPU, DT_GPU, _DT_GPU, DT_CPU/_DT_GPU);
+
+		// Copy down the data from the DEVICE
+		CUDA_SAFE_CALL(cudaMemcpy(h_dy0, d_dy, n_var * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+		for (uint32_t j = 0; j < n_var; j++)
+		{
+			if (1.0e-15 < fabs(h_dy[j] - h_dy0[j]))
+			{
+				printf("Difference: j = %6u : %24.16e\n", j, h_dy[j] - h_dy0[j]);
+			}
+		}
+
+		FREE_HOST_VECTOR((void**)&h_y  );
+		FREE_HOST_VECTOR((void**)&h_dy );
+		FREE_HOST_VECTOR((void**)&h_dy0);
+		FREE_HOST_VECTOR((void**)&h_p  );
+
+		FREE_DEVICE_VECTOR((void**)&d_y );
+		FREE_DEVICE_VECTOR((void**)&d_dy);
+		FREE_DEVICE_VECTOR((void**)&d_p );
+	}
+	catch (const std::string& msg)
+	{
+		std::cerr << "Error: " << msg << std::endl;
+	}
+	std::cout << "Gravitational interaction computations done.\n";
+
+	return 0;
+}
+
+#endif
 
 #if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */

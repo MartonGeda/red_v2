@@ -89,9 +89,9 @@ nbody::~nbody()
 
 void nbody::initialize()
 {
-	h_md       = NULL;
-	d_md       = NULL;
-	md         = NULL;
+	h_md = NULL;
+	d_md = NULL;
+	md   = NULL;
 }
 
 void nbody::allocate_storage()
