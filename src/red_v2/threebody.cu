@@ -41,7 +41,7 @@ void threebody::initialize()
 void threebody::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_device_storage();
 	}
@@ -62,7 +62,7 @@ void threebody::allocate_device_storage()
 void threebody::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
@@ -80,9 +80,23 @@ void threebody::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(h_epoch));
 }
 
+void threebody::copy_metadata(copy_direction_t dir)
+{
+	switch (dir)
+	{
+	case COPY_DIRECTION_TO_DEVICE:
+		copy_vector_to_device(d_md, h_md, n_obj*sizeof(threebody_t::metadata_t));
+		break;
+	case COPY_DIRECTION_TO_HOST:
+		copy_vector_to_host(h_md, d_md, n_obj*sizeof(threebody_t::metadata_t));
+	default:
+		throw std::string("Parameter 'dir' is out of range.");
+	}
+}
+
 void threebody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMP_DEV_CPU == comp_dev)
+	if (PROC_UNIT_CPU == comp_dev.proc_unit)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}

@@ -13,7 +13,7 @@ public:
 	static var_t b[], bb[];
 	static var_t c[], cc[];
 
-	int_rungekutta2(ode& f, var_t dt, comp_dev_t comp_dev);
+	int_rungekutta2(ode& f, comp_dev_t comp_dev);
 	~int_rungekutta2();
 
 	var_t step();

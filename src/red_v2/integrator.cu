@@ -11,9 +11,8 @@
 using namespace std;
 using namespace redutil2;
 
-integrator::integrator(ode& f, var_t dt, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev) : 
+integrator::integrator(ode& f, bool adaptive, var_t tolerance, uint16_t n_stage, comp_dev_t comp_dev) : 
 	f(f),
-	dt_try(dt),
 	adaptive(adaptive),
 	tolerance(tolerance),
 	n_stage(n_stage),
@@ -33,9 +32,9 @@ integrator::~integrator()
 void integrator::initialize()
 {
 	t             = f.t;
+	dt_try        = f.dt;
 	dt_did        = 0.0;
 
-	//d_ck          = NULL;
 	h_k           = NULL;
 	d_k           = NULL;
 	k             = NULL;
@@ -59,7 +58,7 @@ void integrator::initialize()
 void integrator::allocate_storage(uint32_t n_var)
 {
 	allocate_host_storage(n_var);
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_device_storage(n_var);
 	}
@@ -67,24 +66,14 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	h_k = (var_t**)malloc(n_stage*sizeof(var_t*));
-	if (NULL == h_k)
-	{
-		throw string("Host memory allocation failed.");
-	}
-	memset(h_k, 0, n_stage*sizeof(var_t*));
-
-	k = (var_t**)malloc(n_stage*sizeof(var_t*));
-	if (NULL == k)
-	{
-		throw string("Host memory allocation failed.");
-	}
-	memset(k, 0, n_stage*sizeof(var_t*));
-
+	ALLOCATE_HOST_VECTOR((void**)&h_k, n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_var*sizeof(var_t));
 	}
+	ALLOCATE_HOST_VECTOR((void**)&k, n_stage*sizeof(var_t*));
+	save_k = k;
+
 	ALLOCATE_HOST_VECTOR((void**)&(h_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
 	{
@@ -94,21 +83,13 @@ void integrator::allocate_host_storage(uint32_t n_var)
 
 void integrator::allocate_device_storage(uint32_t n_var)
 {
-	CUDA_SAFE_CALL(cudaMalloc((void**)d_k, n_stage*sizeof(var_t*)));
-	if (NULL == d_k)
-	{
-		throw string("Device memory allocation failed.");
-	}
-	// Clear memory 
-	CUDA_SAFE_CALL(cudaMemset((void**)d_k, 0, n_stage*sizeof(var_t)));
-
-	//ALLOCATE_DEVICE_VECTOR((void**)&d_k, n_stage*sizeof(var_t*));
-	//ALLOCATE_DEVICE_VECTOR((void**)&d_ck, n_stage*sizeof(var_t*));
+	ALLOCATE_DEVICE_VECTOR((void**)(&d_k), n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		ALLOCATE_DEVICE_VECTOR((void**)&(d_k[i]), n_var*sizeof(var_t));
-		//copy_vector_to_device((void*)&d_ck[i], &d_k[i], sizeof(var_t*));
+		ALLOCATE_DEVICE_VECTOR((void**)(k + i), n_var*sizeof(var_t));
 	}
+	CUDA_SAFE_CALL(cudaMemcpy(d_k, k, n_stage * sizeof(var_t*), cudaMemcpyHostToDevice));
+
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
 	{
@@ -119,7 +100,7 @@ void integrator::allocate_device_storage(uint32_t n_var)
 void integrator::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
@@ -131,8 +112,8 @@ void integrator::deallocate_host_storage()
 	{
 		FREE_HOST_VECTOR((void **)(h_k + i));
 	}
-	free(h_k); h_k = NULL;
-	free(k);   k = NULL;
+	free(h_k);       h_k = NULL;
+	free(save_k); save_k = NULL;
 
 	FREE_HOST_VECTOR((void **)&(h_ytemp));
 	if (adaptive)
@@ -143,7 +124,6 @@ void integrator::deallocate_host_storage()
 
 void integrator::deallocate_device_storage()
 {
-	//FREE_DEVICE_VECTOR((void **)&(d_ck));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		FREE_DEVICE_VECTOR((void **)&(d_k[i]));
@@ -162,9 +142,9 @@ void integrator::deallocate_device_storage()
 // Status: Not tested
 void integrator::create_aliases()
 {
-	switch (comp_dev)
+	switch (comp_dev.proc_unit)
 	{
-	case COMP_DEV_CPU:
+	case PROC_UNIT_CPU:
 		ytemp = h_ytemp;
 		for (int r = 0; r < n_stage; r++) 
 		{
@@ -175,26 +155,27 @@ void integrator::create_aliases()
 			err = h_err;
 		}
 		break;
-	case COMP_DEV_GPU:
+	case PROC_UNIT_GPU:
 		ytemp = d_ytemp;
-		for (int r = 0; r < n_stage; r++) 
-		{
-			k[r] = d_k[r];
-		}
+		// If the computing device is GPU than k[] already set
+		//for (int r = 0; r < n_stage; r++) 
+		//{
+		//	k[r] = d_k[r];
+		//}
 		if (adaptive)
 		{
 			err = d_err;
 		}
 		break;
 	default:
-		throw string("Parameter 'comp_dev' is out of range.");
+		throw string("Parameter 'PROC_UNIT' is out of range.");
 	}
 }
 
-void integrator::set_computing_device(comp_dev_t device)
+void integrator::set_computing_device(comp_dev_t comp_dev)
 {
 	// If the execution is already on the requested device than nothing to do
-	if (this->comp_dev == device)
+	if (this->comp_dev.proc_unit == comp_dev.proc_unit)
 	{
 		return;
 	}
@@ -204,17 +185,17 @@ void integrator::set_computing_device(comp_dev_t device)
 
 	//switch (device)
 	//{
-	//case COMP_DEV_CPU:
+	//case PROC_UNIT_CPU:
 	//	deallocate_device_storage();
 	//	break;
-	//case COMP_DEV_GPU:
+	//case PROC_UNIT_GPU:
 	//	allocate_device_storage(n_body);
 	//	break;
 	//default:
 	//	throw string("Parameter 'device' is out of range.");
 	//}
 
-	//this->comp_dev = device;
+	//this->PROC_UNIT = device;
 	//create_aliases();
 	//f->set_computing_device(device);
 }
@@ -224,7 +205,7 @@ var_t integrator::get_max_error(uint32_t n_var)
 {
 	var_t max_err = 0.0;
 
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		// Wrap raw pointer with a device_ptr
 		thrust::device_ptr<var_t> d_ptr(d_err);

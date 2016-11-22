@@ -15,6 +15,12 @@ public:
 	void load_ascii_record(std::ifstream& input, var_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p);
 	void load_binary(std::ifstream& input);
 
+	//! Copies N-body metadata between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
+	void copy_metadata(copy_direction_t dir);
+
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
 		\param path_si  full file path where the info about the solution will be printed

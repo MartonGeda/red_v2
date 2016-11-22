@@ -15,6 +15,12 @@ public:
 	void load_ascii_record(std::ifstream& input, var_t* t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v);
 	void load_binary(std::ifstream& input);
 
+	//! Copies N-body metadata between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
+	void copy_metadata(copy_direction_t dir);
+
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
 		\param path_si  full file path where the info about the solution will be printed
@@ -57,11 +63,5 @@ public:
 
 	var_t h;               //! Energy of the system
 
-	tbp_t::metadata_t* h_md;
-	tbp_t::metadata_t* d_md;
-	tbp_t::metadata_t* md;
-
-	var_t* h_epoch;
-	var_t* d_epoch;
-	var_t* epoch;
+	tbp_t::metadata_t *h_md, *d_md, *md;
 };

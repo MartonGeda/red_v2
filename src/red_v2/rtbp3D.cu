@@ -28,7 +28,6 @@ rtbp3D::~rtbp3D()
 void rtbp3D::initialize()
 {
 	h_md    = NULL;
-	h_epoch = NULL;
 
 	h       = 0.0;            // energy
 	h_y[8]  = 0.0;            // s_0: fictitious time (4 position, 4 velocity, 1 time)
@@ -37,7 +36,7 @@ void rtbp3D::initialize()
 void rtbp3D::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_device_storage();
 	}
@@ -46,19 +45,17 @@ void rtbp3D::allocate_storage()
 void rtbp3D::allocate_host_storage()
 {
 	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp_t::metadata_t));
-	ALLOCATE_HOST_VECTOR((void**)&(h_epoch), n_obj * sizeof(var_t));
 }
 
 void rtbp3D::allocate_device_storage()
 {
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp_t::metadata_t));
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_epoch), n_obj * sizeof(var_t));
 }
 
 void rtbp3D::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
@@ -67,13 +64,25 @@ void rtbp3D::deallocate_storage()
 void rtbp3D::deallocate_host_storage()
 {
 	FREE_HOST_VECTOR((void **)&(h_md));
-	FREE_HOST_VECTOR((void **)&(h_epoch));
 }
 
 void rtbp3D::deallocate_device_storage()
 {
 	FREE_DEVICE_VECTOR((void **)&(h_md));
-	FREE_DEVICE_VECTOR((void **)&(h_epoch));
+}
+
+void rtbp3D::copy_metadata(copy_direction_t dir)
+{
+	switch (dir)
+	{
+	case COPY_DIRECTION_TO_DEVICE:
+		copy_vector_to_device(d_md, h_md, n_obj*sizeof(tbp_t::metadata_t));
+		break;
+	case COPY_DIRECTION_TO_HOST:
+		copy_vector_to_host(h_md, d_md, n_obj*sizeof(tbp_t::metadata_t));
+	default:
+		throw std::string("Parameter 'dir' is out of range.");
+	}
 }
 
 void rtbp3D::trans_to_descartes_var(var_t& x, var_t& y, var_t& z, var_t& vx, var_t& vy, var_t& vz)
@@ -115,7 +124,7 @@ static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r
 
 void rtbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMP_DEV_CPU == comp_dev)
+	if (PROC_UNIT_CPU == comp_dev.proc_unit)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}
@@ -206,9 +215,10 @@ void rtbp3D::load_ascii(ifstream& input)
 {
 	tbp_t::param_t* p = (tbp_t::param_t*)h_p;
 
+	var_t _t;
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
-		load_ascii_record(input, &h_epoch[i], &h_md[i], &p[i], &h_y[i], &h_y[i+4]);
+		load_ascii_record(input, &_t, &h_md[i], &p[i], &h_y[i], &h_y[i+4]);
 	}
 }
 

@@ -72,7 +72,7 @@ nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, c
     load_solution_info(path_si);
     load_solution_data(path_sd);
 
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		copy_vars(COPY_DIRECTION_TO_DEVICE);
 		copy_params(COPY_DIRECTION_TO_DEVICE);
@@ -97,7 +97,7 @@ void nbody::initialize()
 void nbody::allocate_storage()
 {
 	allocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_device_storage();
 	}
@@ -116,7 +116,7 @@ void nbody::allocate_device_storage()
 void nbody::deallocate_storage()
 {
 	deallocate_host_storage();
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
@@ -132,9 +132,23 @@ void nbody::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(d_md));
 }
 
+void nbody::copy_metadata(copy_direction_t dir)
+{
+	switch (dir)
+	{
+	case COPY_DIRECTION_TO_DEVICE:
+		copy_vector_to_device(d_md, h_md, n_obj*sizeof(nbp_t::metadata_t));
+		break;
+	case COPY_DIRECTION_TO_HOST:
+		copy_vector_to_host(h_md, d_md, n_obj*sizeof(nbp_t::metadata_t));
+	default:
+		throw std::string("Parameter 'dir' is out of range.");
+	}
+}
+
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	if (COMP_DEV_CPU == comp_dev)
+	if (PROC_UNIT_CPU == comp_dev.proc_unit)
 	{
 		cpu_calc_dy(stage, curr_t, y_temp, dy, true);
 	}

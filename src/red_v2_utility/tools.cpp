@@ -108,8 +108,6 @@ string& trim_comment(string& s, const char* c)
     return s;
 }
 
-
-
 string get_time_stamp(bool use_comma)
 {
 	static char time_stamp[20];
@@ -1067,17 +1065,6 @@ var_t calc_orbital_period(var_t mu, var_t a)
 // Date of creation: 2016.11.02.
 // Last edited: 
 // Status: Tested
-void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var)
-{
-	for (uint32_t i = 0; i < n_var; i++)
-	{
-		a[i] = b[i] + f*c[i];
-	}
-}
-
-// Date of creation: 2016.11.02.
-// Last edited: 
-// Status: Tested
 void calc_lin_comb(var_t* a, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var)
 {
 	for (uint32_t i = 0; i < n_var; i++)
@@ -1091,6 +1078,17 @@ void calc_lin_comb(var_t* a, const var_t* const *c, const var_t* coeff, uint16_t
 			}
 			a[i] += coeff[j] * c[j][i];
 		}
+	}
+}
+
+// Date of creation: 2016.11.02.
+// Last edited: 
+// Status: Tested
+void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var)
+{
+	for (uint32_t i = 0; i < n_var; i++)
+	{
+		a[i] = b[i] + f*c[i];
 	}
 }
 

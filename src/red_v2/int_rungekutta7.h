@@ -15,7 +15,7 @@ public:
 	static var_t c[];
 	static uint16_t a_idx[];
 
-	int_rungekutta7(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
+	int_rungekutta7(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
 	~int_rungekutta7();
 
 	var_t step();

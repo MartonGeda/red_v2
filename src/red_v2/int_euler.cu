@@ -9,25 +9,8 @@
 
 using namespace redutil2;
 
-namespace euler_kernel
-{
-// a_i = b_i + F * c_i
-static __global__
-	void calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
-{
-	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-	uint32_t stride = gridDim.x * blockDim.x;
-
-	while (n > tid)
-	{
-		a[tid] = b[tid] + F * c[tid];
-		tid += stride;
-	}
-}
-} /* namespace euler_kernel */
-
-euler::euler(ode& f, var_t dt, comp_dev_t comp_dev) :
-	integrator(f, dt, false, 0.0, 1, comp_dev)
+euler::euler(ode& f, comp_dev_t comp_dev) :
+	integrator(f, false, 0.0, 1, comp_dev)
 {
 	name    = "Euler";
 	n_order = 1;
@@ -38,9 +21,22 @@ euler::~euler()
 
 void euler::calc_y_np1()
 {
-	if (COMP_DEV_GPU == comp_dev)
+	static uint32_t n_var = 0;
+	bool benchmark = true;
+
+	if (n_var != f.n_var)
 	{
-		euler_kernel::calc_lin_comb<<<grid, block>>>(f.yout, f.y, dt_try, k[0], f.n_var);
+		benchmark = true;
+		n_var = f.n_var;
+	}
+	else
+	{
+		benchmark = false;
+	}
+
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var, comp_dev.id_dev, benchmark);
 		CUDA_CHECK_ERROR();
 	}
 	else
@@ -51,11 +47,6 @@ void euler::calc_y_np1()
 
 var_t euler::step()
 {
-	if (COMP_DEV_GPU == comp_dev)
-	{
-		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
-	}
-
 	uint16_t stage = 0;
 	t = f.t;
 	// Calculate initial differentials and store them into h_k

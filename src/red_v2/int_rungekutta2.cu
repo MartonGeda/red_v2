@@ -33,27 +33,27 @@ namespace rk2_kernel
 {
 // a_i = b_i + F * c_i
 static __global__
-	void calc_lin_comb(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
+	void calc_lin_comb(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
 {
 	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 	uint32_t stride = gridDim.x * blockDim.x;
 
 	while (n > tid)
 	{
-		a[tid] = b[tid] + F * c[tid];
+		a[tid] = b[tid] + f * c[tid];
 		tid += stride;
 	}
 }
 
 } /* namespace rk2_kernel */
 
-int_rungekutta2::int_rungekutta2(ode& f, var_t dt, comp_dev_t comp_dev) :
-	integrator(f, dt, false, 0.0, 2, comp_dev)
+int_rungekutta2::int_rungekutta2(ode& f, comp_dev_t comp_dev) :
+	integrator(f, false, 0.0, 2, comp_dev)
 {
 	name    = "Runge-Kutta2";
 	n_order = 2;
 
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		redutil2::copy_constant_to_device(dc_a, a, sizeof(a));
 		redutil2::copy_constant_to_device(dc_b, b, sizeof(b));
@@ -66,7 +66,7 @@ int_rungekutta2::~int_rungekutta2()
 
 void int_rungekutta2::calc_y_np1()
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		rk2_kernel::calc_lin_comb<<<grid, block>>>(f.yout, f.y, dt_try, k[1], f.n_var);
 		CUDA_CHECK_ERROR();
@@ -79,7 +79,7 @@ void int_rungekutta2::calc_y_np1()
 
 void int_rungekutta2::calc_ytemp(uint16_t stage)
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 	}
 	else
@@ -93,7 +93,7 @@ var_t int_rungekutta2::step()
 {
 	static const uint16_t n_aa = sizeof(int_rungekutta2::aa) / sizeof(var_t);
 
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
 	}

@@ -154,7 +154,7 @@ int main()
  * Compute the linear combination of arrays on the DEVICE
  * and comapre the results those computed on the HOST
  */
-#if 0
+#if 1
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
 #include <time.h>       /* time                      */
@@ -215,18 +215,10 @@ void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_
 }
 } /* kernel_test */
 
-void print_array(var_t *a, uint32_t n_arr)
-{
-	for (uint32_t i = 0; i < n_arr; i++)
-	{
-		printf("\t[%u]: %g\n", i, a[i]);
-	}
-}
-
 int main()
 {
 	static const uint32_t n_vct = 5;
-	static const uint32_t n_arr = 3000000;
+	static const uint32_t n_arr = 3000;
 
 	var_t** h_k = NULL;
 	var_t** d_k = NULL;
@@ -294,35 +286,49 @@ int main()
 		CUDA_SAFE_CALL(cudaMemcpy(d_b, h_b, n_arr * sizeof(var_t), cudaMemcpyHostToDevice));
 		CUDA_SAFE_CALL(cudaMemcpy(d_coeff, h_coeff, n_vct * sizeof(var_t), cudaMemcpyHostToDevice));
 
-		tools::calc_lin_comb_s(h_a, h_b, h_k, h_coeff, n_vct, n_arr);
-
-		//printf("h_a:\n");
-		//print_array(h_a, n_arr);
-
-		dim3 grid;
-		dim3 block;
-		
-		uint32_t n_thread = min(128, n_arr);
-		uint32_t n_block = (n_arr + n_thread - 1)/n_thread;
-		printf("n_thread: %u\n", n_thread);
-		printf(" n_block: %u\n", n_block);
-
-		grid.x	= n_block;
-		block.x = n_thread;
-
-		kernel_test::calc_lin_comb_s<<<grid, block>>>(d_a, d_b, d_k, d_coeff, n_vct, n_arr);
-		cudaThreadSynchronize();
-		//printf("d_a:\n");
-		//kernel_test::print_array<<<1,  1>>>(d_a, n_arr);
-
-		// Copy down the data from the DEVICE
-		CUDA_SAFE_CALL(cudaMemcpy(h_a0, d_a, n_arr * sizeof(var_t), cudaMemcpyDeviceToHost));
-
-		for (uint32_t j = 0; j < n_arr; j++)
+		// Test the tools::calc_lin_comb_s() and gpu_calc_lin_comb_s() functions
+		// Compute a[i] = b[i] + f*c[i]
 		{
-			if (0 != fabs(h_a[j] - h_a0[j]))
+			printf("Compute a[i] = b[i] + f*c[i]\n\n");
+			var_t f = 2.0;
+			var_t *h_c = *h_k;
+			tools::calc_lin_comb_s(h_a, h_b, h_c, f, n_arr);
+
+			var_t *d_c = *tmp;
+			gpu_calc_lin_comb_s(   d_a, d_b, d_c, f, n_arr, 0, false);
+
+			//printf("h_a:\n");
+			//print_array("", n_arr, h_a, PROC_UNIT_CPU);
+
+			//printf("d_a:\n");
+			//print_array("", n_arr, d_a, PROC_UNIT_GPU);
+
+			CUDA_SAFE_CALL(cudaMemcpy(h_a0, d_a, n_arr * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+			for (uint32_t j = 0; j < n_arr; j++)
 			{
-				printf("Difference: j = %6u : %g\n", j, h_a[j] - h_a0[j]);
+				if (0 != fabs(h_a[j] - h_a0[j]))
+				{
+					printf("Difference: j = %6u : %g\n", j, h_a[j] - h_a0[j]);
+				}
+			}
+		}
+
+		// Test the tools::calc_lin_comb_s() and gpu_calc_lin_comb_s() functions
+		// Compute a[i] = b[i] + sum (coeff[j] * c[j][i])
+		{
+			printf("Compute a[i] = b[i] + sum (coeff[j] * c[j][i])\n\n");
+			tools::calc_lin_comb_s(h_a, h_b, h_k, h_coeff, n_vct, n_arr);
+			gpu_calc_lin_comb_s(   d_a, d_b, d_k, d_coeff, n_vct, n_arr, 0, false);
+	
+			CUDA_SAFE_CALL(cudaMemcpy(h_a0, d_a, n_arr * sizeof(var_t), cudaMemcpyDeviceToHost));
+
+			for (uint32_t j = 0; j < n_arr; j++)
+			{
+				if (0 != fabs(h_a[j] - h_a0[j]))
+				{
+					printf("Difference: j = %6u : %g\n", j, h_a[j] - h_a0[j]);
+				}
 			}
 		}
 
@@ -361,9 +367,9 @@ int main()
  * 2016.11.14. - 
  * Gravitational interaction computations
  */
-#if 1
+#if 0
 /*
-Premature optimization is the root of all evil. Always remember the three rules of optimization!
+Premature optimization is the ROOT OF ALL EVIL. Always remember the three rules of optimization!
 
 1. Don't optimize.
 2. If you are an expert, see rule #1
@@ -1249,28 +1255,28 @@ void test_calc_lin_comb()
 
 		printf("The data in the vectors:\n");
 		printf("a:\n");
-		print_array("", n_var, a, COMP_DEV_CPU);
+		print_array("", n_var, a, PROC_UNIT_CPU);
 		printf("b:\n");
-		print_array("", n_var, b, COMP_DEV_CPU);
+		print_array("", n_var, b, PROC_UNIT_CPU);
 		for (uint32_t i = 0; i < n_vct; i++)
 		{
 			printf("c[%d]:\n", i);
-			print_array("", n_var, c[i], COMP_DEV_CPU);
+			print_array("", n_var, c[i], PROC_UNIT_CPU);
 		}
 		printf("The coefficients:\n");
-		print_array("", n_vct, coeff, COMP_DEV_CPU);
+		print_array("", n_vct, coeff, PROC_UNIT_CPU);
 
 		// Calculate the linear combination of the vectors
 		tools::calc_lin_comb(a, c, coeff, n_vct, n_var);
 		printf("The linear combination of the vectors:\n");
 		printf("a:\n");
-		print_array("", n_var, a, COMP_DEV_CPU);
+		print_array("", n_var, a, PROC_UNIT_CPU);
 
 		// Calculate the special case of linear combination of the vectors
 		tools::calc_lin_comb_s(a, b, c, coeff, n_vct, n_var);
 		printf("The special linear combination of the vectors:\n");
 		printf("a:\n");
-		print_array("", n_var, a, COMP_DEV_CPU);
+		print_array("", n_var, a, PROC_UNIT_CPU);
 
 		FREE_HOST_VECTOR((void **)&(coeff));
 		for (uint16_t i = 0; i < n_vct; i++)
@@ -1308,11 +1314,11 @@ void test_calc_lin_comb()
 
 		printf("The data in the vectors:\n");
 		printf("a:\n");
-		print_array("", n_var, a, COMP_DEV_CPU);
+		print_array("", n_var, a, PROC_UNIT_CPU);
 		printf("b:\n");
-		print_array("", n_var, b, COMP_DEV_CPU);
+		print_array("", n_var, b, PROC_UNIT_CPU);
 		printf("c:\n");
-		print_array("", n_var, c, COMP_DEV_CPU);
+		print_array("", n_var, c, PROC_UNIT_CPU);
 		printf("The coefficient:\n");
 		printf("%5e\n", f);
 
@@ -1320,7 +1326,7 @@ void test_calc_lin_comb()
 		tools::calc_lin_comb_s(a, b, c, f, n_var);
 		printf("The special linear combination of two vectors:\n");
 		printf("a:\n");
-		print_array("", n_var, a, COMP_DEV_CPU);
+		print_array("", n_var, a, PROC_UNIT_CPU);
 
 		FREE_HOST_VECTOR((void **)&(c));
 		FREE_HOST_VECTOR((void **)&(b));

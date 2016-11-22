@@ -95,12 +95,12 @@ typedef enum gas_disk_model
 			GAS_DISK_MODEL_N,
 		} gas_disk_model_t;
 
-typedef enum comp_dev
+typedef enum proc_unit
 		{
-			COMP_DEV_CPU,
-			COMP_DEV_GPU,
-			COMP_DEV_N
-		} comp_dev_t;
+			PROC_UNIT_CPU,
+			PROC_UNIT_GPU,
+			PROC_UNIT_N
+		} proc_unit_t;
 
 typedef enum threshold
 		{
@@ -157,15 +157,21 @@ typedef enum body_type
 			BODY_TYPE_N
 		} body_type_t;
 
+typedef struct comp_dev
+		{
+			proc_unit_t proc_unit;
+			uint32_t   id_dev;                //!< The id of the device which will execute the code
+		} comp_dev_t;
+
 // var2_t gets aligned to 16 bytes.
-typedef struct  var2
+typedef struct var2
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
 		} var2_t;        // [16 byte]
 
 // var3_t gets aligned to 16 bytes.
-typedef struct  var3
+typedef struct var3
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
@@ -173,7 +179,7 @@ typedef struct  var3
 		} var3_t;        // [24 byte]
 
 // var4_t gets aligned to 16 bytes.
-typedef struct  var4
+typedef struct var4
 		{
 			var_t x;     // [ 8 byte]
 			var_t y;     // [ 8 byte]
@@ -231,11 +237,12 @@ typedef struct ode_data
 	dim3 grid;                     //! Defines the grid of the blocks of the current execution
 	dim3 block;                    //! Defines the block of the threads of the current execution
 	uint16_t n_tpb;                //! Holds the number of threads per block
-	comp_dev_t comp_dev;   //! The execution is performed on this device
+	comp_dev_t comp_dev;           //! The execution is performed on this device
 
 	ode_data()
 	{
-		comp_dev = COMP_DEV_CPU;
+		comp_dev.proc_unit = PROC_UNIT_CPU;
+		comp_dev.id_dev = 0;
 
 		p      = d_p      = h_p      = 0x0;
 		obj_md = d_obj_md = h_obj_md = 0x0;

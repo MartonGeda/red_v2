@@ -37,15 +37,11 @@ void parameter::create_default()
 {
 	adaptive           = false;
 	error_check_for_tp = false;
-
 	output_data_rep    = DATA_REPRESENTATION_ASCII;
-
 	int_type           = INTEGRATOR_RUNGEKUTTAFEHLBERG78;
 	tolerance          = 1.0e-10;
-
 	simulation_length  = 0.0;
 	output_interval    = 0.0;
-
 	info_dt            = 5.0;      // [sec]
 	dump_dt            = 3600.0;   // [sec]
 

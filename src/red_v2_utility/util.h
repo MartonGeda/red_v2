@@ -52,4 +52,30 @@ namespace redutil2
 	void print_array(std::string path, int n, var_t *data, comp_dev_t comp_dev);
 
 	void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd);
+
+	//! Calculate the special linear combination of two vectors, a[i] = b[i] + f*c[i]
+	/*
+		\param a     vector which will contain the result
+		\param b     vector to which the linear combination will be added
+		\param c     vector to add with weight f
+		\param f     the weight of c
+		\param n_var the number of elements in the vectors
+		\param id_dev the id of the GPU to use for the computation
+		\param benchmark if true perform a benchmark of the underlying kernel
+	*/
+	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool benchmark);
+
+	//! Calculate the special case of linear combination of vectors, a[i] = b[i] + sum (coeff[j] * c[j][i])
+	/*
+		\param a     vector which will contain the result
+		\param b     vector to which the linear combination will be added
+		\param c     vectors which will linear combined
+		\param coeff vector which contains the weights (coefficients)
+		\param n_vct the number of vectors to combine
+		\param n_var the number of elements in the vectors
+		\param id_dev the id of the GPU to use for the computation
+		\param benchmark if true perform a benchmark of the underlying kernel
+	*/
+	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool benchmark);
+
 } /* redutil2 */

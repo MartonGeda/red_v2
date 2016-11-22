@@ -13,7 +13,7 @@ public:
 	static var_t bh[], _bh[];
 	static var_t c[];
 
-	int_rungekutta5(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
+	int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev);
 	~int_rungekutta5();
 
 	var_t step();

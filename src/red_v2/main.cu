@@ -22,11 +22,21 @@ using namespace redutil2;
 void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
 	static string ext = (DATA_REPRESENTATION_ASCII == opt->param->output_data_rep ? "txt" : "dat");
+	static var_t last_download = 0.0;
 
 	string fn_info;
 	string path_si;
 	string fn_data;
 	string path_sd;
+
+	// Do we have to download data from DEVICE
+	if (0.0 < fabs(last_download - f->t))
+	{
+		last_download = f->t;
+		f->copy_vars(COPY_DIRECTION_TO_HOST);
+		f->copy_params(COPY_DIRECTION_TO_HOST);
+		f->copy_metadata(COPY_DIRECTION_TO_HOST);
+	}
 
 	if (opt->append)
 	{
@@ -67,8 +77,7 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 }
 
 void run_benchmark(options* opt, ode* f, integrator* intgr, ofstream& slog)
-{
-}
+{ }
 
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
@@ -137,7 +146,6 @@ int main(int argc, const char** argv, const char** env)
 	time_t start = time(NULL);
 
 	ofstream* slog = NULL;
-	//options*   opt = NULL;
 
 	//matrix4_t m = {{10,8,10,7},{1,9,10,7},{8,8,4,7},{2,8,1,3}};
 	//var4_t v = {4,10,1,5};
@@ -174,7 +182,7 @@ int main(int argc, const char** argv, const char** env)
 		file::log_start(*slog, argc, argv, env, opt->param->get_data(), opt->print_to_screen);
 
 		ode *f = opt->create_model();
-		integrator *intgr = opt->create_integrator(*f, f->dt);
+		integrator *intgr = opt->create_integrator(*f);
 		// TODO: For every model it should be provieded a method to determine the minimum stepsize
 		// OR use the solution provided by the Numerical Recepies
 		intgr->set_dt_min(1.0e-20); // day

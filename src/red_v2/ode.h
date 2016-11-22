@@ -15,7 +15,7 @@ public:
 		\param n_obj       The total number of objets in the problem
 		\param n_vpo       The number of variables per object (vpo)
 		\param n_ppo       The number of parameters per object (ppo)
-		\param comp_dev    The name of the executing device
+		\param PROC_UNIT    The name of the executing device
 	*/
 	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, comp_dev_t comp_dev);
 	//! Constructs an ode object
@@ -26,7 +26,7 @@ public:
 		\param n_ppo       The number of parameters per object (ppo)
 		\param n_var       The total number of variables
 		\param n_par       The total number of parameters
-		\param comp_dev    The name of the executing device
+		\param PROC_UNIT    The name of the executing device
 	*/
 	ode(uint16_t n_dim, uint32_t n_obj, uint16_t n_vpo, uint16_t n_ppo, uint32_t n_var, uint32_t n_par, comp_dev_t comp_dev);
 	//! Destructor
@@ -55,6 +55,8 @@ public:
 	void copy_params(copy_direction_t dir);
 
 	void swap();
+
+	virtual void copy_metadata(copy_direction_t dir) = 0;
 
 	virtual void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;

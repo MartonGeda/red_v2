@@ -12,11 +12,17 @@ public:
         \param path_sd   the path of the file which conatins the initial conditions
         \param n_obj     the number of objects
 		\param n_ppo     the number of parameters per object
-		\param comp_dev  the name of the executing device
+		\param PROC_UNIT  the name of the executing device
 	*/
 	nbody(std::string& path_si, std::string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev);
 	//! Destructor
 	~nbody();
+
+	//! Copies N-body metadata between HOST and DEVICE memory
+	/*!
+		\param dir The direction of the copy
+	*/
+	void copy_metadata(copy_direction_t dir);
 
 	//! Print the solution (the numerical approximation of the solution)
 	/*!

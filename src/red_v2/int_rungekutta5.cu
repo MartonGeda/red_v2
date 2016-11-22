@@ -42,21 +42,21 @@ namespace rk5_kernel
 {
 // a_i = b_i + F * c_i
 static __global__
-	void sum_vector(var_t* a, const var_t* b, var_t F, const var_t* c, uint32_t n)
+	void sum_vector(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
 {
 	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 	uint32_t stride = gridDim.x * blockDim.x;
 
 	while (n > tid)
 	{
-		a[tid] = b[tid] + F * c[tid];
+		a[tid] = b[tid] + f * c[tid];
 		tid += stride;
 	}
 }
 } /* namespace rk5_kernel */
 
-int_rungekutta5::int_rungekutta5(ode& f, var_t dt, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
-	integrator(f, dt, adaptive, tolerance, (adaptive ? 7 : 6), comp_dev)
+int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
+	integrator(f, adaptive, tolerance, (adaptive ? 7 : 6), comp_dev)
 {
 	name    = "Runge-Kutta5";
 	n_order = 5;
@@ -67,7 +67,7 @@ int_rungekutta5::~int_rungekutta5()
 
 void int_rungekutta5::calc_ytemp(uint16_t stage)
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 	}
 	else
@@ -79,7 +79,7 @@ void int_rungekutta5::calc_ytemp(uint16_t stage)
 
 void int_rungekutta5::calc_y_np1()
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 	}
 	else
@@ -91,7 +91,7 @@ void int_rungekutta5::calc_y_np1()
 
 void int_rungekutta5::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		// rk4_kernel::calc_lin_comb
 		CUDA_CHECK_ERROR();
@@ -104,7 +104,7 @@ void int_rungekutta5::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coe
 
 void int_rungekutta5::calc_error(uint32_t n)
 {
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		// rk4_kernel::calc_error
 		CUDA_CHECK_ERROR();
@@ -148,7 +148,7 @@ var_t int_rungekutta5::step()
 	static const uint16_t n_bh = sizeof(int_rungekutta5::bh) / sizeof(var_t);
 	static bool first_call = true;
 
-	if (COMP_DEV_GPU == comp_dev)
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
 	}

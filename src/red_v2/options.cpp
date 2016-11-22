@@ -25,8 +25,7 @@
 using namespace std;
 using namespace redutil2;
 
-options::options(int argc, const char** argv) :
-	param(NULL)
+options::options(int argc, const char** argv)
 {
 	static const char* integrator_type_short_name[] = {"E",	"RK2",	"RK4",	"RKF5",	"RKF7" };
 
@@ -43,7 +42,7 @@ options::options(int argc, const char** argv) :
 #else
 		config = "R";
 #endif
-		string dev = (comp_dev == COMP_DEV_CPU ? "cpu" : "gpu");
+		string dev = (PROC_UNIT_CPU == comp_dev.proc_unit ? "cpu" : "gpu");
 		// as: adaptive step-size, fs: fix step-size
 		string adapt = (param->adaptive == true ? "as" : "fs");
 		
@@ -53,25 +52,21 @@ options::options(int argc, const char** argv) :
 }
 
 options::~options() 
-{
-}
+{ }
 
 void options::create_default()
 {
-	dyn_model           = DYN_MODEL_N;
-
-	verbose             = false;
-	print_to_screen     = false;
-	append              = false;
-	ef                  = false;
-	benchmark           = false;
-
-	id_dev              = 0;
-	n_change_to_cpu     = 100;
-
-	comp_dev            = COMP_DEV_CPU;
-	g_disk_model        = GAS_DISK_MODEL_NONE;
-
+	param                              = NULL;
+	dyn_model                          = DYN_MODEL_N;
+	verbose                            = false;
+	print_to_screen                    = false;
+	append                             = false;
+	ef                                 = false;
+	benchmark                          = false;
+	id_dev                             = 0;
+	n_change_to_cpu                    = 100;
+	comp_dev.proc_unit                 = PROC_UNIT_CPU;
+	g_disk_model                       = GAS_DISK_MODEL_NONE;
 	out_fn[OUTPUT_NAME_LOG]            = "log";
 	out_fn[OUTPUT_NAME_INFO]           = "info";
 	out_fn[OUTPUT_NAME_EVENT]          = "event";
@@ -177,11 +172,11 @@ void options::parse(int argc, const char** argv)
 
 		else if (p == "-cpu")
 		{
-			comp_dev = COMP_DEV_CPU;
+			comp_dev.proc_unit = PROC_UNIT_CPU;
 		}
 		else if (p == "-gpu")
 		{
-			comp_dev = COMP_DEV_GPU;
+			comp_dev.proc_unit = PROC_UNIT_GPU;
 		}
 		else if (p == "-ga")
 		{
@@ -351,26 +346,26 @@ ode* options::create_model()
 	return model;
 }
 
-integrator* options::create_integrator(ode& f, var_t dt)
+integrator* options::create_integrator(ode& f)
 {
 	integrator* intgr = NULL;
 
 	switch (param->int_type)
 	{
 	case INTEGRATOR_EULER:
-		intgr = new euler(f, dt, comp_dev);
+		intgr = new euler(f, comp_dev);
 		break;
 	case INTEGRATOR_RUNGEKUTTA2:
-		intgr = new int_rungekutta2(f, dt, comp_dev);
+		intgr = new int_rungekutta2(f, comp_dev);
 		break;
 	case INTEGRATOR_RUNGEKUTTA4:
-		intgr = new int_rungekutta4(f, dt, param->adaptive, param->tolerance, comp_dev);
+		intgr = new int_rungekutta4(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	case INTEGRATOR_RUNGEKUTTAFEHLBERG56:
-		intgr = new int_rungekutta5(f, dt, param->adaptive, param->tolerance, comp_dev);
+		intgr = new int_rungekutta5(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	case INTEGRATOR_RUNGEKUTTAFEHLBERG78:
-		intgr = new int_rungekutta7(f, dt, param->adaptive, param->tolerance, comp_dev);
+		intgr = new int_rungekutta7(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	default:
 		throw string("Requested integrator is not implemented.");
