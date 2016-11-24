@@ -89,6 +89,7 @@ void threebody::copy_metadata(copy_direction_t dir)
 		break;
 	case COPY_DIRECTION_TO_HOST:
 		copy_vector_to_host(h_md, d_md, n_obj*sizeof(threebody_t::metadata_t));
+		break;
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
 	}

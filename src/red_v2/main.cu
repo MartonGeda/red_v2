@@ -30,7 +30,7 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 	string path_sd;
 
 	// Do we have to download data from DEVICE
-	if (0.0 < fabs(last_download - f->t))
+	if (PROC_UNIT_GPU == opt->comp_dev.proc_unit && 0.0 < fabs(last_download - f->t))
 	{
 		last_download = f->t;
 		f->copy_vars(COPY_DIRECTION_TO_HOST);
@@ -207,9 +207,9 @@ int main(int argc, const char** argv, const char** env)
 	{
 		if (NULL != slog)
 		{
-			file::log_message(*slog, "Error: " + msg, false);
+			file::log_message(*slog, "Error: " + msg + ".", false);
 		}
-		cerr << "Error: " << msg << endl;
+		cerr << "Error: " << msg << "." << endl;
 	}
 
 	if (NULL != slog)

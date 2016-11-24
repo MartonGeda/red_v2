@@ -33,6 +33,21 @@ options::options(int argc, const char** argv)
 	parse(argc, argv);
 	param = new parameter(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_PARAMETER], print_to_screen);
 
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		int n_device = 0;
+		CUDA_SAFE_CALL(cudaGetDeviceCount(&n_device));
+		if (0 == n_device)
+		{
+			throw string("There are no cuda capable device in the machine");
+		}
+		if (0 > comp_dev.id_dev || comp_dev.id_dev > n_device)
+		{
+			throw string("The selected device id does not exist");
+		}
+		CUDA_SAFE_CALL(cudaSetDevice(comp_dev.id_dev));
+	}
+
 	if (ef)
 	{
 		char sep = '_';
@@ -63,9 +78,9 @@ void options::create_default()
 	append                             = false;
 	ef                                 = false;
 	benchmark                          = false;
-	id_dev                             = 0;
 	n_change_to_cpu                    = 100;
 	comp_dev.proc_unit                 = PROC_UNIT_CPU;
+	comp_dev.id_dev                    = -1;
 	g_disk_model                       = GAS_DISK_MODEL_NONE;
 	out_fn[OUTPUT_NAME_LOG]            = "log";
 	out_fn[OUTPUT_NAME_INFO]           = "info";
@@ -158,7 +173,7 @@ void options::parse(int argc, const char** argv)
 			{
 				throw string("Invalid number at: " + p);
 			}
-			id_dev = atoi(argv[i]);
+			comp_dev.id_dev = atoi(argv[i]);
 		}
 		else if (p == "-n_chg")
 		{
@@ -225,6 +240,10 @@ void options::parse(int argc, const char** argv)
 		i++;
 	}
 	// Check for obligatory arguments
+	if (PROC_UNIT_GPU == comp_dev.proc_unit && -1 == comp_dev.id_dev)
+	{
+		throw string("Missing the device id on which the active host thread executes the device code (see -id_dev)");
+	}
 	if (0 == in_fn[INPUT_NAME_START_FILES].length())
 	{
 		throw string("Missing value for -i");
@@ -237,7 +256,6 @@ void options::parse(int argc, const char** argv)
 	{
 		throw string("Missing value for -m");
 	}
-
 	if (0 == dir[DIRECTORY_NAME_OUT].length())
 	{
 		dir[DIRECTORY_NAME_OUT] = dir[DIRECTORY_NAME_IN];

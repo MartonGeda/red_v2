@@ -102,6 +102,13 @@ typedef enum proc_unit
 			PROC_UNIT_N
 		} proc_unit_t;
 
+typedef enum mem_loc
+		{
+			MEM_LOC_HOST,
+			MEM_LOC_DEVICE,
+			MEM_LOC_N
+		} mem_loc_t;
+
 typedef enum threshold
 		{
 			THRESHOLD_HIT_CENTRUM_DISTANCE,  //! inside this limit the body is considered to have hitted the central body and removed from the simulation [AU]
@@ -160,7 +167,7 @@ typedef enum body_type
 typedef struct comp_dev
 		{
 			proc_unit_t proc_unit;
-			uint32_t   id_dev;                //!< The id of the device which will execute the code
+			int         id_dev;                //!< The id of the device which will execute the code
 		} comp_dev_t;
 
 // var2_t gets aligned to 16 bytes.

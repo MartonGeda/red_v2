@@ -450,7 +450,7 @@ void set_device(int id_of_target_dev, ostream& sout)
 	}
 }
 
-void print_array(string path, int n, var_t *data, comp_dev_t comp_dev)
+void print_array(string path, int n, var_t *data, mem_loc_t mem_loc)
 {
 	var_t* h_data = NULL;
 
@@ -467,7 +467,7 @@ void print_array(string path, int n, var_t *data, comp_dev_t comp_dev)
 	out->setf(ios::right);
 	out->setf(ios::scientific);
 
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	if (MEM_LOC_DEVICE == mem_loc)
 	{
 		h_data = new var_t[n];
 		copy_vector_to_host(h_data, data, n * sizeof(var_t));
@@ -481,7 +481,7 @@ void print_array(string path, int n, var_t *data, comp_dev_t comp_dev)
 		*out << setw(5) << i << setprecision(16) << setw(25) << h_data[i] << endl;
 	}
 
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	if (MEM_LOC_DEVICE == mem_loc)
 	{
 		delete[] h_data;
 	}
@@ -563,9 +563,9 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			printf("%4u %10.6f [ms]\n", nt, GPU_DT);
+			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
+		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
 	}
 	else
 	{
@@ -611,9 +611,9 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			printf("%4u %10.6f [ms]\n", nt, GPU_DT);
+			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
+		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
 	}
 	else
 	{
@@ -621,6 +621,4 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 		red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, c, coeff, n_vct, n_var);
 	}
 }
-
-
 } /* redutil2 */

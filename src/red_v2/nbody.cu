@@ -77,7 +77,6 @@ nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, c
 		copy_vars(COPY_DIRECTION_TO_DEVICE);
 		copy_params(COPY_DIRECTION_TO_DEVICE);
 	}
-
 	calc_integral();
 	tout = t;
 }
@@ -141,6 +140,7 @@ void nbody::copy_metadata(copy_direction_t dir)
 		break;
 	case COPY_DIRECTION_TO_HOST:
 		copy_vector_to_host(h_md, d_md, n_obj*sizeof(nbp_t::metadata_t));
+		break;
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
 	}
@@ -155,31 +155,6 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 	else
 	{
 		gpu_calc_dy(stage, curr_t, y_temp, dy);
-	}
-}
-
-void nbody::calc_integral()
-{
-	static bool first_call = true;
-
-	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-
-	var3_t* r = (var3_t*)h_y;
-	var3_t* v = (var3_t*)(h_y + 3*n_obj);
-
-	integral.R = tools::nbp::calc_position_of_bc(n_obj, p, r);
-	integral.V = tools::nbp::calc_velocity_of_bc(n_obj, p, v);
-	integral.c = tools::nbp::calc_angular_momentum(n_obj, p, r, v);
-	integral.h = tools::nbp::calc_total_energy(n_obj, p, r, v);
-
-	if (first_call)
-	{
-		first_call = false;
-
-		integral.R0 = integral.R;
-		integral.V0 = integral.V;
-		integral.c0 = integral.c;
-		integral.h0 = integral.h;
 	}
 }
 
@@ -258,16 +233,46 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
-
-	set_kernel_launch_param(n_obj, n_tpb, grid, block);
+	// TODO: do a benchmark and set the optimal thread number
+	{
+		n_tpb = 256;
+	}
+	set_kernel_launch_param(n_var, n_tpb, grid, block);
 
 	var3_t* r = (var3_t*)y_temp;
 	var3_t* a = (var3_t*)(dy + 3*n_obj);
 	nbp_t::param_t* p = (nbp_t::param_t*)d_p;
 
+	// TODO: use asynchronous copy operation
+	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
+
 	kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, p, r, a);
 	CUDA_CHECK_ERROR();
+}
+
+void nbody::calc_integral()
+{
+	static bool first_call = true;
+
+	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
+	var3_t* r = (var3_t*)h_y;
+	var3_t* v = (var3_t*)(h_y + 3*n_obj);
+
+	integral.R = tools::nbp::calc_position_of_bc(n_obj, p, r);
+	integral.V = tools::nbp::calc_velocity_of_bc(n_obj, p, v);
+	integral.c = tools::nbp::calc_angular_momentum(n_obj, p, r, v);
+	integral.h = tools::nbp::calc_total_energy(n_obj, p, r, v);
+
+	if (first_call)
+	{
+		first_call = false;
+
+		integral.R0 = integral.R;
+		integral.V0 = integral.V;
+		integral.c0 = integral.c;
+		integral.h0 = integral.h;
+	}
 }
 
 void nbody::load_solution_info(string& path)

@@ -142,6 +142,7 @@ void ode::copy_vars(copy_direction_t dir)
 		break;
 	case COPY_DIRECTION_TO_HOST:
 		copy_vector_to_host(h_y, d_y, n_var*sizeof(var_t));
+		break;
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
 	}
@@ -156,6 +157,7 @@ void ode::copy_params(copy_direction_t dir)
 		break;
 	case COPY_DIRECTION_TO_HOST:
 		copy_vector_to_host(h_p, d_p, n_par*sizeof(var_t));
+		break;
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
 	}
@@ -163,7 +165,8 @@ void ode::copy_params(copy_direction_t dir)
 
 void ode::swap()
 {
-	std::swap(t,   tout);
+	std::swap(t, tout);
+	std::swap(y, yout);
 	std::swap(h_y, h_yout);
 	std::swap(d_y, d_yout);
 }
