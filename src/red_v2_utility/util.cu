@@ -53,6 +53,19 @@ void calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_
 	}
 }
 
+//! Calculate the error for the Runge-Kutta 4 method: error = |k4 - k5|
+__global__
+void calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n)
+{
+	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t stride = gridDim.x * blockDim.x;
+
+	while (n > tid)
+	{
+        a[tid] = fabs(k4[tid] - k5[tid]);
+		tid += stride;
+	}
+}
 } /* red_kernel */
 
 namespace redutil2
@@ -526,7 +539,7 @@ void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd)
 // Date of creation: 2016.11.22.
 // Last edited: 
 // Status:
-void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool benchmark)
+void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool optimize)
 {
 	static uint16_t n_tpb = 256;
 	static bool first_call = true;
@@ -534,16 +547,16 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 	dim3 grid;
 	dim3 block;
 
-	if (benchmark || first_call)
+	if (optimize || first_call)
 	{
 		first_call = false;
 
 		cudaDeviceProp prop;
-		cudaGetDeviceProperties(&prop, id_dev);
-
 		cudaEvent_t start, stop;
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
+
+        CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
+		CUDA_SAFE_CALL(cudaEventCreate(&start));
+		CUDA_SAFE_CALL(cudaEventCreate(&stop));
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
@@ -551,13 +564,14 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
-			cudaEventRecord(start);
+			CUDA_SAFE_CALL(cudaEventRecord(start));
 			red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, f, c, n_var);
-			cudaEventRecord(stop);
-			cudaEventSynchronize(stop);
+       		CUDA_CHECK_ERROR();
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
 
 			float GPU_DT = 0.0f;
-			cudaEventElapsedTime(&GPU_DT, start, stop);
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&GPU_DT, start, stop));
 			if (GPU_DT < min_GPU_DT)
 			{
 				min_GPU_DT = GPU_DT;
@@ -571,10 +585,11 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
 		red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, f, c, n_var);
+   		CUDA_CHECK_ERROR();
 	}
 }
 
-void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool benchmark)
+void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool optimize)
 {
 	static uint16_t n_tpb = 256;
 	static bool first_call = true;
@@ -582,16 +597,16 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 	dim3 grid;
 	dim3 block;
 
-	if (benchmark || first_call)
+	if (optimize || first_call)
 	{
 		first_call = false;
 
 		cudaDeviceProp prop;
-		cudaGetDeviceProperties(&prop, id_dev);
-
 		cudaEvent_t start, stop;
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
+
+        CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
+		CUDA_SAFE_CALL(cudaEventCreate(&start));
+		CUDA_SAFE_CALL(cudaEventCreate(&stop));
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
@@ -599,13 +614,14 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
-			cudaEventRecord(start);
+            CUDA_SAFE_CALL(cudaEventRecord(start));
 			red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, c, coeff, n_vct, n_var);
-			cudaEventRecord(stop);
-			cudaEventSynchronize(stop);
+    		CUDA_CHECK_ERROR();
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
 
 			float GPU_DT = 0.0f;
-			cudaEventElapsedTime(&GPU_DT, start, stop);
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&GPU_DT, start, stop));
 			if (GPU_DT < min_GPU_DT)
 			{
 				min_GPU_DT = GPU_DT;
@@ -619,6 +635,58 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
 		red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, c, coeff, n_vct, n_var);
+   		CUDA_CHECK_ERROR();
+	}
+}
+
+// Calculate the error for the Runge-Kutta 4 method: a = |k4 - k5|
+void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_var, int id_dev, bool optimize)
+{
+	static uint16_t n_tpb = 256;
+	static bool first_call = true;
+
+	dim3 grid;
+	dim3 block;
+
+	if (optimize || first_call)
+	{
+		first_call = false;
+
+		cudaDeviceProp prop;
+		cudaEvent_t start, stop;
+
+        CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
+		CUDA_SAFE_CALL(cudaEventCreate(&start));
+		CUDA_SAFE_CALL(cudaEventCreate(&stop));
+
+		float min_GPU_DT = 1.0e8;
+		uint16_t d_nt = prop.warpSize / 2;
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		{
+			set_kernel_launch_param(n_var, nt, grid, block);
+
+			CUDA_SAFE_CALL(cudaEventRecord(start));
+            red_kernel::calc_rk4_error<<<grid, block>>>(a, k4, k5, n_var);
+       		CUDA_CHECK_ERROR();
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+
+			float GPU_DT = 0.0f;
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&GPU_DT, start, stop));
+			if (GPU_DT < min_GPU_DT)
+			{
+				min_GPU_DT = GPU_DT;
+				n_tpb = nt;
+			}
+			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
+		}
+		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
+	}
+	else
+	{
+		set_kernel_launch_param(n_var, n_tpb, grid, block);
+        red_kernel::calc_rk4_error<<<grid, block>>>(a, k4, k5, n_var);
+   		CUDA_CHECK_ERROR();
 	}
 }
 } /* redutil2 */

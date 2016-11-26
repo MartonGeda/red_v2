@@ -7,10 +7,9 @@
 #include "macro.h"
 #include "redutil2.h"
 
-using namespace std;
 using namespace redutil2;
 
-#define	LAMBDA	1.0/60.0
+static const var_t lambda = 1.0/60.0;
 
 /*
  * Fehlberg, E.
@@ -38,22 +37,9 @@ var_t int_rungekutta5::c[]  = { 0.0, 1.0/8.0, 1.0/4.0, 4.0/9.0, 4.0/5.0, 1.0, 1.
 var_t int_rungekutta5::_a[ sizeof(int_rungekutta5::a ) / sizeof(var_t)];
 var_t int_rungekutta5::_bh[ sizeof(int_rungekutta5::bh ) / sizeof(var_t)];
 
-namespace rk5_kernel
-{
-// a_i = b_i + F * c_i
-static __global__
-	void sum_vector(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
-{
-	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-	uint32_t stride = gridDim.x * blockDim.x;
+__constant__ var_t dc_a[sizeof(int_rungekutta5::a) / sizeof(var_t)];
+__constant__ var_t dc_bh[sizeof(int_rungekutta5::bh) / sizeof(var_t)];
 
-	while (n > tid)
-	{
-		a[tid] = b[tid] + f * c[tid];
-		tid += stride;
-	}
-}
-} /* namespace rk5_kernel */
 
 int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
 	integrator(f, adaptive, tolerance, (adaptive ? 7 : 6), comp_dev)
@@ -63,12 +49,14 @@ int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_de
 }
 
 int_rungekutta5::~int_rungekutta5()
-{}
+{ }
 
 void int_rungekutta5::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
+		var_t* coeff = dc_a + stage * n_stage;
+		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
@@ -89,19 +77,6 @@ void int_rungekutta5::calc_y_np1()
 	}
 }
 
-void int_rungekutta5::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
-{
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		// rk4_kernel::calc_lin_comb
-		CUDA_CHECK_ERROR();
-	}
-	else
-	{
-		cpu_calc_lin_comb(y, y_n, coeff, n_coeff, n_var);
-	}
-}
-
 void int_rungekutta5::calc_error(uint32_t n)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
@@ -115,23 +90,6 @@ void int_rungekutta5::calc_error(uint32_t n)
 	}
 }
 
-void int_rungekutta5::cpu_calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
-{
-	for (uint32_t i = 0; i < n_var; i++)
-	{
-		var_t dy = 0.0;
-		for (uint16_t j = 0; j < n_coeff; j++)
-		{
-			if (0.0 == coeff[j])
-			{
-				continue;
-			}
-			dy += coeff[j] * h_k[j][i];
-		}
-		y[i] = y_n[i] + dy;
-	}
-}
-
 void int_rungekutta5::cpu_calc_error(uint32_t n)
 {
 	for (uint32_t i = 0; i < n; i++)
@@ -142,7 +100,7 @@ void int_rungekutta5::cpu_calc_error(uint32_t n)
 
 var_t int_rungekutta5::step()
 {
-	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
+	static std::string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 
 	static const uint16_t n_a = sizeof(int_rungekutta5::a) / sizeof(var_t);
 	static const uint16_t n_bh = sizeof(int_rungekutta5::bh) / sizeof(var_t);
@@ -197,7 +155,7 @@ var_t int_rungekutta5::step()
 			}
 			calc_error(f.n_var);
 			max_err = get_max_error(f.n_var);
-			max_err *= dt_try * LAMBDA;
+			max_err *= dt_try * lambda;
 			calc_dt_try(max_err);
 		}
 		iter++;
@@ -205,11 +163,11 @@ var_t int_rungekutta5::step()
 
 	if (max_iter <= iter)
 	{
-		throw string(err_msg1 + " The number of iteration exceeded the limit.");
+		throw std::string(err_msg1 + " The number of iteration exceeded the limit.");
 	}
 	if (dt_min >= dt_try)
 	{
-		throw string(err_msg1 + " The stepsize is smaller than the limit.");
+		throw std::string(err_msg1 + " The stepsize is smaller than the limit.");
 	}
 	update_counters(iter);
 

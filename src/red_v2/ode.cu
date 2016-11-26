@@ -42,21 +42,23 @@ ode::~ode()
 
 void ode::initialize()
 {
-	t      = 0.0;
-	tout   = 0.0;
-	dt     = 0.0;
+    optimize    = true;
 
-	h_y    = NULL;
-	h_yout = NULL;
-	d_y	   = NULL;
-	d_yout = NULL;
-	y	   = NULL;
-	yout   = NULL;
-	h_p    = NULL;
-	d_p	   = NULL;
-	p	   = NULL;
+    t           = 0.0;
+	tout        = 0.0;
+	dt          = 0.0;
 
-	n_tpb  = 1;
+	h_y         = NULL;
+	h_yout      = NULL;
+	d_y	        = NULL;
+	d_yout      = NULL;
+	y	        = NULL;
+	yout        = NULL;
+	h_p         = NULL;
+	d_p	        = NULL;
+	p	        = NULL;
+
+	n_tpb       = 1;
 
 	var3_t zero = {0, 0, 0};
 	integral.h0 = integral.h = 0;

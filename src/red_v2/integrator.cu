@@ -31,7 +31,9 @@ integrator::~integrator()
 
 void integrator::initialize()
 {
-	t             = f.t;
+    optimize      = true;
+
+    t             = f.t;
 	dt_try        = f.dt;
 	dt_did        = 0.0;
 

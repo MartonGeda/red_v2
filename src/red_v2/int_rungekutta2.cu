@@ -12,64 +12,50 @@ using namespace redutil2;
 // The Runge-Kutta matrix
 var_t int_rungekutta2::a[] = 
 { 
-	0.0,     0.0, 
-	1.0/2.0, 0.0
+	0.0,     0.0,      // y = yn          -> k1
+	1.0/2.0, 0.0       // y = yn + h*k1
 };
 // weights
 var_t int_rungekutta2::b[] = { 0.0, 1.0     };
 // nodes
 var_t int_rungekutta2::c[] = { 0.0, 1.0/2.0 };
 // These arrays will contain the stepsize multiplied by the constants
-var_t int_rungekutta2::aa[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
-var_t int_rungekutta2::bb[ sizeof(int_rungekutta2::b ) / sizeof(var_t)];
-var_t int_rungekutta2::cc[ sizeof(int_rungekutta2::c ) / sizeof(var_t)];
+var_t int_rungekutta2::_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
+var_t int_rungekutta2::_b[ sizeof(int_rungekutta2::b ) / sizeof(var_t)];
+var_t int_rungekutta2::_c[ sizeof(int_rungekutta2::c ) / sizeof(var_t)];
 
 __constant__ var_t dc_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
-__constant__ var_t dc_b[ sizeof(int_rungekutta2::b ) / sizeof(var_t)];
-__constant__ var_t dc_c[ sizeof(int_rungekutta2::c ) / sizeof(var_t)];
 
-
-namespace rk2_kernel
-{
-// a_i = b_i + F * c_i
-static __global__
-	void calc_lin_comb(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
-{
-	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-	uint32_t stride = gridDim.x * blockDim.x;
-
-	while (n > tid)
-	{
-		a[tid] = b[tid] + f * c[tid];
-		tid += stride;
-	}
-}
-
-} /* namespace rk2_kernel */
 
 int_rungekutta2::int_rungekutta2(ode& f, comp_dev_t comp_dev) :
 	integrator(f, false, 0.0, 2, comp_dev)
 {
 	name    = "Runge-Kutta2";
 	n_order = 2;
-
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		redutil2::copy_constant_to_device(dc_a, a, sizeof(a));
-		redutil2::copy_constant_to_device(dc_b, b, sizeof(b));
-		redutil2::copy_constant_to_device(dc_c, c, sizeof(c));
-	}
 }
 
 int_rungekutta2::~int_rungekutta2()
-{}
+{ }
+
+void int_rungekutta2::calc_ytemp(uint16_t stage)
+{
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		var_t* coeff = dc_a + stage * n_stage;
+		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
+	}
+	else
+	{
+		var_t* coeff = _a + stage * n_stage;
+		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
+	}
+}
 
 void int_rungekutta2::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		rk2_kernel::calc_lin_comb<<<grid, block>>>(f.yout, f.y, dt_try, k[1], f.n_var);
-		CUDA_CHECK_ERROR();
+		gpu_calc_lin_comb_s(f.yout, f.y, k[1], dt_try, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
@@ -77,25 +63,19 @@ void int_rungekutta2::calc_y_np1()
 	}
 }
 
-void int_rungekutta2::calc_ytemp(uint16_t stage)
+var_t int_rungekutta2::step()
 {
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	static const uint16_t n_a = sizeof(int_rungekutta2::a) / sizeof(var_t);
+	static uint32_t n_var = 0;
+
+    if (n_var != f.n_var)
 	{
+		optimize = true;
+		n_var = f.n_var;
 	}
 	else
 	{
-		var_t* coeff = aa + stage * n_stage;
-		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
-	}
-}
-
-var_t int_rungekutta2::step()
-{
-	static const uint16_t n_aa = sizeof(int_rungekutta2::aa) / sizeof(var_t);
-
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
+		optimize = false;
 	}
 
 	uint16_t stage = 0;
@@ -105,9 +85,13 @@ var_t int_rungekutta2::step()
 
 	// TODO: check if this speeds up the app or not!
 	// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
-	for (uint16_t i = 0; i < n_aa; i++)
+	for (uint16_t i = 0; i < n_a; i++)
 	{
-		aa[i] = dt_try * a[i];
+		_a[i] = dt_try * a[i];
+	}
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
 	}
 
 	stage = 1;
@@ -118,11 +102,10 @@ var_t int_rungekutta2::step()
 	calc_y_np1();
 
 	dt_did = dt_try;
-
-	update_counters(1);
-
 	f.tout = t = f.t + dt_did;
 	f.swap();
+
+    update_counters(1);
 
 	return dt_did;
 }

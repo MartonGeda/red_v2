@@ -66,7 +66,9 @@ public:
 
 	std::string name;     //! Name of the model
 
-	var_t t;              //! Independent variable (e.g. time or fictitious time)
+    bool optimize;        //!< If true than perform optimization
+
+    var_t t;              //! Independent variable (e.g. time or fictitious time)
 	var_t tout;           //! Independent variable at the end of the integration step
 	var_t dt;             //! Increment/decrement of the independent variable (step-size for the integrator)
 

@@ -105,10 +105,12 @@ int main()
 			ALLOCATE_DEVICE_VECTOR((void**)(tmp + i), n_arr*sizeof(int));
 			printf("after allocation: %p\n", tmp[i]);
 			kernel_test::print_array<<<1,  1>>>(*(tmp + i), n_arr);
+       		CUDA_CHECK_ERROR();
 			cudaThreadSynchronize();
 		}
 		CUDA_SAFE_CALL(cudaMemcpy(d_k, tmp, n_vct * sizeof(int*), cudaMemcpyHostToDevice));
 		kernel_test::print_array<<<1,  1>>>(d_k, n_vct);
+   		CUDA_CHECK_ERROR();
 		cudaThreadSynchronize();
 
 
@@ -126,6 +128,7 @@ int main()
 			printf("tmp[%u]: %p\n", i, tmp[i]);
 			CUDA_SAFE_CALL(cudaMemcpy(tmp[i], h_k[i], n_arr * sizeof(int), cudaMemcpyHostToDevice));
 			kernel_test::print_array<<<1,  1>>>(tmp[i], n_arr);
+       		CUDA_CHECK_ERROR();
 			cudaThreadSynchronize();
 		}
 
