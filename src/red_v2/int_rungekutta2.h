@@ -9,9 +9,9 @@ class ode;
 class int_rungekutta2 : public integrator
 {
 public:
-	static var_t a[], aa[];
-	static var_t b[], bb[];
-	static var_t c[], cc[];
+	static var_t a[], _a[];
+	static var_t b[], _b[];
+	static var_t c[], _c[];
 
 	int_rungekutta2(ode& f, comp_dev_t comp_dev);
 	~int_rungekutta2();

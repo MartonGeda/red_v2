@@ -389,7 +389,12 @@ integrator* options::create_integrator(ode& f)
 		throw string("Requested integrator is not implemented.");
 	}
 
-	if (param->error_check_for_tp)
+	// TODO: For every model it should be provieded a method to determine the minimum stepsize
+	// OR use the solution provided by the Numerical Recepies
+	intgr->set_dt_min(1.0e-20); // day
+	intgr->set_max_iter(100);
+
+    if (param->error_check_for_tp)
 	{
 		intgr->error_check_for_tp = true;
 	}

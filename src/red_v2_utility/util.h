@@ -61,9 +61,9 @@ namespace redutil2
 		\param f     the weight of c
 		\param n_var the number of elements in the vectors
 		\param id_dev the id of the GPU to use for the computation
-		\param benchmark if true perform a benchmark of the underlying kernel
+		\param optimize If true than perform optimization of the underlying kernel
 	*/
-	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool benchmark);
+	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool optimize);
 
 	//! Calculate the special case of linear combination of vectors, a[i] = b[i] + sum (coeff[j] * c[j][i])
 	/*
@@ -74,8 +74,19 @@ namespace redutil2
 		\param n_vct the number of vectors to combine
 		\param n_var the number of elements in the vectors
 		\param id_dev the id of the GPU to use for the computation
-		\param benchmark if true perform a benchmark of the underlying kernel
+		\param optimize If true than perform optimization of the underlying kernel
 	*/
-	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool benchmark);
+	void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool optimize);
+
+    //! Calculate the error for the Runge-Kutta 4 method: a = |k4 - k5|
+    /*
+        \param a will hold the result
+        \param k4 input vector
+        \param k5 input vector
+		\param n_var the number of elements in the vectors
+		\param id_dev the id of the GPU to use for the computation
+		\param optimize If true than perform optimization of the underlying kernel
+    */
+    void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_var, int id_dev, bool optimize);
 
 } /* redutil2 */

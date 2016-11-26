@@ -17,27 +17,13 @@ euler::euler(ode& f, comp_dev_t comp_dev) :
 }
 
 euler::~euler()
-{}
+{ }
 
 void euler::calc_y_np1()
 {
-	static uint32_t n_var = 0;
-	bool benchmark = true;
-
-	if (n_var != f.n_var)
-	{
-		benchmark = true;
-		n_var = f.n_var;
-	}
-	else
-	{
-		benchmark = false;
-	}
-
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var, comp_dev.id_dev, benchmark);
-		CUDA_CHECK_ERROR();
+		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
@@ -47,19 +33,30 @@ void euler::calc_y_np1()
 
 var_t euler::step()
 {
-	uint16_t stage = 0;
+	static uint32_t n_var = 0;
+
+    if (n_var != f.n_var)
+	{
+		optimize = true;
+		n_var = f.n_var;
+	}
+	else
+	{
+		optimize = false;
+	}
+
+    uint16_t stage = 0;
 	t = f.t;
-	// Calculate initial differentials and store them into h_k
+	// Calculate initial differentials and store them into k
 	f.calc_dy(stage, t, f.y, k[stage]);
 
 	calc_y_np1();
 
 	dt_did = dt_try;
-
-	update_counters(1);
-
 	f.tout = t = f.t + dt_did;
 	f.swap();
 
-	return dt_did;
+	update_counters(1);
+
+    return dt_did;
 }

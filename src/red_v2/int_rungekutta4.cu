@@ -7,7 +7,6 @@
 #include "macro.h"
 #include "redutil2.h"
 
-using namespace std;
 using namespace redutil2;
 
 static const var_t lambda = 1.0/10.0;
@@ -34,25 +33,12 @@ var_t int_rungekutta4::bh[] = { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 };
 var_t int_rungekutta4::c[]  = { 0.0, 1.0/2.0, 1.0/2.0, 1.0, 1.0 };
 
 // These arrays will contain the stepsize multiplied by the constants
-var_t int_rungekutta4::_a[ sizeof(int_rungekutta4::a ) / sizeof(var_t)];
-var_t int_rungekutta4::_bh[ sizeof(int_rungekutta4::bh ) / sizeof(var_t)];
+var_t int_rungekutta4::_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
+var_t int_rungekutta4::_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
 
-namespace rk4_kernel
-{
-// a_i = b_i + F * c_i
-static __global__
-	void sum_vector(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
-{
-	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-	uint32_t stride = gridDim.x * blockDim.x;
+__constant__ var_t dc_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
+__constant__ var_t dc_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
 
-	while (n > tid)
-	{
-		a[tid] = b[tid] + f * c[tid];
-		tid += stride;
-	}
-}
-} /* namespace rk4_kernel */
 
 int_rungekutta4::int_rungekutta4(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
 	integrator(f, adaptive, tolerance, (adaptive ? 5 : 4), comp_dev)
@@ -62,12 +48,14 @@ int_rungekutta4::int_rungekutta4(ode& f, bool adaptive, var_t tolerance, comp_de
 }
 
 int_rungekutta4::~int_rungekutta4()
-{}
+{ }
 
 void int_rungekutta4::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
+		var_t* coeff = dc_a + stage * n_stage;
+		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
@@ -80,6 +68,8 @@ void int_rungekutta4::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
+		var_t* coeff = dc_bh;
+		gpu_calc_lin_comb_s(f.yout, f.y, k, coeff, 4, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
@@ -92,9 +82,8 @@ void int_rungekutta4::calc_error(uint32_t n)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		// rk4_kernel::calc_error
-		CUDA_CHECK_ERROR();
-	}
+        gpu_calc_rk4_error(err, k[3], k[4], n, comp_dev.id_dev, optimize);
+    }
 	else
 	{
 		cpu_calc_error(n);
@@ -109,18 +98,23 @@ void int_rungekutta4::cpu_calc_error(uint32_t n)
 	}
 }
 
-
 var_t int_rungekutta4::step()
 {
-	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
+	static std::string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 
 	static const uint16_t n_a = sizeof(int_rungekutta4::a) / sizeof(var_t);
 	static const uint16_t n_bh = sizeof(int_rungekutta4::bh) / sizeof(var_t);
 	static bool first_call = true;
+	static uint32_t n_var = 0;
 
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+    if (n_var != f.n_var)
 	{
-		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
+		optimize = true;
+		n_var = f.n_var;
+	}
+	else
+	{
+		optimize = false;
 	}
 
 	uint16_t stage = 0;
@@ -144,7 +138,14 @@ var_t int_rungekutta4::step()
 		}
 		else
 		{
-			memcpy(k[0], k[4], f.n_var*sizeof(var_t));
+            if (PROC_UNIT_GPU == comp_dev.proc_unit)
+            {
+                CUDA_SAFE_CALL(cudaMemcpy(k[0], k[4], f.n_var*sizeof(var_t), cudaMemcpyDeviceToDevice));
+            }
+            else
+            {
+    			memcpy(k[0], k[4], f.n_var*sizeof(var_t));
+            }
 		}
 	}
 
@@ -162,6 +163,11 @@ var_t int_rungekutta4::step()
 		{
 			_bh[i] = dt_try * bh[i];
 		}
+	    if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	    {
+		    redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
+            redutil2::copy_constant_to_device(dc_bh, _bh, sizeof(_bh));
+	    }
 
 		for (stage = 1; stage < n_order; stage++) // stage = 1, 2, 3 
 		{
@@ -187,16 +193,17 @@ var_t int_rungekutta4::step()
 
 	if (max_iter <= iter)
 	{
-		throw string(err_msg1 + " The number of iteration exceeded the limit.");
+		throw std::string(err_msg1 + " The number of iteration exceeded the limit.");
 	}
-	if (dt_min >= dt_try)
+	if (dt_min > dt_try)
 	{
-		throw string(err_msg1 + " The stepsize is smaller than the limit.");
+		throw std::string(err_msg1 + " The stepsize is smaller than the limit.");
 	}
-	update_counters(iter);
-	
-	t = f.tout = f.t + dt_did;
+
+    t = f.tout = f.t + dt_did;
 	f.swap();
 
-	return dt_did;
+	update_counters(iter);
+
+    return dt_did;
 }

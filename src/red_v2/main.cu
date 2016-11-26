@@ -141,12 +141,6 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	} /* while : main cycle*/
 }
 
-int main(int argc, const char** argv, const char** env)
-{
-	time_t start = time(NULL);
-
-	ofstream* slog = NULL;
-
 	//matrix4_t m = {{10,8,10,7},{1,9,10,7},{8,8,4,7},{2,8,1,3}};
 	//var4_t v = {4,10,1,5};
 	//matrix4_t n = tools::calc_matrix_matrix_product(m,m);
@@ -170,6 +164,12 @@ int main(int argc, const char** argv, const char** env)
 	//tools::trans_to_threebody(qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
 	//tools::trans_to_descartes(1,5.685826099573812e-09,5.685826099573812e-09,qv1,pv1,qv2,pv2,qv3,pv3,Q1,P1,Q2,P2);
 
+
+int main(int argc, const char** argv, const char** env)
+{
+	time_t start = time(NULL);
+	ofstream* slog = NULL;
+
 	try
 	{
 		options* opt = new options(argc, argv);
@@ -183,10 +183,6 @@ int main(int argc, const char** argv, const char** env)
 
 		ode *f = opt->create_model();
 		integrator *intgr = opt->create_integrator(*f);
-		// TODO: For every model it should be provieded a method to determine the minimum stepsize
-		// OR use the solution provided by the Numerical Recepies
-		intgr->set_dt_min(1.0e-20); // day
-		intgr->set_max_iter(100);
 
 		if (opt->benchmark && DYN_MODEL_NBODY == opt->dyn_model)
 		{
