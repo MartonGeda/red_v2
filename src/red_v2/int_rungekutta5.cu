@@ -34,11 +34,11 @@ var_t int_rungekutta5::bh[] = { 17.0/192.0, 0.0, 64.0/231.0, 2187.0/8960.0, 2875
 var_t int_rungekutta5::c[]  = { 0.0, 1.0/8.0, 1.0/4.0, 4.0/9.0, 4.0/5.0, 1.0, 1.0 };
 
 // These arrays will contain the stepsize multiplied by the constants
-var_t int_rungekutta5::_a[ sizeof(int_rungekutta5::a ) / sizeof(var_t)];
-var_t int_rungekutta5::_bh[ sizeof(int_rungekutta5::bh ) / sizeof(var_t)];
+var_t int_rungekutta5::h_a[ sizeof(int_rungekutta5::a ) / sizeof(var_t)];
+var_t int_rungekutta5::h_bh[ sizeof(int_rungekutta5::bh ) / sizeof(var_t)];
 
-__constant__ var_t dc_a[sizeof(int_rungekutta5::a) / sizeof(var_t)];
-__constant__ var_t dc_bh[sizeof(int_rungekutta5::bh) / sizeof(var_t)];
+//__constant__ var_t dc_a[sizeof(int_rungekutta5::a) / sizeof(var_t)];
+//__constant__ var_t dc_bh[sizeof(int_rungekutta5::bh) / sizeof(var_t)];
 
 
 int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
@@ -46,21 +46,45 @@ int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_de
 {
 	name    = "Runge-Kutta5";
 	n_order = 5;
+
+	d_a  = NULL;
+	d_bh = NULL;
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		allocate_Butcher_tableau();
+	}	
 }
 
 int_rungekutta5::~int_rungekutta5()
-{ }
+{
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		deallocate_Butcher_tableau();
+	}	
+}
+
+void int_rungekutta5::allocate_Butcher_tableau()
+{
+	ALLOCATE_DEVICE_VECTOR((void**)&d_a,  sizeof(a));
+	ALLOCATE_DEVICE_VECTOR((void**)&d_bh, sizeof(bh));
+}
+
+void int_rungekutta5::deallocate_Butcher_tableau()
+{
+	FREE_DEVICE_VECTOR((void**)&d_a);
+	FREE_DEVICE_VECTOR((void**)&d_bh);
+}
 
 void int_rungekutta5::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = dc_a + stage * n_stage;
+		var_t* coeff = d_a + stage * n_stage;
 		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = _a + stage * n_stage;
+		var_t* coeff = h_a + stage * n_stage;
 		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
 	}
 }
@@ -69,11 +93,13 @@ void int_rungekutta5::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
+		var_t* coeff = d_bh;
+		gpu_calc_lin_comb_s(f.yout, f.y, k, coeff, 6, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = _bh;
-		tools::calc_lin_comb_s(f.yout, f.y, k, coeff, 4, f.n_var);
+		var_t* coeff = h_bh;
+		tools::calc_lin_comb_s(f.yout, f.y, k, coeff, 6, f.n_var);
 	}
 }
 
@@ -81,20 +107,14 @@ void int_rungekutta5::calc_error(uint32_t n)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		// rk4_kernel::calc_error
-		CUDA_CHECK_ERROR();
+        gpu_calc_rk5_error(err, k[5], k[6], n, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		cpu_calc_error(n);
-	}
-}
-
-void int_rungekutta5::cpu_calc_error(uint32_t n)
-{
-	for (uint32_t i = 0; i < n; i++)
-	{
-		h_err[i] = fabs(k[5][i] - k[6][i]);
+		for (uint32_t i = 0; i < n; i++)
+		{
+			h_err[i] = fabs(k[5][i] - k[6][i]);
+		}
 	}
 }
 
@@ -105,10 +125,16 @@ var_t int_rungekutta5::step()
 	static const uint16_t n_a = sizeof(int_rungekutta5::a) / sizeof(var_t);
 	static const uint16_t n_bh = sizeof(int_rungekutta5::bh) / sizeof(var_t);
 	static bool first_call = true;
+	static uint32_t n_var = 0;
 
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+    if (n_var != f.n_var)
 	{
-		redutil2::set_kernel_launch_param(f.n_var, THREADS_PER_BLOCK, grid, block);
+		optimize = true;
+		n_var = f.n_var;
+	}
+	else
+	{
+		optimize = false;
 	}
 
 	uint16_t stage = 0;
@@ -123,23 +149,25 @@ var_t int_rungekutta5::step()
 		// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
 		for (uint16_t i = 0; i < n_a; i++)
 		{
-			_a[i] = dt_try * a[i];
+			h_a[i] = dt_try * a[i];
 		}
 		for (uint16_t i = 0; i < n_bh; i++)
 		{
-			_bh[i] = dt_try * bh[i];
+			h_bh[i] = dt_try * bh[i];
 		}
+	    if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	    {
+			copy_vector_to_device(d_a,  h_a,  sizeof(h_a) );
+			copy_vector_to_device(d_bh, h_bh, sizeof(h_bh));
+	    }
 
 		for (stage = 1; stage < 6; stage++)
 		{
 			t = f.t + c[stage] * dt_try;
-			// Calculate the y_temp for the next f evaluation
 			calc_ytemp(stage);
-			//cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
-			f.calc_dy(stage, t, h_ytemp, h_k[stage]); // -> k2, k3, k4, k5, k6
+			f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, k4, k5, k6
 		}
-		// So far we have stage (=6) number of k vectors
-		//cpu_calc_lin_comb(f.h_yout, f.h_y, bb, stage, f.n_var);
+		// We have stage (=6) number of k vectors, approximate the solution in f.yout using the bh coeff:
 		calc_y_np1();
 
 		if (adaptive)
@@ -148,10 +176,9 @@ var_t int_rungekutta5::step()
 			for ( ; stage < n_stage; stage++)
 			{
 				t = f.t + c[stage] * dt_try;
-				// Calculate the y_temp for the next f evaulation
 				calc_ytemp(stage);
 				//cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
-				f.calc_dy(stage, t, h_ytemp, h_k[stage]); // -> k7
+				f.calc_dy(stage, t, ytemp, k[stage]); // -> k7
 			}
 			calc_error(f.n_var);
 			max_err = get_max_error(f.n_var);
@@ -169,12 +196,11 @@ var_t int_rungekutta5::step()
 	{
 		throw std::string(err_msg1 + " The stepsize is smaller than the limit.");
 	}
-	update_counters(iter);
 
 	t = f.tout = f.t + dt_did;
 	f.swap();
 
+	update_counters(iter);
+
 	return dt_did;
 }
-
-#undef LAMBDA

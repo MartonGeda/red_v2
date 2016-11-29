@@ -19,6 +19,12 @@ euler::euler(ode& f, comp_dev_t comp_dev) :
 euler::~euler()
 { }
 
+void euler::allocate_Butcher_tableau()
+{ }
+
+void euler::deallocate_Butcher_tableau()
+{ }
+
 void euler::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)

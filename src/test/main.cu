@@ -1,3 +1,76 @@
+
+/*
+ * Test the constant memory of thee DEVICE
+ * The constant memory does not work on NVIDIA GeForce GT 620 !!
+ */
+#if 1
+#include <stdio.h>      /* printf, scanf, puts, NULL */
+#include <iostream>
+
+#include "device_launch_parameters.h"
+#include "cuda_runtime.h"
+
+#include "macro.h"
+#include "type.h"
+#include "redutil2.h"
+
+using namespace redutil2;
+
+// The Runge-Kutta matrix
+var_t a[] = 
+{ 
+	1.0, -10.0,
+	0.5,  -0.25
+};
+__constant__ var_t dc_a[sizeof(a) / sizeof(var_t)];
+
+//! Print pointer and dereferennce it
+__global__
+void print_ptr(const var_t* a)
+{
+	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (0 == tid)
+	{
+		printf("%p\n", a);
+		printf("a[0] = %25.16le\n", a[0]);
+		printf("a[1] = %25.16le\n", a[1]);
+		printf("a[2] = %25.16le\n", a[2]);
+		printf("a[3] = %25.16le\n", a[3]);
+	}
+}
+
+int main()
+{
+	try
+	{
+		var_t* d_a = NULL;
+
+		ALLOCATE_DEVICE_VECTOR((void**)&d_a, sizeof(a));
+		copy_vector_to_device(d_a, a, sizeof(a));
+
+		CUDA_SAFE_CALL(cudaMemcpyToSymbol(dc_a, a, sizeof(a)));
+		//copy_constant_to_device(dc_a, a, sizeof(a));
+
+		printf("d_a:\n");
+		print_ptr<<<1, 1>>>(d_a);
+		CUDA_CHECK_ERROR();
+
+		printf("dc_a:\n");
+		print_ptr<<<1, 1>>>(dc_a);
+		CUDA_CHECK_ERROR();
+
+		FREE_DEVICE_VECTOR((void**)&d_a);
+	}
+	catch (const std::string& msg)
+	{
+		std::cerr << "Error: " << msg << "." << std::endl;
+	}
+
+	return 0;
+}
+#endif
+
 /*
  * 2016.11.11. - 11.13. TEST OK
  * Allocation of array of pointers
@@ -157,7 +230,7 @@ int main()
  * Compute the linear combination of arrays on the DEVICE
  * and comapre the results those computed on the HOST
  */
-#if 1
+#if 0
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand, malloc       */
 #include <time.h>       /* time                      */

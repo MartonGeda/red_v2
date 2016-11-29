@@ -33,11 +33,11 @@ var_t int_rungekutta4::bh[] = { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 };
 var_t int_rungekutta4::c[]  = { 0.0, 1.0/2.0, 1.0/2.0, 1.0, 1.0 };
 
 // These arrays will contain the stepsize multiplied by the constants
-var_t int_rungekutta4::_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
-var_t int_rungekutta4::_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
+var_t int_rungekutta4::h_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
+var_t int_rungekutta4::h_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
 
-__constant__ var_t dc_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
-__constant__ var_t dc_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
+//__constant__ var_t dc_a[sizeof(int_rungekutta4::a) / sizeof(var_t)];
+//__constant__ var_t dc_bh[sizeof(int_rungekutta4::bh) / sizeof(var_t)];
 
 
 int_rungekutta4::int_rungekutta4(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
@@ -45,21 +45,45 @@ int_rungekutta4::int_rungekutta4(ode& f, bool adaptive, var_t tolerance, comp_de
 {
 	name    = "Runge-Kutta4";
 	n_order = 4;
+
+	d_a  = NULL;
+	d_bh = NULL;
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		allocate_Butcher_tableau();
+	}	
 }
 
 int_rungekutta4::~int_rungekutta4()
-{ }
+{
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		deallocate_Butcher_tableau();
+	}	
+}
+
+void int_rungekutta4::allocate_Butcher_tableau()
+{
+	ALLOCATE_DEVICE_VECTOR((void**)&d_a,  sizeof(a));
+	ALLOCATE_DEVICE_VECTOR((void**)&d_bh, sizeof(bh));
+}
+
+void int_rungekutta4::deallocate_Butcher_tableau()
+{
+	FREE_DEVICE_VECTOR((void**)&d_a);
+	FREE_DEVICE_VECTOR((void**)&d_bh);
+}
 
 void int_rungekutta4::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = dc_a + stage * n_stage;
+		var_t* coeff = d_a + stage * n_stage;
 		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = _a + stage * n_stage;
+		var_t* coeff = h_a + stage * n_stage;
 		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
 	}
 }
@@ -68,12 +92,12 @@ void int_rungekutta4::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = dc_bh;
+		var_t* coeff = d_bh;
 		gpu_calc_lin_comb_s(f.yout, f.y, k, coeff, 4, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = _bh;
+		var_t* coeff = h_bh;
 		tools::calc_lin_comb_s(f.yout, f.y, k, coeff, 4, f.n_var);
 	}
 }
@@ -86,15 +110,10 @@ void int_rungekutta4::calc_error(uint32_t n)
     }
 	else
 	{
-		cpu_calc_error(n);
-	}
-}
-
-void int_rungekutta4::cpu_calc_error(uint32_t n)
-{
-	for (uint32_t i = 0; i < n; i++)
-	{
-		h_err[i] = fabs(h_k[3][i] - h_k[4][i]);
+		for (uint32_t i = 0; i < n; i++)
+		{
+			h_err[i] = fabs(h_k[3][i] - h_k[4][i]);
+		}
 	}
 }
 
@@ -157,16 +176,18 @@ var_t int_rungekutta4::step()
 		// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
 		for (uint16_t i = 0; i < n_a; i++)
 		{
-			_a[i] = dt_try * a[i];
+			h_a[i] = dt_try * a[i];
 		}
 		for (uint16_t i = 0; i < n_bh; i++)
 		{
-			_bh[i] = dt_try * bh[i];
+			h_bh[i] = dt_try * bh[i];
 		}
 	    if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	    {
-		    redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
-            redutil2::copy_constant_to_device(dc_bh, _bh, sizeof(_bh));
+			copy_vector_to_device(d_a,  h_a,  sizeof(h_a) );
+			copy_vector_to_device(d_bh, h_bh, sizeof(h_bh));
+			//redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
+			//redutil2::copy_constant_to_device(dc_bh, _bh, sizeof(_bh));
 	    }
 
 		for (stage = 1; stage < n_order; stage++) // stage = 1, 2, 3 

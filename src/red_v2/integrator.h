@@ -32,6 +32,8 @@ public:
 	void set_dt_min(var_t dt)      { dt_min = dt;          }
 	var_t get_dt_min()             { return dt_min;        }
 
+	virtual void allocate_Butcher_tableau()   = 0;
+	virtual void deallocate_Butcher_tableau() = 0;
 	virtual var_t step() = 0;
 
 	ode& f;

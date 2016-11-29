@@ -7,9 +7,9 @@
 #include "macro.h"
 #include "redutil2.h"
 
-#define	LAMBDA	41.0/840.0
+using namespace redutil2;
 
-using namespace std;
+static const var_t lambda = 41.0/840.0;
 
 // The Runge-Kutta matrix
 var_t int_rungekutta7::a[] = 
@@ -57,10 +57,34 @@ int_rungekutta7::int_rungekutta7(ode& f, bool adaptive, var_t tolerance, comp_de
 {
 	name    = "Runge-Kutta7";
 	n_order = 7;
+
+	d_a  = NULL;
+	d_bh = NULL;
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		allocate_Butcher_tableau();
+	}	
 }
 
 int_rungekutta7::~int_rungekutta7()
-{}
+{
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		deallocate_Butcher_tableau();
+	}	
+}
+
+void int_rungekutta7::allocate_Butcher_tableau()
+{
+	ALLOCATE_DEVICE_VECTOR((void**)&d_a,  sizeof(a));
+	ALLOCATE_DEVICE_VECTOR((void**)&d_bh, sizeof(bh));
+}
+
+void int_rungekutta7::deallocate_Butcher_tableau()
+{
+	FREE_DEVICE_VECTOR((void**)&d_a);
+	FREE_DEVICE_VECTOR((void**)&d_bh);
+}
 
 void int_rungekutta7::calc_lin_comb(var_t* y, const var_t* y_n, const var_t* coeff, uint16_t n_coeff, uint32_t n_var)
 {
@@ -115,7 +139,7 @@ void int_rungekutta7::cpu_calc_error(uint32_t n)
 
 var_t int_rungekutta7::step()
 {
-	static string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
+	static std::string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
 
 	static const uint16_t n_a = sizeof(int_rungekutta7::a) / sizeof(int_rungekutta7::a[0]);
 	static const uint16_t n_b = sizeof(int_rungekutta7::b) / sizeof(int_rungekutta7::b[0]);
@@ -172,7 +196,7 @@ var_t int_rungekutta7::step()
 			max_err = get_max_error(f.n_var);
 			if (1.0e-20 < max_err)
 			{
-				max_err *= dt_try * LAMBDA;
+				max_err *= dt_try * lambda;
 				dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
 			}
 			else
@@ -185,11 +209,11 @@ var_t int_rungekutta7::step()
 
 	if (max_iter <= iter)
 	{
-		throw string(err_msg1 + " The number of iteration exceeded the limit.");
+		throw std::string(err_msg1 + " The number of iteration exceeded the limit.");
 	}
 	if (dt_min >= dt_try)
 	{
-		throw string(err_msg1 + " The stepsize is smaller than the limit.");
+		throw std::string(err_msg1 + " The stepsize is smaller than the limit.");
 	}
 
 	update_counters(iter);

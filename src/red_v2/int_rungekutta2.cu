@@ -20,11 +20,10 @@ var_t int_rungekutta2::b[] = { 0.0, 1.0     };
 // nodes
 var_t int_rungekutta2::c[] = { 0.0, 1.0/2.0 };
 // These arrays will contain the stepsize multiplied by the constants
-var_t int_rungekutta2::_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
-var_t int_rungekutta2::_b[ sizeof(int_rungekutta2::b ) / sizeof(var_t)];
-var_t int_rungekutta2::_c[ sizeof(int_rungekutta2::c ) / sizeof(var_t)];
+var_t int_rungekutta2::h_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
 
-__constant__ var_t dc_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
+// TODO: constant memory is not working on NVIDIA GeForce GT 620.
+//__constant__ var_t dc_a[ sizeof(int_rungekutta2::a ) / sizeof(var_t)];
 
 
 int_rungekutta2::int_rungekutta2(ode& f, comp_dev_t comp_dev) :
@@ -32,21 +31,42 @@ int_rungekutta2::int_rungekutta2(ode& f, comp_dev_t comp_dev) :
 {
 	name    = "Runge-Kutta2";
 	n_order = 2;
+
+	d_a = NULL;
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		allocate_Butcher_tableau();
+	}	
 }
 
 int_rungekutta2::~int_rungekutta2()
-{ }
+{
+	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+	{
+		deallocate_Butcher_tableau();
+	}	
+}
+
+void int_rungekutta2::allocate_Butcher_tableau()
+{
+	ALLOCATE_DEVICE_VECTOR((void**)&d_a, sizeof(a));
+}
+
+void int_rungekutta2::deallocate_Butcher_tableau()
+{
+	FREE_DEVICE_VECTOR((void**)&d_a);
+}
 
 void int_rungekutta2::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = dc_a + stage * n_stage;
+		var_t* coeff = d_a + stage * n_stage;
 		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = _a + stage * n_stage;
+		var_t* coeff = h_a + stage * n_stage;
 		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
 	}
 }
@@ -87,11 +107,13 @@ var_t int_rungekutta2::step()
 	// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
 	for (uint16_t i = 0; i < n_a; i++)
 	{
-		_a[i] = dt_try * a[i];
+		h_a[i] = dt_try * a[i];
 	}
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
+		copy_vector_to_device(d_a, h_a, sizeof(h_a));
+		// TODO: constant memory is not working on NVIDIA GeForce GT 620.
+		//redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
 	}
 
 	stage = 1;

@@ -144,14 +144,16 @@ void integrator::deallocate_device_storage()
 // Status: Not tested
 void integrator::create_aliases()
 {
+// TODO: Ezt kell tesztelni!!
 	switch (comp_dev.proc_unit)
 	{
 	case PROC_UNIT_CPU:
 		ytemp = h_ytemp;
-		for (int r = 0; r < n_stage; r++) 
-		{
-			k[r] = h_k[r];
-		}
+		k = h_k;
+		//for (int r = 0; r < n_stage; r++) 
+		//{
+		//	k[r] = h_k[r];
+		//}
 		if (adaptive)
 		{
 			err = h_err;
@@ -159,6 +161,7 @@ void integrator::create_aliases()
 		break;
 	case PROC_UNIT_GPU:
 		ytemp = d_ytemp;
+		k = d_k;
 		// If the computing device is GPU than k[] already set
 		//for (int r = 0; r < n_stage; r++) 
 		//{

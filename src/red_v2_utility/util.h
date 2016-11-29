@@ -89,4 +89,15 @@ namespace redutil2
     */
     void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_var, int id_dev, bool optimize);
 
+    //! Calculate the error for the Runge-Kutta 4 method: a = |k4 - k5|
+    /*
+        \param a will hold the result
+        \param k5 input vector
+        \param k6 input vector
+		\param n_var the number of elements in the vectors
+		\param id_dev the id of the GPU to use for the computation
+		\param optimize If true than perform optimization of the underlying kernel
+    */
+    void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_var, int id_dev, bool optimize);
+
 } /* redutil2 */

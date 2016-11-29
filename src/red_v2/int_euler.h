@@ -12,6 +12,8 @@ public:
 	euler(ode& f, comp_dev_t comp_dev);
 	~euler();
 
+	void allocate_Butcher_tableau();
+	void deallocate_Butcher_tableau();
 	var_t step();
 
 private:

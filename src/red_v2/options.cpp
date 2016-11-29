@@ -33,6 +33,11 @@ options::options(int argc, const char** argv)
 	parse(argc, argv);
 	param = new parameter(dir[DIRECTORY_NAME_IN], in_fn[INPUT_NAME_PARAMETER], print_to_screen);
 
+	if (INTEGRATOR_EULER == param->int_type || INTEGRATOR_RUNGEKUTTA2 == param->int_type)
+	{
+		param->adaptive = false;
+	}
+
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		int n_device = 0;
