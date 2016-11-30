@@ -68,7 +68,7 @@ protected:
 	var_t** h_k;                 //!< Differentials in the HOST memory
 	var_t** d_k;                 //!< Differentials in the DEVICE memory
 	var_t** k;                   //!< Alias to the differentials (either in the HOST or the DEVICE memory)
-	var_t** save_k;              //!< Save the original address of k before aliasing
+	var_t** cpy_dk;              //!< Holds a copy of the allocated DEVICE vectors address in the HOST memory
 
 	var_t* h_ytemp;	             //!< Holds the temporary solution approximation along the step in the HOST memory
 	var_t* d_ytemp;	             //!< Holds the temporary solution approximation along the step in the DEVICE memory

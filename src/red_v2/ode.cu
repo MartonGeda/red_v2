@@ -92,11 +92,12 @@ void ode::allocate_device_storage(uint32_t n_var, uint32_t n_par)
 
 void ode::deallocate_storage()
 {
-	deallocate_host_storage();
+	//NOTE : First always release the DEVICE memory
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
+	deallocate_host_storage();
 }
 
 void ode::deallocate_host_storage()

@@ -68,13 +68,14 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	ALLOCATE_HOST_VECTOR((void**)&h_k, n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_VECTOR((void**)&k,      n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_VECTOR((void**)&h_k,    n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_VECTOR((void**)&cpy_dk, n_stage*sizeof(var_t*));
+
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
 		ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_var*sizeof(var_t));
 	}
-	ALLOCATE_HOST_VECTOR((void**)&k, n_stage*sizeof(var_t*));
-	save_k = k;
 
 	ALLOCATE_HOST_VECTOR((void**)&(h_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
@@ -88,9 +89,9 @@ void integrator::allocate_device_storage(uint32_t n_var)
 	ALLOCATE_DEVICE_VECTOR((void**)(&d_k), n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		ALLOCATE_DEVICE_VECTOR((void**)(k + i), n_var*sizeof(var_t));
+		ALLOCATE_DEVICE_VECTOR((void**)(cpy_dk + i), n_var*sizeof(var_t));
 	}
-	CUDA_SAFE_CALL(cudaMemcpy(d_k, k, n_stage * sizeof(var_t*), cudaMemcpyHostToDevice));
+	CUDA_SAFE_CALL(cudaMemcpy(d_k, cpy_dk, n_stage * sizeof(var_t*), cudaMemcpyHostToDevice));
 
 	ALLOCATE_DEVICE_VECTOR((void**)&(d_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
@@ -101,11 +102,12 @@ void integrator::allocate_device_storage(uint32_t n_var)
 
 void integrator::deallocate_storage()
 {
-	deallocate_host_storage();
+	//NOTE : First always release the DEVICE memory
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		deallocate_device_storage();
 	}
+	deallocate_host_storage();
 }
 
 void integrator::deallocate_host_storage()
@@ -114,8 +116,9 @@ void integrator::deallocate_host_storage()
 	{
 		FREE_HOST_VECTOR((void **)(h_k + i));
 	}
+	free(k);           k = NULL;
 	free(h_k);       h_k = NULL;
-	free(save_k); save_k = NULL;
+	free(cpy_dk); cpy_dk = NULL;
 
 	FREE_HOST_VECTOR((void **)&(h_ytemp));
 	if (adaptive)
@@ -128,7 +131,7 @@ void integrator::deallocate_device_storage()
 {
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		FREE_DEVICE_VECTOR((void **)&(d_k[i]));
+		FREE_DEVICE_VECTOR((void **)&(cpy_dk[i]));
 	}
 	FREE_DEVICE_VECTOR((void **)&(d_k));
 
@@ -149,11 +152,7 @@ void integrator::create_aliases()
 	{
 	case PROC_UNIT_CPU:
 		ytemp = h_ytemp;
-		k = h_k;
-		//for (int r = 0; r < n_stage; r++) 
-		//{
-		//	k[r] = h_k[r];
-		//}
+		memcpy(k, h_k, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = h_err;
@@ -161,12 +160,7 @@ void integrator::create_aliases()
 		break;
 	case PROC_UNIT_GPU:
 		ytemp = d_ytemp;
-		k = d_k;
-		// If the computing device is GPU than k[] already set
-		//for (int r = 0; r < n_stage; r++) 
-		//{
-		//	k[r] = d_k[r];
-		//}
+		memcpy(k, cpy_dk, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = d_err;

@@ -101,7 +101,7 @@ var_t int_rungekutta2::step()
 	uint16_t stage = 0;
 	t = f.t;
 	// Calculate initial differentials and store them into h_k
-	f.calc_dy(stage, t, f.y, k[stage]);
+	f.calc_dy(stage, t, f.y, k[0]); // -> k1
 
 	// TODO: check if this speeds up the app or not!
 	// Compute in advance the dt_try * coefficients to save n_var multiplication per stage
