@@ -40,6 +40,7 @@ void integrator::initialize()
 	h_k           = NULL;
 	d_k           = NULL;
 	k             = NULL;
+	cpy_dk        = NULL;
 
 	h_ytemp       = NULL;
 	d_ytemp       = NULL;
@@ -68,7 +69,7 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	ALLOCATE_HOST_VECTOR((void**)&k,      n_stage*sizeof(var_t*));
+	//ALLOCATE_HOST_VECTOR((void**)&k,      n_stage*sizeof(var_t*));
 	ALLOCATE_HOST_VECTOR((void**)&h_k,    n_stage*sizeof(var_t*));
 	ALLOCATE_HOST_VECTOR((void**)&cpy_dk, n_stage*sizeof(var_t*));
 
@@ -116,7 +117,7 @@ void integrator::deallocate_host_storage()
 	{
 		FREE_HOST_VECTOR((void **)(h_k + i));
 	}
-	free(k);           k = NULL;
+	//free(k);           k = NULL;
 	free(h_k);       h_k = NULL;
 	free(cpy_dk); cpy_dk = NULL;
 
@@ -152,7 +153,8 @@ void integrator::create_aliases()
 	{
 	case PROC_UNIT_CPU:
 		ytemp = h_ytemp;
-		memcpy(k, h_k, n_stage * sizeof(var_t*));
+		k = h_k;
+		//memcpy(k, h_k, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = h_err;
@@ -160,7 +162,8 @@ void integrator::create_aliases()
 		break;
 	case PROC_UNIT_GPU:
 		ytemp = d_ytemp;
-		memcpy(k, cpy_dk, n_stage * sizeof(var_t*));
+		k = cpy_dk;
+		//memcpy(k, cpy_dk, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = d_err;

@@ -80,12 +80,12 @@ void int_rungekutta5::calc_ytemp(uint16_t stage)
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_a + stage * n_stage;
-		gpu_calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_a + stage * n_stage;
-		tools::calc_lin_comb_s(ytemp, f.y, k, coeff, stage, f.n_var);
+		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
 	}
 }
 
@@ -94,12 +94,12 @@ void int_rungekutta5::calc_y_np1()
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_bh;
-		gpu_calc_lin_comb_s(f.yout, f.y, k, coeff, 6, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 6, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_bh;
-		tools::calc_lin_comb_s(f.yout, f.y, k, coeff, 6, f.n_var);
+		tools::calc_lin_comb_s(f.yout, f.y, h_k, coeff, 6, f.n_var);
 	}
 }
 
@@ -176,8 +176,7 @@ var_t int_rungekutta5::step()
 			for ( ; stage < n_stage; stage++)
 			{
 				t = f.t + c[stage] * dt_try;
-				calc_ytemp(stage);
-				//cpu_calc_lin_comb(h_ytemp, f.h_y, &aa[a_idx[stage-1]], stage, f.n_var);
+				calc_ytemp(stage);				
 				f.calc_dy(stage, t, ytemp, k[stage]); // -> k7
 			}
 			calc_error(f.n_var);
