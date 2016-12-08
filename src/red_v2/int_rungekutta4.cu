@@ -48,6 +48,7 @@ int_rungekutta4::int_rungekutta4(ode& f, bool adaptive, var_t tolerance, comp_de
 
 	d_a  = NULL;
 	d_bh = NULL;
+	check_Butcher_tableau();
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_Butcher_tableau();
@@ -72,6 +73,26 @@ void int_rungekutta4::deallocate_Butcher_tableau()
 {
 	FREE_DEVICE_VECTOR((void**)&d_a);
 	FREE_DEVICE_VECTOR((void**)&d_bh);
+}
+
+void int_rungekutta4::check_Butcher_tableau()
+{
+	uint16_t n_c = sizeof(int_rungekutta4::c) / sizeof(var_t);
+	uint16_t n_col = (sizeof(int_rungekutta4::a) / sizeof(var_t)) / n_c;
+
+	for (uint16_t i = 0; i < n_c; i++)
+	{
+		var_t sum = 0.0;
+		for (uint16_t j = 0; j < n_col; j++)
+		{
+			uint16_t k = i * n_col + j;
+			sum += a[k];
+		}
+		if (1.0e-15 < fabs(sum - c[i]))
+		{
+			throw std::string("The Runge-Kutta 4 is not consistent (sum(a_ij) != c_i.)");
+		}
+	}
 }
 
 void int_rungekutta4::calc_ytemp(uint16_t stage)
@@ -141,7 +162,7 @@ var_t int_rungekutta4::step()
 	//f.calc_dy(stage, t, f.y, k[0]); // -> k1
 
 	// The final function evaluation at the nth step is the same as the first at the (n+1)th step,
-	// thus the effective number of function evaluations per step is four.
+	// thus the effective number of function evaluations per step is 4.
 	if (!adaptive)
 	{
 		// Calculate initial differentials and store them into k
@@ -190,14 +211,14 @@ var_t int_rungekutta4::step()
 			//redutil2::copy_constant_to_device(dc_bh, _bh, sizeof(_bh));
 	    }
 
-		for (stage = 1; stage < n_order; stage++) // stage = 1, 2, 3 
+		for (stage = 1; stage < 4; stage++) // stage = 1, 2, 3 
 		{
 			t = f.t + c[stage] * dt_try;          // -> tn + h2, tn + h/2, tn + h
 			calc_ytemp(stage);                    // -> ytmp = yn + h/2*k1,  ytmp = yn + h/2*k2,  ytmp = yn + h*k3
 			f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, k4
 		}
-		// We have stage (=4) number of k vectors, approximate the solution in f.yout using the bh coeff:
-		calc_y_np1();   // -> y = ynp1 = yn + h/6*(k1 + 2*k2 + 2*k3 + k4) = f.yout
+		// We have stage (4) number of k vectors, approximate the solution in f.yout using the bh coeff:
+		calc_y_np1();   // -> f.yout = y = ynp1 = yn + h/6*(k1 + 2*k2 + 2*k3 + k4)
 
 		if (adaptive)
 		{

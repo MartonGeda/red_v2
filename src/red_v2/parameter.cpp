@@ -38,7 +38,7 @@ void parameter::create_default()
 	adaptive           = false;
 	error_check_for_tp = false;
 	output_data_rep    = DATA_REPRESENTATION_ASCII;
-	int_type           = INTEGRATOR_RUNGEKUTTAFEHLBERG78;
+	int_type           = INTEGRATOR_RUNGEKUTTA7;
 	tolerance          = 1.0e-10;
 	simulation_length  = 0.0;
 	output_interval    = 0.0;
@@ -125,25 +125,25 @@ void parameter::set_param(string& key, string& value)
     else if (key == "integrator")
 	{
 		transform(value.begin(), value.end(), value.begin(), ::tolower);
-		if (     value == "e"    || value == "euler")
+		if (     value == "e"   || value == "euler")
 		{
 			int_type = INTEGRATOR_EULER;
 		}
-		else if (value == "rk2"  || value == "rungekutta2" || value == "runge-kutta2")
+		else if (value == "rk2" || value == "rungekutta2")
 		{
 			int_type = INTEGRATOR_RUNGEKUTTA2;
 		}
-		else if (value == "rk4"  || value == "rungekutta4" || value == "runge-kutta4")
+		else if (value == "rk4" || value == "rungekutta4")
 		{
 			int_type = INTEGRATOR_RUNGEKUTTA4;
 		}
-		else if (value == "rkf5" || value == "rungekuttafehlberg5" || value == "runge-kutta-fehlberg5")
+		else if (value == "rk5" || value == "rungekutta5")
 		{
-			int_type = INTEGRATOR_RUNGEKUTTAFEHLBERG56;
+			int_type = INTEGRATOR_RUNGEKUTTA5;
 		}
-		else if (value == "rkf7" || value == "rungekuttafehlberg7" || value == "runge-kutta-fehlberg7")
+		else if (value == "rk7" || value == "rungekutta7")
 		{
-			int_type = INTEGRATOR_RUNGEKUTTAFEHLBERG78;
+			int_type = INTEGRATOR_RUNGEKUTTA7;
 		}			
 		else
 		{
@@ -228,9 +228,8 @@ ostream& operator<<(ostream& stream, const parameter* p)
 			"INTEGRATOR_EULER"
 			"INTEGRATOR_RUNGEKUTTA2",
 			"INTEGRATOR_RUNGEKUTTA4",
-			"INTEGRATOR_RUNGEKUTTAFEHLBERG56",
-			"INTEGRATOR_RUNGEKUTTAFEHLBERG78",
-			"INTEGRATOR_RUNGEKUTTANYSTROM"
+			"INTEGRATOR_RUNGEKUTTA5",
+			"INTEGRATOR_RUNGEKUTTA7"
 		};
 
 	stream << "simulation name           : " << p->simulation_name << endl;

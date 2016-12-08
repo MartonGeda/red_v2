@@ -9,8 +9,7 @@
 
 using namespace redutil2;
 
-static const var_t lambda = 1.0/60.0;
-
+#if 0
 /*
  * Fehlberg, E.
  * "Classical Fifth-, Sixth-, Seventh-, and Eighth-Order Runge-Kutta Formulas with Stepsize Control"
@@ -19,15 +18,42 @@ static const var_t lambda = 1.0/60.0;
  */
 // The Runge-Kutta matrix
 var_t int_rungekutta5::a[] = 
-{ 
-/* 0 */         0.0,           0.0,              0.0,              0.0,           0.0,    0.0, 
-/* 1 */   1.0/8.0,             0.0,              0.0,              0.0,           0.0,    0.0, 
-/* 2 */         0.0,     1.0/4.0,                0.0,              0.0,           0.0,    0.0, 
-/* 3 */ 196.0/729.0,  -320.0/729.0,    448.0/729.0,                0.0,           0.0,    0.0,
-/* 4 */ 836.0/2875.0,   64.0/575.0, -13376.0/20125.0,  21384.0/20125.0,           0.0,    0.0, 
-/* 5 */ -73.0/48.0,            0.0,   1312.0/231.0,    -2025.0/448.0,   2875.0/2112.0,    0.0, 
-/* 6 */  17.0/192.0,           0.0,     64.0/231.0,     2187.0/8960.0,  2875.0/8448.0, 1.0/20
+{        /*    0            1           2           3             4          5     6  */
+/* 0 */         0.0,          0.0,         0.0,         0.0,          0.0,  0.0,  0.0, 
+/* 1 */     1.0/6.0,          0.0,         0.0,         0.0,          0.0,  0.0,  0.0, 
+/* 2 */     4.0/75.0,   16.0/75.0,         0.0,         0.0,          0.0,  0.0,  0.0, 
+/* 3 */     5.0/6.0,    -8.0/3.0,    5.0/2.0,           0.0,          0.0,  0.0,  0.0,
+/* 4 */    -8.0/5.0,   144.0/25.0,      -4.0,    16.0/25.0,          0.0,   0.0,  0.0, 
+/* 5 */   361.0/320.0,  -18.0/5.0, 407.0/128.0, -11.0/80.0,   55.0/128.0,   0.0,  0.0, 
+/* 6 */   -11.0/640.0,        0.0,  11.0/256.0, -11.0/160.0,  11.0/256.0,   0.0,  0.0,
+/* 7 */    93.0/640.0,  -18.0/5.0, 803.0/256.0, -11.0/160.0,  99.0/256.0,   0.0,  1.0
 };
+// weights
+var_t int_rungekutta5::bh[] = { 7.0/1408, 0.0, 1125.0/2816.0, 9.0/32.0, 125.0/768.0, 0.0, 5.0/66.0, 5.0/66.0 };
+// nodes
+var_t int_rungekutta5::c[]  = { 0.0, 1.0/6.0, 4.0/15.0, 2.0/3.0, 4.0/5.0, 1.0, 0.0, 1.0 };
+#endif
+
+/*
+ * Dormand, J. R.; Prince, P. J.
+ * "New Runge-Kutta algorithms for numerical simulation in dynamical astronomy"
+ * Celestial Mechanics, vol. 18, Oct. 1978, p. 223-232.
+ * p. 225 Table II. Runge-Kutta 5(4)T
+ */
+static const var_t lambda = 1.0/60.0;
+
+// The Runge-Kutta matrix
+var_t int_rungekutta5::a[] = 
+{      /*        1              2                 3                 4              5       6      */
+/* 1 */         0.0,           0.0,              0.0,              0.0,           0.0,    0.0,  // -> k1
+/* 2 */   1.0/8.0,             0.0,              0.0,              0.0,           0.0,    0.0, 	// -> k2
+/* 3 */         0.0,     1.0/4.0,                0.0,              0.0,           0.0,    0.0, 	// -> k3
+/* 4 */ 196.0/729.0,  -320.0/729.0,    448.0/729.0,                0.0,           0.0,    0.0,	// -> k4
+/* 5 */ 836.0/2875.0,   64.0/575.0, -13376.0/20125.0,  21384.0/20125.0,           0.0,    0.0, 	// -> k5
+/* 6 */ -73.0/48.0,            0.0,   1312.0/231.0,    -2025.0/448.0,   2875.0/2112.0,    0.0, 	// -> k6
+/*-------------------------------------------------------------------------------------------------------*/
+/* 7 */  17.0/192.0,           0.0,     64.0/231.0,     2187.0/8960.0,  2875.0/8448.0, 1.0/20	// -> k7
+}; /* 7 x 6 matrix */
 // weights
 var_t int_rungekutta5::bh[] = { 17.0/192.0, 0.0, 64.0/231.0, 2187.0/8960.0, 2875.0/8448.0, 1.0/20 };
 // nodes
@@ -49,6 +75,7 @@ int_rungekutta5::int_rungekutta5(ode& f, bool adaptive, var_t tolerance, comp_de
 
 	d_a  = NULL;
 	d_bh = NULL;
+	check_Butcher_tableau();
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_Butcher_tableau();
@@ -73,6 +100,26 @@ void int_rungekutta5::deallocate_Butcher_tableau()
 {
 	FREE_DEVICE_VECTOR((void**)&d_a);
 	FREE_DEVICE_VECTOR((void**)&d_bh);
+}
+
+void int_rungekutta5::check_Butcher_tableau()
+{
+	uint16_t n_c = sizeof(int_rungekutta5::c) / sizeof(var_t);
+	uint16_t n_col = (sizeof(int_rungekutta5::a) / sizeof(var_t)) / n_c;
+
+	for (uint16_t i = 0; i < n_c; i++)
+	{
+		var_t sum = 0.0;
+		for (uint16_t j = 0; j < n_col; j++)
+		{
+			uint16_t k = i * n_col + j;
+			sum += a[k];
+		}
+		if (1.0e-15 < fabs(sum - c[i]))
+		{
+			throw std::string("The Runge-Kutta 5 is not consistent (sum(a_ij) != c_i.)");
+		}
+	}
 }
 
 void int_rungekutta5::calc_ytemp(uint16_t stage)
@@ -139,7 +186,35 @@ var_t int_rungekutta5::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-	f.calc_dy(stage, t, f.y, k[stage]); // -> k1
+	//f.calc_dy(stage, t, f.y, k[0]); // -> k1
+
+	// The final function evaluation at the nth step is the same as the first at the (n+1)th step,
+	// thus the effective number of function evaluations per step is 6.
+	if (!adaptive)
+	{
+		// Calculate initial differentials and store them into k1
+		f.calc_dy(stage, t, f.y, k[0]); // -> k1
+	}
+	else
+	{
+		if (first_call)
+		{
+			first_call = false;
+			// Calculate initial differentials and store them into k1
+			f.calc_dy(stage, t, f.y, k[0]); // -> k1
+		}
+		else
+		{
+            if (PROC_UNIT_GPU == comp_dev.proc_unit)
+            {
+                CUDA_SAFE_CALL(cudaMemcpy(k[0], k[6], f.n_var*sizeof(var_t), cudaMemcpyDeviceToDevice));
+            }
+            else
+            {
+    			memcpy(k[0], k[6], f.n_var*sizeof(var_t));
+            }
+		}
+	}
 
 	var_t max_err = 0.0;
 	uint16_t iter = 0;
@@ -167,18 +242,14 @@ var_t int_rungekutta5::step()
 			calc_ytemp(stage);
 			f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, k4, k5, k6
 		}
-		// We have stage (=6) number of k vectors, approximate the solution in f.yout using the bh coeff:
-		calc_y_np1();
+		// We have stage (6) number of k vectors, approximate the solution in f.yout using the bh coeff:
+		calc_y_np1();   // -> f.yout = y = ynp1 = yn + 17/192*k1 + ... + 1/20*k6
 
 		if (adaptive)
 		{
 			// Here stage = 6
-			for ( ; stage < n_stage; stage++)
-			{
-				t = f.t + c[stage] * dt_try;
-				calc_ytemp(stage);				
-				f.calc_dy(stage, t, ytemp, k[stage]); // -> k7
-			}
+			t = f.t + c[stage] * dt_try;
+			f.calc_dy(stage, t, f.yout, k[stage]); // -> k7
 			calc_error(f.n_var);
 			max_err = get_max_error(f.n_var);
 			max_err *= dt_try * lambda;

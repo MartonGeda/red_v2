@@ -34,6 +34,7 @@ public:
 
 	virtual void allocate_Butcher_tableau()   = 0;
 	virtual void deallocate_Butcher_tableau() = 0;
+	virtual void check_Butcher_tableau() = 0;
 	virtual var_t step() = 0;
 
 	ode& f;

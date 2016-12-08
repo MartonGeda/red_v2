@@ -103,6 +103,20 @@ void calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n)
 		tid += stride;
 	}
 }
+
+//! Calculate the error for the Runge-Kutta 7 method: error = |k1 + k11 - k12 - k13|
+__global__
+void calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t* k12, const var_t* k13, uint32_t n)
+{
+	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+	uint32_t stride = gridDim.x * blockDim.x;
+
+	while (n > tid)
+	{
+        a[tid] = fabs(k1[tid] + k11[tid] - k12[tid] - k13[tid]);
+		tid += stride;
+	}
+}
 } /* red_kernel */
 
 namespace redutil2
@@ -774,6 +788,57 @@ void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_v
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
         red_kernel::calc_rk5_error<<<grid, block>>>(a, k5, k6, n_var);
+   		CUDA_CHECK_ERROR();
+	}
+}
+
+// Calculate the error for the Runge-Kutta 7 method: a = |k1 + k11 - k12 - k13|
+void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t* k12, const var_t* k13, uint32_t n_var, int id_dev, bool optimize)
+{
+	static uint16_t n_tpb = 256;
+	static bool first_call = true;
+
+	dim3 grid;
+	dim3 block;
+
+	if (optimize || first_call)
+	{
+		first_call = false;
+
+		cudaDeviceProp prop;
+		cudaEvent_t start, stop;
+
+        CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
+		CUDA_SAFE_CALL(cudaEventCreate(&start));
+		CUDA_SAFE_CALL(cudaEventCreate(&stop));
+
+		float min_GPU_DT = 1.0e8;
+		uint16_t d_nt = prop.warpSize / 2;
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		{
+			set_kernel_launch_param(n_var, nt, grid, block);
+
+			CUDA_SAFE_CALL(cudaEventRecord(start));
+            red_kernel::calc_rk7_error<<<grid, block>>>(a, k1, k11, k12, k13, n_var);
+       		CUDA_CHECK_ERROR();
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+
+			float GPU_DT = 0.0f;
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&GPU_DT, start, stop));
+			if (GPU_DT < min_GPU_DT)
+			{
+				min_GPU_DT = GPU_DT;
+				n_tpb = nt;
+			}
+			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
+		}
+		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
+	}
+	else
+	{
+		set_kernel_launch_param(n_var, n_tpb, grid, block);
+        red_kernel::calc_rk7_error<<<grid, block>>>(a, k1, k11, k12, k13, n_var);
    		CUDA_CHECK_ERROR();
 	}
 }

@@ -33,6 +33,7 @@ int_rungekutta2::int_rungekutta2(ode& f, comp_dev_t comp_dev) :
 	n_order = 2;
 
 	d_a = NULL;
+	check_Butcher_tableau();
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		allocate_Butcher_tableau();
@@ -55,6 +56,26 @@ void int_rungekutta2::allocate_Butcher_tableau()
 void int_rungekutta2::deallocate_Butcher_tableau()
 {
 	FREE_DEVICE_VECTOR((void**)&d_a);
+}
+
+void int_rungekutta2::check_Butcher_tableau()
+{
+	uint16_t n_c = sizeof(int_rungekutta2::c) / sizeof(var_t);
+	uint16_t n_col = (sizeof(int_rungekutta2::a) / sizeof(var_t)) / n_c;
+
+	for (uint16_t i = 0; i < n_c; i++)
+	{
+		var_t sum = 0.0;
+		for (uint16_t j = 0; j < n_col; j++)
+		{
+			uint16_t k = i * n_col + j;
+			sum += a[k];
+		}
+		if (1.0e-15 < fabs(sum - c[i]))
+		{
+			throw std::string("The Runge-Kutta 2 is not consistent (sum(a_ij) != c_i.)");
+		}
+	}
 }
 
 void int_rungekutta2::calc_ytemp(uint16_t stage)

@@ -27,7 +27,7 @@ using namespace redutil2;
 
 options::options(int argc, const char** argv)
 {
-	static const char* integrator_type_short_name[] = {"E",	"RK2",	"RK4",	"RKF5",	"RKF7" };
+	static const char* integrator_type_short_name[] = {"E",	"RK2", "RK4", "RK5", "RK7"};
 
 	create_default();
 	parse(argc, argv);
@@ -384,10 +384,10 @@ integrator* options::create_integrator(ode& f)
 	case INTEGRATOR_RUNGEKUTTA4:
 		intgr = new int_rungekutta4(f, param->adaptive, param->tolerance, comp_dev);
 		break;
-	case INTEGRATOR_RUNGEKUTTAFEHLBERG56:
+	case INTEGRATOR_RUNGEKUTTA5:
 		intgr = new int_rungekutta5(f, param->adaptive, param->tolerance, comp_dev);
 		break;
-	case INTEGRATOR_RUNGEKUTTAFEHLBERG78:
+	case INTEGRATOR_RUNGEKUTTA7:
 		intgr = new int_rungekutta7(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	default:
