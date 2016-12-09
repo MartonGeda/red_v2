@@ -163,7 +163,7 @@ var_t int_rungekutta7::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-	// Calculate initial differentials and store them into h_k
+	// Calculate initial differentials and store them into k
 	f.calc_dy(stage, t, f.y, k[0]);  // -> k1
 
 	var_t max_err = 0.0;

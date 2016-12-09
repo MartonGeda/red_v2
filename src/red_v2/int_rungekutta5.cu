@@ -186,7 +186,6 @@ var_t int_rungekutta5::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-	//f.calc_dy(stage, t, f.y, k[0]); // -> k1
 
 	// The final function evaluation at the nth step is the same as the first at the (n+1)th step,
 	// thus the effective number of function evaluations per step is 6.
