@@ -1,7 +1,6 @@
 #pragma once
 
 #include "integrator.h"
-
 #include "type.h"
 
 class ode;

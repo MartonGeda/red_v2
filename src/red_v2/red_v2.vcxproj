@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="integrator.h" />
     <ClInclude Include="int_euler.h" />
+    <ClInclude Include="int_hermite4.h" />
     <ClInclude Include="int_rungekutta2.h" />
     <ClInclude Include="int_rungekutta4.h" />
     <ClInclude Include="int_rungekutta5.h" />
@@ -40,6 +41,7 @@
   <ItemGroup>
     <CudaCompile Include="integrator.cu" />
     <CudaCompile Include="int_euler.cu" />
+    <CudaCompile Include="int_hermite4.cu" />
     <CudaCompile Include="int_rungekutta2.cu" />
     <CudaCompile Include="int_rungekutta4.cu" />
     <CudaCompile Include="int_rungekutta5.cu" />

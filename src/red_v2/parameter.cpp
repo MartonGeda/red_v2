@@ -145,6 +145,10 @@ void parameter::set_param(string& key, string& value)
 		{
 			int_type = INTEGRATOR_RUNGEKUTTA7;
 		}			
+		else if (value == "h4" || value == "hermite4")
+		{
+			int_type = INTEGRATOR_HERMITE4;
+		}			
 		else
 		{
 			throw string("Invalid integrator type: " + value);

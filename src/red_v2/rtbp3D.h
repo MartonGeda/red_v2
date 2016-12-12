@@ -50,6 +50,7 @@ public:
 	static void trans_to_parameter(const var3_t& r, const var3_t& v, var4_t& u, var4_t& u_prime);
 	void trans_to_descartes_var(var_t& x, var_t& y, var_t& z, var_t& vx, var_t& vy, var_t& vz);
 
+    void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk);
 	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
 

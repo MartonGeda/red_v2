@@ -77,6 +77,11 @@ void tbp1D::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(d_md));
 }
 
+void tbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
+{
+	throw string("The tbp1D::calc_dy is not implemented.");
+}
+
 void tbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)

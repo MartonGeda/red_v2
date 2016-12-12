@@ -45,8 +45,9 @@ public:
 	*/
 	void print_integral(std::string& path);
 
-	void calc_integral();
+    void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk);
 	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
+	void calc_integral();
 
 //	void trans_to_descartes(var3_t& q1, var3_t& p1, var3_t& q2, var3_t& p2, var3_t& q3, var3_t& p3, const var4_t& Q1, const var4_t& P1, const var4_t& Q2, const var4_t& P2);
 //	void trans_to_threebody(const var3_t& qv1, const var3_t& pv1, const var3_t& qv2, const var3_t& pv2, const var3_t& qv3, const var3_t& pv3, var4_t& Q1, var4_t& P1, var4_t& Q2, var4_t& P2);

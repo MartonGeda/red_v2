@@ -62,6 +62,9 @@
     <ClInclude Include="nbody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="int_hermite4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="int_euler.cu">
@@ -110,6 +113,9 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="nbody.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_hermite4.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

@@ -147,6 +147,19 @@ void nbody::copy_metadata(copy_direction_t dir)
 	}
 }
 
+void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
+{
+	if (PROC_UNIT_CPU == comp_dev.proc_unit)
+	{
+        // TODO: implement the symmetric version
+		cpu_calc_dy(stage, curr_t, y_temp, acc, jrk, false);
+	}
+	else
+	{
+		throw string("The nbody::gpu_calc_dy is not implemented.");
+	}
+}
+
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)
@@ -156,6 +169,60 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 	else
 	{
 		gpu_calc_dy(stage, curr_t, y_temp, dy);
+	}
+}
+
+void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk, bool use_symm_prop)
+{
+	var3_t* r = (var3_t*)y_temp;
+    var3_t* v = (var3_t*)(y_temp + 3*n_obj);
+	var3_t* _acc = (var3_t*)(acc);
+	var3_t* _jrk = (var3_t*)(jrk);
+	// Clear the acceleration and jerk arrays: the += op can be used
+	memset(_acc, 0, n_obj*sizeof(var3_t));
+	memset(_jrk, 0, n_obj*sizeof(var3_t));
+
+	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
+	if (use_symm_prop)
+	{
+    	throw string("The symmetric version of nbody::cpu_calc_dy is not implemented.");
+	}
+	else
+	{
+		for (uint32_t i = 0; i < n_obj; i++)
+		{
+			var3_t r_ji = {0, 0, 0};
+			var3_t v_ji = {0, 0, 0};
+			for (uint32_t j = 0; j < n_obj; j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
+				r_ji.x = r[j].x - r[i].x;
+				r_ji.y = r[j].y - r[i].y;
+				r_ji.z = r[j].z - r[i].z;
+
+                v_ji.x = v[j].x - v[i].x;
+				v_ji.y = v[j].y - v[i].y;
+				v_ji.z = v[j].z - v[i].z;
+
+				var_t d2 = SQR(r_ji.x) + SQR(r_ji.y) + SQR(r_ji.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = K2 / (d*d2);
+
+				var_t s = p[j].mass * d_3;
+				_acc[i].x += s * r_ji.x;
+				_acc[i].y += s * r_ji.y;
+				_acc[i].z += s * r_ji.z;
+
+                var_t alpha = 3.0 * (r_ji.x * v_ji.x + r_ji.y * v_ji.y + r_ji.z * v_ji.z) / d2;
+                _jrk[i].x += s * v_ji.x - alpha * _acc[i].x;
+                _jrk[i].y += s * v_ji.y - alpha * _acc[i].y;
+                _jrk[i].z += s * v_ji.z - alpha * _acc[i].z;
+			}
+		}
 	}
 }
 

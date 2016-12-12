@@ -58,6 +58,7 @@ public:
 
 	virtual void copy_metadata(copy_direction_t dir) = 0;
 
+	virtual void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk) = 0;
 	virtual void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy) = 0;
 	virtual void calc_integral() = 0;
 

@@ -38,6 +38,7 @@ public:
 	*/
 	void print_integral(std::string& path);
 
+    void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk);
 	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
 
@@ -75,7 +76,8 @@ private:
 	*/
 	void load_binary(std::ifstream& input);
 
-	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop);
+    void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk, bool use_symm_prop);
+    void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
 	nbp_t::metadata_t *h_md, *d_md, *md;

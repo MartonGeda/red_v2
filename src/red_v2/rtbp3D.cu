@@ -124,6 +124,11 @@ static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r
 //	vz = (2.0/r) * (h_y[2] * h_y[4] + h_y[3] * h_y[5] + h_y[0] * h_y[6] + h_y[1] * h_y[7]);		// vz = 2/r * (u3*vu1 - u4*vu2 - u1*vu3 + u2*vu4)
 //}
 
+void rtbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
+{
+	throw string("The rtbp3D::calc_dy is not implemented.");
+}
+
 void rtbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)

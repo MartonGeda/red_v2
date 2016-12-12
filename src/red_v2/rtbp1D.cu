@@ -92,6 +92,11 @@ void rtbp1D::copy_metadata(copy_direction_t dir)
 	}
 }
 
+void rtbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
+{
+	throw string("The rtbp1D::calc_dy is not implemented.");
+}
+
 void rtbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)

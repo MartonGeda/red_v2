@@ -8,6 +8,7 @@
 #include "int_rungekutta4.h"
 #include "int_rungekutta5.h"
 #include "int_rungekutta7.h"
+#include "int_hermite4.h"
 #include "parameter.h"
 #include "tbp1D.h"
 #include "tbp2D.h"
@@ -27,7 +28,7 @@ using namespace redutil2;
 
 options::options(int argc, const char** argv)
 {
-	static const char* integrator_type_short_name[] = {"E",	"RK2", "RK4", "RK5", "RK7"};
+	static const char* integrator_type_short_name[] = {"E",	"RK2", "RK4", "RK5", "RK7", "H4"};
 
 	create_default();
 	parse(argc, argv);
@@ -389,6 +390,9 @@ integrator* options::create_integrator(ode& f)
 		break;
 	case INTEGRATOR_RUNGEKUTTA7:
 		intgr = new int_rungekutta7(f, param->adaptive, param->tolerance, comp_dev);
+		break;
+	case INTEGRATOR_HERMITE4:
+		intgr = new int_hermite4(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	default:
 		throw string("Requested integrator is not implemented.");
