@@ -392,7 +392,7 @@ integrator* options::create_integrator(ode& f)
 		intgr = new int_rungekutta7(f, param->adaptive, param->tolerance, comp_dev);
 		break;
 	case INTEGRATOR_HERMITE4:
-		intgr = new int_hermite4(f, param->adaptive, param->tolerance, comp_dev);
+        intgr = new int_hermite4(f, param->adaptive, param->eta, comp_dev);
 		break;
 	default:
 		throw string("Requested integrator is not implemented.");

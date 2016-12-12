@@ -40,6 +40,7 @@ void parameter::create_default()
 	output_data_rep    = DATA_REPRESENTATION_ASCII;
 	int_type           = INTEGRATOR_RUNGEKUTTA7;
 	tolerance          = 1.0e-10;
+    eta                = 0.02;
 	simulation_length  = 0.0;
 	output_interval    = 0.0;
 	info_dt            = 5.0;      // [sec]
@@ -162,6 +163,15 @@ void parameter::set_param(string& key, string& value)
 		}
 		adaptive = true;
 		tolerance = atof(value.c_str());
+	}
+    else if (key == "eta")
+	{
+		if (!tools::is_number(value))
+		{
+			throw string("Invalid number at: " + key);
+		}
+		adaptive = true;
+		eta = atof(value.c_str());
 	}
 	else if (key == "error check for tp")
 	{

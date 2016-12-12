@@ -203,21 +203,20 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 				r_ji.x = r[j].x - r[i].x;
 				r_ji.y = r[j].y - r[i].y;
 				r_ji.z = r[j].z - r[i].z;
+				var_t d2 = SQR(r_ji.x) + SQR(r_ji.y) + SQR(r_ji.z);
+				var_t d = sqrt(d2);
+				var_t d_3 = K2 / (d*d2);
+				var_t s = p[j].mass * d_3;
+
+                _acc[i].x += s * r_ji.x;
+				_acc[i].y += s * r_ji.y;
+				_acc[i].z += s * r_ji.z;
 
                 v_ji.x = v[j].x - v[i].x;
 				v_ji.y = v[j].y - v[i].y;
 				v_ji.z = v[j].z - v[i].z;
+                var_t alpha = 3.0 * (r_ji.x * v_ji.x + r_ji.y * v_ji.y + r_ji.z * v_ji.z) / (d2 * d2 * d);
 
-				var_t d2 = SQR(r_ji.x) + SQR(r_ji.y) + SQR(r_ji.z);
-				var_t d = sqrt(d2);
-				var_t d_3 = K2 / (d*d2);
-
-				var_t s = p[j].mass * d_3;
-				_acc[i].x += s * r_ji.x;
-				_acc[i].y += s * r_ji.y;
-				_acc[i].z += s * r_ji.z;
-
-                var_t alpha = 3.0 * (r_ji.x * v_ji.x + r_ji.y * v_ji.y + r_ji.z * v_ji.z) / d2;
                 _jrk[i].x += s * v_ji.x - alpha * _acc[i].x;
                 _jrk[i].y += s * v_ji.y - alpha * _acc[i].y;
                 _jrk[i].z += s * v_ji.z - alpha * _acc[i].z;

@@ -20,6 +20,7 @@ public:
 
 	integrator_type_t int_type;	       //! type of the integrator
 	var_t tolerance;                   //! tolerance/eps/accuracy of the simulation
+    var_t eta;                         //! used by the Hermite-type methods
 	bool error_check_for_tp;           //! Check the error also for the test particle
 	bool adaptive;                     //! Adaptive step size
 								       

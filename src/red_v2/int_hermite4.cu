@@ -12,11 +12,13 @@ using namespace redutil2;
 /*
  * http://www.artcompsci.org/kali/vol/two_body_problem_2/ch11.html#rdocsect76
  */
-int_hermite4::int_hermite4(ode& f, bool adaptive, var_t tolerance, comp_dev_t comp_dev) :
-    integrator(f, adaptive, tolerance, 4, comp_dev)
+int_hermite4::int_hermite4(ode& f, bool adaptive, var_t eta, comp_dev_t comp_dev) :
+    integrator(f, adaptive, 0.0, 4, comp_dev)
 {
     name    = "Hermite4";
     n_order = 4;
+
+    this->eta = eta;
 }
 
 void int_hermite4::allocate_Butcher_tableau()
@@ -36,9 +38,9 @@ void int_hermite4::predict()
 	else
 	{
         // 2 FLOPS
-        const double dt = dt_try;
-        const double dt_2 = (1./2.) * dt_try;
-        const double dt_3 = (1./3.) * dt_try;
+        const var_t dt = dt_try;
+        const var_t dt_2 = (1./2.) * dt_try;
+        const var_t dt_3 = (1./3.) * dt_try;
 
         const var3_t* acc = (var3_t*)k[0];
         const var3_t* jrk = (var3_t*)k[1];
@@ -67,14 +69,14 @@ void int_hermite4::predict()
 
 void int_hermite4::correct()
 {
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
+    if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 	}
 	else
 	{
         // 2 FLOPS
-        const double dt_2 = (1./2.) * dt_try;
-        const double dt_6 = (1./6.) * dt_try;
+        const var_t dt_2 = (1./2.) * dt_try;
+        const var_t dt_6 = (1./6.) * dt_try;
 
         const var3_t* acc  = (var3_t*)k[0];
         const var3_t* jrk  = (var3_t*)k[1];
@@ -113,6 +115,7 @@ void int_hermite4::correct()
 var_t int_hermite4::step()
 {
 	t = f.t;
+    dt_did = dt_try;
 
     f.calc_dy(0, t, f.y, k[0], k[1]);
     predict();
@@ -120,6 +123,25 @@ var_t int_hermite4::step()
     f.calc_dy(0, t, ytemp, k[2], k[3]);
     correct();
 
+    if (adaptive)
+    {
+        const var3_t* acc  = (var3_t*)k[2];
+        const var3_t* jrk  = (var3_t*)k[3];
+
+        var_t min_dt2 = 1.0e20;
+        for (uint32_t i = 0; i < f.n_obj; i++)
+        {
+            var_t acc2 = SQR(acc[i].x) + SQR(acc[i].y) + SQR(acc[i].z);
+            var_t jrk2 = SQR(jrk[i].x) + SQR(jrk[i].y) + SQR(jrk[i].z);
+            var_t dt2 = acc2 / jrk2;
+            if (min_dt2 > dt2)
+            {
+                min_dt2 = dt2;
+            }
+        }
+        dt_try = eta * sqrt(min_dt2);
+    }
+    
     t = f.tout = f.t + dt_did;
 	f.swap();
 
