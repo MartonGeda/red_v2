@@ -27,6 +27,9 @@ var_t int_rungekutta4::a[] =
 /*---------------------------------------------------------------------------------------*/
 	1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0  // y = yn + h/6*(k1 + 2*k1 + 2*k3 + k4)    -> k5
 }; /* 5 x 4 matrix */
+static uint16_t a_row = 5;
+static uint16_t a_col = 4;
+
 // weights
 var_t int_rungekutta4::bh[] = { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 };
 // nodes
@@ -99,12 +102,12 @@ void int_rungekutta4::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = d_a + stage * n_stage;
+		var_t* coeff = d_a + stage * a_col;
 		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = h_a + stage * n_stage;
+		var_t* coeff = h_a + stage * a_col;
 		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
 	}
 }
@@ -161,33 +164,33 @@ var_t int_rungekutta4::step()
 	t = f.t;
 	//f.calc_dy(stage, t, f.y, k[0]); // -> k1
 
-	// The final function evaluation at the nth step is the same as the first at the (n+1)th step,
+    // The final function evaluation at the nth step is the same as the first at the (n+1)th step,
 	// thus the effective number of function evaluations per step is 4.
-	if (!adaptive)
-	{
-		// Calculate initial differentials and store them into k
-		f.calc_dy(stage, t, f.y, k[0]); // -> k1
-	}
-	else
-	{
-		if (first_call)
-		{
-			first_call = false;
-			// Calculate initial differentials and store them into k
-			f.calc_dy(stage, t, f.y, k[0]); // -> k1
-		}
-		else
-		{
+    if (!adaptive)
+    {
+        // Calculate initial differentials and store them into k
+        f.calc_dy(stage, t, f.y, k[0]); // -> k1
+    }
+    else
+    {
+        if (first_call)
+        {
+            first_call = false;
+            // Calculate initial differentials and store them into k
+            f.calc_dy(stage, t, f.y, k[0]); // -> k1
+        }
+        else
+        {
             if (PROC_UNIT_GPU == comp_dev.proc_unit)
             {
                 CUDA_SAFE_CALL(cudaMemcpy(k[0], k[4], f.n_var*sizeof(var_t), cudaMemcpyDeviceToDevice));
             }
             else
             {
-    			memcpy(k[0], k[4], f.n_var*sizeof(var_t));
+                memcpy(k[0], k[4], f.n_var*sizeof(var_t));
             }
-		}
-	}
+        }
+    }
 
 	var_t max_err = 0.0;
 	uint16_t iter = 0;
@@ -207,8 +210,6 @@ var_t int_rungekutta4::step()
 	    {
 			copy_vector_to_device(d_a,  h_a,  sizeof(h_a) );
 			copy_vector_to_device(d_bh, h_bh, sizeof(h_bh));
-			//redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
-			//redutil2::copy_constant_to_device(dc_bh, _bh, sizeof(_bh));
 	    }
 
 		for (stage = 1; stage < 4; stage++) // stage = 1, 2, 3 

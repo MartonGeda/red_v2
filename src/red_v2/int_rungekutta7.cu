@@ -35,6 +35,8 @@ var_t int_rungekutta7::a[] =
 /*12 */     3.0/205.0,       0.0,        0.0,          0.0,           0.0,   -6.0/41.0,   -3.0/205.0,  -3.0/41.0,  3.0/41.0,   6.0/41.0,  0.0,  0.0,
 /*13 */ -1777.0/4100.0,      0.0,        0.0, -341.0/164.0, 4496.0/1025.0, -289.0/82.0, 2193.0/4100.0, 51.0/82.0, 33.0/164.0, 12.0/41.0,  0.0,  1.0
 };
+static uint16_t a_row = 13;
+static uint16_t a_col = 12;
 // weights
 var_t int_rungekutta7::bh[] = { 41.0/840.0, 0.0, 0.0, 0.0, 0.0, 34.0/105.0, 9.0/35.0, 9.0/35.0, 9.0/280.0, 9.0/280.0, 41.0/840.0 };
 // nodes
@@ -104,12 +106,12 @@ void int_rungekutta7::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = d_a + stage * n_stage;
+		var_t* coeff = d_a + stage * a_col;
 		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = h_a + stage * n_stage;
+		var_t* coeff = h_a + stage * a_col;
 		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
 	}
 }

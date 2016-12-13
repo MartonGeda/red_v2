@@ -150,6 +150,10 @@ void parameter::set_param(string& key, string& value)
 		{
 			int_type = INTEGRATOR_HERMITE4;
 		}			
+		else if (value == "h4b" || value == "hermite4b")
+		{
+			int_type = INTEGRATOR_HERMITE4B;
+		}			
 		else
 		{
 			throw string("Invalid integrator type: " + value);

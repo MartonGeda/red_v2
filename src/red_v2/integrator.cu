@@ -69,7 +69,6 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	//ALLOCATE_HOST_VECTOR((void**)&k,      n_stage*sizeof(var_t*));
 	ALLOCATE_HOST_VECTOR((void**)&h_k,    n_stage*sizeof(var_t*));
 	ALLOCATE_HOST_VECTOR((void**)&cpy_dk, n_stage*sizeof(var_t*));
 

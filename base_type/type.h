@@ -125,6 +125,7 @@ typedef enum integrator_type
 			INTEGRATOR_RUNGEKUTTA5,
 			INTEGRATOR_RUNGEKUTTA7,
             INTEGRATOR_HERMITE4,
+            INTEGRATOR_HERMITE4B,
 			INTEGRATOR_N
 		} integrator_type_t;
 

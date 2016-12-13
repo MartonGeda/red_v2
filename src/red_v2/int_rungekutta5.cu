@@ -54,6 +54,8 @@ var_t int_rungekutta5::a[] =
 /*-------------------------------------------------------------------------------------------------------*/
 /* 7 */  17.0/192.0,           0.0,     64.0/231.0,     2187.0/8960.0,  2875.0/8448.0, 1.0/20	// -> k7
 }; /* 7 x 6 matrix */
+static uint16_t a_row = 7;
+static uint16_t a_col = 6;
 // weights
 var_t int_rungekutta5::bh[] = { 17.0/192.0, 0.0, 64.0/231.0, 2187.0/8960.0, 2875.0/8448.0, 1.0/20 };
 // nodes
@@ -126,12 +128,12 @@ void int_rungekutta5::calc_ytemp(uint16_t stage)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		var_t* coeff = d_a + stage * n_stage;
+		var_t* coeff = d_a + stage * a_col;
 		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		var_t* coeff = h_a + stage * n_stage;
+		var_t* coeff = h_a + stage * a_col;
 		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
 	}
 }
@@ -186,6 +188,7 @@ var_t int_rungekutta5::step()
 
 	uint16_t stage = 0;
 	t = f.t;
+	//f.calc_dy(stage, t, f.y, k[0]); // -> k1
 
 	// The final function evaluation at the nth step is the same as the first at the (n+1)th step,
 	// thus the effective number of function evaluations per step is 6.

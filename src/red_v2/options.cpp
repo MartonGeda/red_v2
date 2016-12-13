@@ -28,7 +28,7 @@ using namespace redutil2;
 
 options::options(int argc, const char** argv)
 {
-	static const char* integrator_type_short_name[] = {"E",	"RK2", "RK4", "RK5", "RK7", "H4"};
+	static const char* integrator_type_short_name[] = {"E",	"RK2", "RK4", "RK5", "RK7", "H4", "H4b"};
 
 	create_default();
 	parse(argc, argv);
@@ -393,6 +393,9 @@ integrator* options::create_integrator(ode& f)
 		break;
 	case INTEGRATOR_HERMITE4:
         intgr = new int_hermite4(f, param->adaptive, param->eta, comp_dev);
+		break;
+	case INTEGRATOR_HERMITE4B:
+        intgr = new int_hermite4b(f, param->adaptive, param->eta, comp_dev);
 		break;
 	default:
 		throw string("Requested integrator is not implemented.");
